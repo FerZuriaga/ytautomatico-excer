@@ -7,6 +7,8 @@ describe("Product page", () => {
         cy.gotoAEUrl("/products")
 
         cy.allProducts()
+
+        //esto queda para qque yo me acuerde 
         //cy.visit("https://automationexercise.com/products")
         //cy.get("h2.title").should("exist").and("have.text", "All Products")
         //cy.get(".product-image-wrapper").its("length").should("be.gt", 0)
