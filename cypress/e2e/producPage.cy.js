@@ -20,11 +20,12 @@ describe("Product page", () => {
         cy.get(".product-image-wrapper").as("allProducts")//aca los llamo con un alias
         cy.get("@allProducts").then((allProducts) => {
             const numProducts = allProducts.length
+            //const randomNum = Math.floor(Math.random()*numProducts)
             cy.randomNum(numProducts).then((randomNum) => {
-                cy.wrap(allProducts).find(".productinfo h2").eq(randomNumber).should("exist").invoke("text").as("producPrice")
-                cy.wrap(allProducts).find(".productinfo p").eq(randomNumber).should("exist").invoke("text").as("producName")
-                cy.wrap(allProducts).find(".productinfo a").eq(randomNumber).should("have.text", "Add to cart")
-                cy.wrap(allProducts).find(".choose").eq(randomNumber).contains("View Product").click()
+                cy.wrap(allProducts).find(".productinfo h2").eq(randomNum).should("exist").invoke("text").as("producPrice")
+                cy.wrap(allProducts).find(".productinfo p").eq(randomNum).should("exist").invoke("text").as("producName")
+                cy.wrap(allProducts).find(".productinfo a").eq(randomNum).should("have.text", "Add to cart")
+                cy.wrap(allProducts).find(".choose").eq(randomNum).contains("View Product").click()
 
             })
 

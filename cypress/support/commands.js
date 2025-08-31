@@ -27,6 +27,10 @@
 
  })
 
+ Cypress.Commands.add("validateAEUrl", (route) =>{
+    cy.location("pathname").should("contain", `${route}`)
+
+ })
 
   Cypress.Commands.add("allProducts", () =>{
     cy.get("h2.title").should("exist").and("have.text", "All Products")
