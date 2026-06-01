@@ -23,7 +23,7 @@
 //
 // -- This will overwrite an existing command --
  Cypress.Commands.add("gotoAEUrl", (route) =>{
-    cy.visit(`https://automationexercise.com${route}`)
+    cy.visit(`https://automationexercise.com${route}`, { timeout: 120000 })
 
  })
 

@@ -22,6 +22,10 @@ class HomePage {
         return cy.get('#success-subscribe')
     }
 
+    get signupLoginBtn() {
+        return cy.get('a[href="/login"]')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     verifyHomePageVisible() {
@@ -45,6 +49,10 @@ class HomePage {
         this.subscriptionSuccessMessage
             .should('be.visible')
             .and('contain.text', 'You have been successfully subscribed!')
+    }
+
+    clickSignupLogin() {
+        this.signupLoginBtn.click()
     }
 }
 
