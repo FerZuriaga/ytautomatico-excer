@@ -54,6 +54,26 @@ class HomePage {
     clickSignupLogin() {
         this.signupLoginBtn.click()
     }
+
+    // Hace scroll hasta el final de la página (footer) usando el comando nativo de Cypress
+    scrollToBottom() {
+        cy.scrollTo('bottom')
+    }
+
+    // Verifica que el footer es visible
+    verifyFooterVisible() {
+        cy.get('#footer').should('be.visible')
+    }
+
+    // Hace scroll hacia arriba hasta el top de la página sin usar el botón de flecha
+    scrollToTop() {
+        cy.scrollTo('top')
+    }
+
+    // Verifica que el header/logo es visible en la parte superior de la página
+    verifyHeaderVisible() {
+        cy.get('#header').should('be.visible')
+    }
 }
 
 export default HomePage
