@@ -3,7 +3,11 @@
 
 class SignupPage {
 
-    // ─── Selectores - Formulario de nombre y email (primer paso) ─────────────
+    // ─── Selectores — Sección "New User Signup!" ─────────────────────────────
+
+    get newUserSignupTitle() {
+        return cy.contains('New User Signup!')
+    }
 
     get signupNameInput() {
         return cy.get('[data-qa="signup-name"]')
@@ -17,13 +21,18 @@ class SignupPage {
         return cy.get('[data-qa="signup-button"]')
     }
 
-    // ─── Selectores - Formulario de información de cuenta (segundo paso) ──────
+    // ─── Selectores — Sección "ENTER ACCOUNT INFORMATION" ────────────────────
 
     get accountInfoTitle() {
         return cy.contains('Enter Account Information')
     }
 
     get genderMrRadio() {
+        return cy.get('#id_gender1')
+    }
+
+    // Alias de genderMrRadio (nombre usado en TC1)
+    get titleMrRadio() {
         return cy.get('#id_gender1')
     }
 
@@ -43,6 +52,16 @@ class SignupPage {
         return cy.get('[data-qa="years"]')
     }
 
+    get newsletterCheckbox() {
+        return cy.get('#newsletter')
+    }
+
+    get specialOffersCheckbox() {
+        return cy.get('#optin')
+    }
+
+    // ─── Selectores — Datos de dirección ─────────────────────────────────────
+
     get firstNameInput() {
         return cy.get('[data-qa="first_name"]')
     }
@@ -51,8 +70,21 @@ class SignupPage {
         return cy.get('[data-qa="last_name"]')
     }
 
+    get companyInput() {
+        return cy.get('[data-qa="company"]')
+    }
+
     get addressInput() {
         return cy.get('[data-qa="address"]')
+    }
+
+    // Alias de addressInput (nombre usado en TC1)
+    get address1Input() {
+        return cy.get('[data-qa="address"]')
+    }
+
+    get address2Input() {
+        return cy.get('[data-qa="address2"]')
     }
 
     get countrySelect() {
@@ -79,7 +111,7 @@ class SignupPage {
         return cy.get('[data-qa="create-account"]')
     }
 
-    // ─── Selectores - Confirmacion de cuenta creada ────────────────────────────
+    // ─── Selectores — Confirmación de cuenta creada ───────────────────────────
 
     get accountCreatedTitle() {
         return cy.get('[data-qa="account-created"]')
@@ -89,9 +121,14 @@ class SignupPage {
         return cy.get('[data-qa="continue-button"]')
     }
 
-    // ─── Selectores - Eliminacion de cuenta ───────────────────────────────────
+    // ─── Selectores — Eliminación de cuenta ──────────────────────────────────
 
     get deleteAccountLink() {
+        return cy.get('a[href="/delete_account"]')
+    }
+
+    // Alias de deleteAccountLink (nombre usado en TC1)
+    get deleteAccountButton() {
         return cy.get('a[href="/delete_account"]')
     }
 
@@ -99,21 +136,86 @@ class SignupPage {
         return cy.get('[data-qa="account-deleted"]')
     }
 
-    // ─── Acciones ─────────────────────────────────────────────────────────────
+    // ─── Acciones — API granular (TC1) ────────────────────────────────────────
 
-    // Completa el primer paso: nombre y email
-    fillSignupNameAndEmail(name, email) {
+    verifyNewUserSignupVisible() {
+        this.newUserSignupTitle.should('be.visible')
+    }
+
+    enterSignupNameAndEmail(name, email) {
         this.signupNameInput.should('be.visible').type(name)
         this.signupEmailInput.should('be.visible').type(email)
+    }
+
+    clickSignupButton() {
         this.signupButton.click()
     }
 
-    // Verifica que el titulo "Enter Account Information" sea visible
-    verifyAccountInfoForm() {
+    verifyAccountInfoFormVisible() {
         this.accountInfoTitle.should('be.visible')
     }
 
-    // Completa el formulario detallado de informacion de cuenta
+    fillAccountInfo(password) {
+        this.titleMrRadio.check()
+        this.passwordInput.should('be.visible').type(password)
+        this.daySelect.select('10')
+        this.monthSelect.select('January')
+        this.yearSelect.select('1990')
+    }
+
+    selectNewsletterAndOffers() {
+        this.newsletterCheckbox.check()
+        this.specialOffersCheckbox.check()
+    }
+
+    fillAddressDetails(data) {
+        this.firstNameInput.should('be.visible').type(data.firstName)
+        this.lastNameInput.type(data.lastName)
+        this.companyInput.type(data.company)
+        this.address1Input.type(data.address1)
+        this.address2Input.type(data.address2)
+        this.countrySelect.select(data.country)
+        this.stateInput.type(data.state)
+        this.cityInput.type(data.city)
+        this.zipcodeInput.type(data.zipcode)
+        this.mobileNumberInput.type(data.mobileNumber)
+    }
+
+    clickCreateAccount() {
+        this.createAccountButton.click()
+    }
+
+    verifyAccountCreated() {
+        this.accountCreatedTitle.should('be.visible').and('have.text', 'Account Created!')
+    }
+
+    clickContinue() {
+        this.continueButton.click()
+    }
+
+    clickDeleteAccount() {
+        this.deleteAccountLink.click()
+    }
+
+    verifyAccountDeleted() {
+        this.accountDeletedTitle.should('be.visible').and('have.text', 'Account Deleted!')
+    }
+
+    // ─── Acciones — API de compatibilidad hacia atrás (TC15 y tests mergeados) ─
+
+    // wrapper → enterSignupNameAndEmail() + clickSignupButton()
+    fillSignupNameAndEmail(name, email) {
+        this.enterSignupNameAndEmail(name, email)
+        this.clickSignupButton()
+    }
+
+    // wrapper → verifyAccountInfoFormVisible()
+    verifyAccountInfoForm() {
+        this.verifyAccountInfoFormVisible()
+    }
+
+    // Completa el formulario completo de cuenta con datos variables (fecha incluida).
+    // No se reemplaza por fillAccountInfo() porque esa versión hardcodea la fecha.
     fillAccountDetails({ password, day, month, year, firstName, lastName, address, country, state, city, zipcode, mobile }) {
         this.genderMrRadio.check()
         this.passwordInput.should('be.visible').type(password)
@@ -130,26 +232,16 @@ class SignupPage {
         this.mobileNumberInput.should('be.visible').type(mobile)
     }
 
-    // Hace click en el boton "Create Account"
-    clickCreateAccount() {
-        this.createAccountButton.click()
-    }
-
-    // Verifica el mensaje "ACCOUNT CREATED!" y hace click en Continue
+    // wrapper → verifyAccountCreated() + clickContinue()
     verifyAccountCreatedAndContinue() {
-        this.accountCreatedTitle.should('be.visible').and('have.text', 'Account Created!')
-        this.continueButton.click()
+        this.verifyAccountCreated()
+        this.clickContinue()
     }
 
-    // Elimina la cuenta haciendo click en el enlace del menu
-    clickDeleteAccount() {
-        this.deleteAccountLink.click()
-    }
-
-    // Verifica el mensaje "ACCOUNT DELETED!" y hace click en Continue
+    // wrapper → verifyAccountDeleted() + clickContinue()
     verifyAccountDeletedAndContinue() {
-        this.accountDeletedTitle.should('be.visible').and('have.text', 'Account Deleted!')
-        this.continueButton.click()
+        this.verifyAccountDeleted()
+        this.clickContinue()
     }
 }
 
