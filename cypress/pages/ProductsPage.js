@@ -69,6 +69,57 @@ class ProductsPage {
                 })
         })
     }
+
+    // Enlace "View Product" del primer producto de la lista
+    get firstProductViewLink() {
+        return cy.get('.product-image-wrapper').first().find('a').contains('View Product')
+    }
+
+    // Nombre del producto en la página de detalle
+    get productDetailName() {
+        return cy.get('.product-information h2')
+    }
+
+    // Párrafos de información del detalle (categoría, disponibilidad, condición, marca)
+    get productDetailInfo() {
+        return cy.get('.product-information p')
+    }
+
+    // Precio del producto en la página de detalle
+    get productDetailPrice() {
+        return cy.get('.product-information span span')
+    }
+
+    // Hace click en "View Product" del primer producto
+    clickFirstProductViewLink() {
+        this.firstProductViewLink.should('be.visible').click()
+    }
+
+    // Verifica que la página de detalle del producto contiene todos los campos requeridos
+    verifyProductDetailPage() {
+        this.productDetailName.should('be.visible').and('not.be.empty')
+        this.productDetailPrice.should('be.visible').and('not.be.empty')
+        this.productDetailInfo.contains('Category').should('exist')
+        this.productDetailInfo.contains('Availability').should('exist')
+        this.productDetailInfo.contains('Condition').should('exist')
+        this.productDetailInfo.contains('Brand').should('exist')
+    }
+
+    // Hace hover sobre el producto en el indice dado (0-based) y hace click en "Add to cart"
+    hoverAndAddToCart(index) {
+        cy.get('.product-image-wrapper').eq(index).trigger('mouseover')
+        cy.get('.product-image-wrapper').eq(index).find('.add-to-cart').first().click({ force: true })
+    }
+
+    // Hace click en "Continue Shopping" en el modal de confirmacion
+    clickContinueShopping() {
+        cy.get('#cartModal .modal-footer button').contains('Continue Shopping').click()
+    }
+
+    // Hace click en "View Cart" en el modal de confirmacion
+    clickViewCartFromModal() {
+        cy.get('#cartModal .modal-body a[href="/view_cart"]').should('be.visible').click()
+    }
 }
 
 export default ProductsPage
