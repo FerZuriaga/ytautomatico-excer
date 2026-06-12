@@ -26,6 +26,10 @@ class HomePage {
         return cy.get('a[href="/login"]')
     }
 
+    get contactUsLink() {
+        return cy.get('a[href="/contact_us"]')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     verifyHomePageVisible() {
@@ -73,6 +77,10 @@ class HomePage {
     // Verifica que el header/logo es visible en la parte superior de la página
     verifyHeaderVisible() {
         cy.get('#header').should('be.visible')
+    }
+
+    clickContactUs() {
+        this.contactUsLink.should('be.visible').click()
     }
 }
 
