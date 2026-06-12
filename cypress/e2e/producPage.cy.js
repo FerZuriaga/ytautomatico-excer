@@ -95,25 +95,25 @@ describe("Product page", () => {
     it("Test case 4 : Filtrar productos by brand", () => {
         cy.get(".brands_products").should("exist").and("not.be.empty")
         cy.get(".brands_products h2").should("have.text", "Brands")
-        cy.get(".brand_products li a").as("brandFilters")
+        cy.get(".brands_products li a").as("brandFilters")
         cy.get("@brandFilters").then((brands) => {
             cy.randomNum(brands.length).then((randomIndex) => {
                 cy.wrap(brands).eq(randomIndex).then((brand) => {
-                    let nameBrand = brand.text()
-                    cy.wrap(nameBrand.split(")")[1]).as("brandName")
+                    const href = brand.attr("href")
+                    cy.wrap(href.split("/brand_products/")[1]).as("brandName")
                 })
-                cy.wrap(brands).find("span").eq(randomIndex).invoke("text").then((brandProduct) => {
-                    let numProd = Number (brandProduct.slice(1, brandProduct.length - 1)) //el slice lo usas para sacarle los parentesis al numero, desde el primer elemento hasta el largo-1, y el Number convierte el string en numero
-                    cy.wrap(numProd).as("@numProdBrand")
+                cy.wrap(brands).eq(randomIndex).find("span").invoke("text").then((brandProduct) => {
+                    let numProd = Number(brandProduct.slice(1, brandProduct.length - 1))
+                    cy.wrap(numProd).as("numProdBrand")
                 })
-                cy.wrap(brands).eq(randomIndex).click() //hago click sobre uno de mis marcas para que se filtre
+                cy.wrap(brands).eq(randomIndex).click()
 
             })
         })
 
         cy.location("pathname").should("contain", "brand_products/")
         cy.get("@brandName").then((brandName) =>{
-            cy.get("h2 .title").should("contain", brandName)
+            cy.get("h2.title").should("contain", brandName)
         })
 
         cy.get("@numProdBrand").then((numProdBrand) =>{
@@ -138,10 +138,10 @@ describe("Product page", () => {
         const searchText = "jeans"
         cy.get("input#search_product").type(searchText)
         cy.get("button#submit_search").click()
-        cy.get("h2 .title").should("have.text", "Searched Products")
+        cy.get("h2.title").should("have.text", "Searched Products")
         cy.location("search").should("contain", searchText)
         cy.get(".product-image-wrapper").as("productItems")
-        cy.get("@producItems").each((item) =>{
+        cy.get("@productItems").each((item) =>{
             cy.wrap(item).find(".productinfo p").invoke("text").then((productName)=>{
                 expect(productName.toLowerCase()).to.contains(searchText) //el lowercase convierte la mayuscula en minuscula
             })
