@@ -34,6 +34,11 @@ class HomePage {
         return cy.get('.shop-menu ul li a[href*="cart"]')
     }
 
+    // Botón "Products" del menú de navegación (TC22)
+    get productsBtn() {
+        return cy.get('.navbar-nav a[href="/products"]')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     verifyHomePageVisible() {
@@ -93,6 +98,11 @@ class HomePage {
 
     verifyCartPageVisible() {
         cy.validateAEUrl('/view_cart')
+    }
+
+    // Hace click en el botón "Products" del menú de navegación (TC22)
+    clickProducts() {
+        this.productsBtn.should('be.visible').click()
     }
 }
 

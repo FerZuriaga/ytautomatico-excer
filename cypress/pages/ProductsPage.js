@@ -75,6 +75,11 @@ class ProductsPage {
         this.pageTitle.should('be.visible').and('have.text', 'Searched Products')
     }
 
+    // Hace click en el botón "View Product" del primer producto de la lista
+    clickViewProduct() {
+        cy.get('.choose').first().contains('View Product').click()
+    }
+
     // Recorre con each() todos los productos del resultado
     // y verifica que el nombre de cada uno contenga el término buscado
     verifyProductsContain(productName) {
