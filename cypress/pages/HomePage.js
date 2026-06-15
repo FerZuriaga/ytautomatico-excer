@@ -30,6 +30,10 @@ class HomePage {
         return cy.get('a[href="/contact_us"]')
     }
 
+    get cartBtn() {
+        return cy.get('.shop-menu ul li a[href*="cart"]')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     verifyHomePageVisible() {
@@ -81,6 +85,14 @@ class HomePage {
 
     clickContactUs() {
         this.contactUsLink.should('be.visible').click()
+    }
+
+    clickCartButton() {
+        this.cartBtn.click()
+    }
+
+    verifyCartPageVisible() {
+        cy.validateAEUrl('/view_cart')
     }
 }
 
