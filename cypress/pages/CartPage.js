@@ -20,6 +20,21 @@ class CartPage {
         return cy.get('#cart_info_table tbody tr').first().find('.cart_quantity')
     }
 
+    // Enlace al carrito en el menú de navegación (TC16)
+    get cartLink() {
+        return cy.get('.shop-menu ul li a[href*="cart"]')
+    }
+
+    // Botón "Proceed To Checkout" en la página del carrito (TC16)
+    get proceedToCheckoutButton() {
+        return cy.get('.col-sm-6 .check_out')
+    }
+
+    // Enlace "Register / Login" en el modal de checkout (TC16)
+    get registerLoginButton() {
+        return cy.get('.modal-body a[href="/login"]')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     // Verifica que la pagina del carrito sea visible
@@ -89,6 +104,34 @@ class CartPage {
             .then((total) => {
                 expect(total.trim()).to.eq(unitPrice)
             })
+    }
+
+    // ─── Acciones de navegación y carrito (TC16) ──────────────────────────────
+
+    // Navega a /products, agrega el primer producto al carrito y cierra el modal
+    addFirstProductToCart() {
+        cy.gotoAEUrl('/products')
+        cy.get('.product-image-wrapper').first().within(() => {
+            cy.get('.productinfo a').click()
+        })
+        cy.get('#cartModal .modal-confirm [data-dismiss="modal"]').click()
+    }
+
+    // Hace click en el enlace del carrito en el menú de navegación (TC16)
+    clickCartButton() {
+        this.cartLink.click()
+    }
+
+    // Verifica que la página del carrito sea visible usando el contenedor #cart_info.
+    // Usa selector explícito para no colisionar con cartInfoTable (#cart_info_table) de TC12/TC13.
+    verifyCartPageDisplayed() {
+        cy.validateAEUrl('/view_cart')
+        cy.get('#cart_info').should('exist').and('be.visible')
+    }
+
+    // Hace click en "Proceed To Checkout" desde la página del carrito (TC16)
+    clickProceedToCheckout() {
+        this.proceedToCheckoutButton.should('be.visible').click()
     }
 }
 
