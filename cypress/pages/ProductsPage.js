@@ -69,6 +69,18 @@ class ProductsPage {
                 })
         })
     }
+
+    getProductPriceAt(index) {
+        return this.productCards.find('.productinfo h2').eq(index).should('exist').invoke('text')
+    }
+
+    getProductNameAt(index) {
+        return this.productCards.find('.productinfo p').eq(index).should('exist').invoke('text')
+    }
+
+    clickViewProductAt(index) {
+        this.productCards.find('.choose').eq(index).contains('View Product').click()
+    }
 }
 
 export default ProductsPage
