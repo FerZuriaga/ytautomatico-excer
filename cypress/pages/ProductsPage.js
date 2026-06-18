@@ -69,6 +69,40 @@ class ProductsPage {
                 })
         })
     }
+
+    // Guarda el nombre del primer producto del listado en una variable de Cypress
+    // y luego agrega ese producto al carrito cerrando el modal de confirmacion
+    saveFirstProductNameAndAddToCart() {
+        // Recuperar el nombre antes de hacer click para tenerlo disponible como alias
+        this.productCards.first()
+            .find('.productinfo p')
+            .should('be.visible')
+            .invoke('text')
+            .then((name) => {
+                cy.wrap(name.trim()).as('firstProductName')
+            })
+        this.productCards.first()
+            .find('.productinfo a')
+            .should('have.text', 'Add to cart')
+            .click()
+        cy.get('#cartModal').should('be.visible')
+        cy.get('#cartModal [data-dismiss="modal"]').click()
+    }
+
+    // Verifica que el carrito contenga el producto cuyo nombre fue guardado como @firstProductName
+    verifyCartContainsProduct() {
+        cy.get('#cart_info_table').should('exist').and('be.visible')
+        cy.get('#cart_info_table tbody tr').should('have.length.gte', 1)
+        cy.get('@firstProductName').then((productName) => {
+            cy.get('#cart_info_table tbody tr').first()
+                .find('.cart_description h4 a')
+                .should('be.visible')
+                .invoke('text')
+                .then((cartName) => {
+                    expect(cartName.trim()).to.include(productName)
+                })
+        })
+    }
 }
 
 export default ProductsPage
