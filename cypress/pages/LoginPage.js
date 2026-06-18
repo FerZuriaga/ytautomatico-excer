@@ -48,6 +48,14 @@ class LoginPage {
     clickLogout() {
         this.logoutButton.click()
     }
+
+    get loginErrorMessage() {
+        return cy.contains('Your email or password is incorrect!')
+    }
+
+    verifyLoginError() {
+        this.loginErrorMessage.should('be.visible')
+    }
 }
 
 export default LoginPage
