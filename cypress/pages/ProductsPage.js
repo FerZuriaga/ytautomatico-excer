@@ -103,6 +103,41 @@ class ProductsPage {
                 })
         })
     }
+
+    // Enlace "View Product" del primer producto de la lista
+    get firstProductViewLink() {
+        return cy.get('.product-image-wrapper').first().find('a').contains('View Product')
+    }
+
+    // Nombre del producto en la página de detalle
+    get productDetailName() {
+        return cy.get('.product-information h2')
+    }
+
+    // Párrafos de información del detalle (categoría, disponibilidad, condición, marca)
+    get productDetailInfo() {
+        return cy.get('.product-information p')
+    }
+
+    // Precio del producto en la página de detalle
+    get productDetailPrice() {
+        return cy.get('.product-information span span')
+    }
+
+    // Hace click en "View Product" del primer producto
+    clickFirstProductViewLink() {
+        this.firstProductViewLink.should('be.visible').click()
+    }
+
+    // Verifica que la página de detalle del producto contiene todos los campos requeridos
+    verifyProductDetailPage() {
+        this.productDetailName.should('be.visible').and('not.be.empty')
+        this.productDetailPrice.should('be.visible').and('not.be.empty')
+        this.productDetailInfo.contains('Category').should('exist')
+        this.productDetailInfo.contains('Availability').should('exist')
+        this.productDetailInfo.contains('Condition').should('exist')
+        this.productDetailInfo.contains('Brand').should('exist')
+    }
 }
 
 export default ProductsPage
