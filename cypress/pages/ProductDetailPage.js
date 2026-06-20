@@ -16,6 +16,21 @@ class ProductDetailPage {
         return cy.get('.product-information h2')
     }
 
+    // Alias de productTitle (nombre usado en TC2)
+    get detailName() {
+        return cy.get('.product-information h2')
+    }
+
+    // Precio del producto en detalle (TC2)
+    get detailPrice() {
+        return cy.get('.product-information span span')
+    }
+
+    // Párrafos de información: categoría, disponibilidad, condición, marca (TC2)
+    get productInfoLabels() {
+        return cy.get('.product-information p')
+    }
+
     // Input de cantidad
     get quantityInput() {
         return cy.get('input#quantity')
@@ -34,30 +49,6 @@ class ProductDetailPage {
     // Enlace "View Cart" dentro del modal
     get viewCartLink() {
         return cy.get('#cartModal .modal-body a[href="/view_cart"]')
-    }
-
-    // ─── Acciones: Cantidad y Carrito ─────────────────────────────────────────
-
-    // Verifica que la pagina de detalle del producto sea visible
-    verifyProductDetailVisible() {
-        this.productInformation.should('be.visible')
-        cy.url().should('include', '/product_details/')
-    }
-
-    // Establece la cantidad deseada en el input
-    setQuantity(quantity) {
-        this.quantityInput.should('be.visible').clear().type(String(quantity))
-    }
-
-    // Hace click en el boton Add to cart
-    clickAddToCart() {
-        this.addToCartBtn.should('be.visible').click()
-    }
-
-    // Verifica que el modal de carrito aparezca y hace click en View Cart
-    clickViewCart() {
-        this.cartModal.should('be.visible')
-        this.viewCartLink.should('be.visible').click()
     }
 
     // ─── Selectores: Review Form ───────────────────────────────────────────────
@@ -92,6 +83,30 @@ class ProductDetailPage {
         return cy.get('.alert-success span')
     }
 
+    // ─── Acciones: Cantidad y Carrito ─────────────────────────────────────────
+
+    // Verifica que la pagina de detalle del producto sea visible
+    verifyProductDetailVisible() {
+        this.productInformation.should('be.visible')
+        cy.url().should('include', '/product_details/')
+    }
+
+    // Establece la cantidad deseada en el input
+    setQuantity(quantity) {
+        this.quantityInput.should('be.visible').clear().type(String(quantity))
+    }
+
+    // Hace click en el boton Add to cart
+    clickAddToCart() {
+        this.addToCartBtn.should('be.visible').click()
+    }
+
+    // Verifica que el modal de carrito aparezca y hace click en View Cart
+    clickViewCart() {
+        this.cartModal.should('be.visible')
+        this.viewCartLink.should('be.visible').click()
+    }
+
     // ─── Acciones: Review ─────────────────────────────────────────────────────
 
     // Verifica que la seccion "Write Your Review" sea visible
@@ -114,6 +129,33 @@ class ProductDetailPage {
         this.reviewSuccessMessage
             .should('be.visible')
             .and('contain.text', 'Thank you for your review.')
+    }
+
+    // ─── Acciones: API granular de verificación de detalle (TC2) ──────────────
+
+    // Verifica que la URL corresponde a una página de detalle de producto
+    verifyOnDetailPage() {
+        cy.validateAEUrl('product_detail')
+    }
+
+    // Verifica que el precio en detalle coincide con el valor esperado
+    verifyPriceMatches(expectedPrice) {
+        this.detailPrice.invoke('text').should('eq', expectedPrice)
+    }
+
+    // Verifica que el nombre en detalle coincide con el valor esperado
+    verifyNameMatches(expectedName) {
+        this.detailName.invoke('text').should('eq', expectedName)
+    }
+
+    // Verifica que los 4 campos informativos del producto están presentes
+    verifyProductInfoLabels() {
+        const labels = ['Category:', 'Availability', 'Condition', 'Brand']
+        this.productInfoLabels.each((label, index) => {
+            if (index < labels.length) {
+                cy.wrap(label).should('contain.text', labels[index])
+            }
+        })
     }
 }
 

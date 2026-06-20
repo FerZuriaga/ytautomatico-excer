@@ -30,6 +30,26 @@ class ProductsPage {
         return cy.get('button#submit_search')
     }
 
+    // Enlace "View Product" del primer producto de la lista
+    get firstProductViewLink() {
+        return cy.get('.product-image-wrapper').first().find('a').contains('View Product')
+    }
+
+    // Nombre del producto en la página de detalle (usado por TC8)
+    get productDetailName() {
+        return cy.get('.product-information h2')
+    }
+
+    // Párrafos de información del detalle: categoría, disponibilidad, condición, marca (usado por TC8)
+    get productDetailInfo() {
+        return cy.get('.product-information p')
+    }
+
+    // Precio del producto en la página de detalle (usado por TC8)
+    get productDetailPrice() {
+        return cy.get('.product-information span span')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     // Hace click en el enlace "Products" del menú de navegación
@@ -73,7 +93,6 @@ class ProductsPage {
     // Guarda el nombre del primer producto del listado en una variable de Cypress
     // y luego agrega ese producto al carrito cerrando el modal de confirmacion
     saveFirstProductNameAndAddToCart() {
-        // Recuperar el nombre antes de hacer click para tenerlo disponible como alias
         this.productCards.first()
             .find('.productinfo p')
             .should('be.visible')
@@ -104,26 +123,6 @@ class ProductsPage {
         })
     }
 
-    // Enlace "View Product" del primer producto de la lista
-    get firstProductViewLink() {
-        return cy.get('.product-image-wrapper').first().find('a').contains('View Product')
-    }
-
-    // Nombre del producto en la página de detalle
-    get productDetailName() {
-        return cy.get('.product-information h2')
-    }
-
-    // Párrafos de información del detalle (categoría, disponibilidad, condición, marca)
-    get productDetailInfo() {
-        return cy.get('.product-information p')
-    }
-
-    // Precio del producto en la página de detalle
-    get productDetailPrice() {
-        return cy.get('.product-information span span')
-    }
-
     // Hace click en "View Product" del primer producto
     clickFirstProductViewLink() {
         this.firstProductViewLink.should('be.visible').click()
@@ -137,6 +136,23 @@ class ProductsPage {
         this.productDetailInfo.contains('Availability').should('exist')
         this.productDetailInfo.contains('Condition').should('exist')
         this.productDetailInfo.contains('Brand').should('exist')
+    }
+
+    // ─── API granular por índice (TC2) ────────────────────────────────────────
+
+    // Retorna el precio del producto en la posición dada dentro del listado
+    getProductPriceAt(index) {
+        return this.productCards.find('.productinfo h2').eq(index).should('exist').invoke('text')
+    }
+
+    // Retorna el nombre del producto en la posición dada dentro del listado
+    getProductNameAt(index) {
+        return this.productCards.find('.productinfo p').eq(index).should('exist').invoke('text')
+    }
+
+    // Hace click en "View Product" del producto en la posición dada
+    clickViewProductAt(index) {
+        this.productCards.find('.choose').eq(index).contains('View Product').click()
     }
 }
 
