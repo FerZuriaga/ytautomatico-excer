@@ -75,11 +75,6 @@ class ProductsPage {
         this.pageTitle.should('be.visible').and('have.text', 'Searched Products')
     }
 
-    // Hace click en el botón "View Product" del primer producto de la lista
-    clickViewProduct() {
-        cy.get('.choose').first().contains('View Product').click()
-    }
-
     // Recorre con each() todos los productos del resultado
     // y verifica que el nombre de cada uno contenga el término buscado
     verifyProductsContain(productName) {
@@ -158,6 +153,29 @@ class ProductsPage {
     // Hace click en "View Product" del producto en la posición dada
     clickViewProductAt(index) {
         this.productCards.find('.choose').eq(index).contains('View Product').click()
+    }
+
+    // Hace click en "View Product" del primer producto (TC22)
+    clickViewProduct() {
+        cy.get('.choose').first().contains('View Product').click()
+    }
+
+    // ─── Acciones de hover y modal de carrito (TC12) ──────────────────────────
+
+    // Hace hover sobre el producto en el indice dado y hace click en "Add to cart" via overlay
+    hoverAndAddToCart(index) {
+        cy.get('.product-image-wrapper').eq(index).trigger('mouseover')
+        cy.get('.product-image-wrapper').eq(index).find('.add-to-cart').first().click({ force: true })
+    }
+
+    // Hace click en "Continue Shopping" dentro del modal de confirmacion
+    clickContinueShopping() {
+        cy.get('#cartModal .modal-footer button').contains('Continue Shopping').click()
+    }
+
+    // Hace click en "View Cart" dentro del modal de confirmacion
+    clickViewCartFromModal() {
+        cy.get('#cartModal .modal-body a[href="/view_cart"]').should('be.visible').click()
     }
 }
 
