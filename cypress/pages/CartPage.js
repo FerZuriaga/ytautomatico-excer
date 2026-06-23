@@ -133,6 +133,11 @@ class CartPage {
     clickProceedToCheckout() {
         this.proceedToCheckoutButton.should('be.visible').click()
     }
+
+    // Hace click en "Register / Login" en el modal de checkout (TC14)
+    clickRegisterLogin() {
+        this.registerLoginButton.should('be.visible').click()
+    }
 }
 
 export default CartPage

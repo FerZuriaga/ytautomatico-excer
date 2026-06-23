@@ -171,9 +171,9 @@ class SignupPage {
     fillAddressDetails(data) {
         this.firstNameInput.should('be.visible').type(data.firstName)
         this.lastNameInput.type(data.lastName)
-        this.companyInput.type(data.company)
+        if (data.company) this.companyInput.type(data.company)
         this.address1Input.type(data.address1)
-        this.address2Input.type(data.address2)
+        if (data.address2) this.address2Input.type(data.address2)
         this.countrySelect.select(data.country)
         this.stateInput.type(data.state)
         this.cityInput.type(data.city)
@@ -201,7 +201,18 @@ class SignupPage {
         this.accountDeletedTitle.should('be.visible').and('have.text', 'Account Deleted!')
     }
 
-    // ─── Acciones — API de compatibilidad hacia atrás (TC15 y tests mergeados) ─
+    // ─── Acciones — API de compatibilidad hacia atrás (TC14, TC15 y tests mergeados) ─
+
+    // wrapper → enterSignupNameAndEmail() — alias usado en TC14
+    enterSignupDetails(name, email) {
+        this.enterSignupNameAndEmail(name, email)
+    }
+
+    // wrapper → accountInfoTitle assert + fillAccountInfo() — usado en TC14
+    fillAccountInformation(password) {
+        this.accountInfoTitle.should('be.visible')
+        this.fillAccountInfo(password)
+    }
 
     // wrapper → enterSignupNameAndEmail() + clickSignupButton()
     fillSignupNameAndEmail(name, email) {
