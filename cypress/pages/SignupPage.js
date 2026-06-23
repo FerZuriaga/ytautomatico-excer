@@ -201,6 +201,16 @@ class SignupPage {
         this.accountDeletedTitle.should('be.visible').and('have.text', 'Account Deleted!')
     }
 
+    // ─── Acciones — API granular (TC23) ──────────────────────────────────────────
+
+    fillSignupName(name) {
+        this.signupNameInput.should('be.visible').type(name)
+    }
+
+    fillSignupEmail(email) {
+        this.signupEmailInput.should('be.visible').type(email)
+    }
+
     // ─── Acciones — API de compatibilidad hacia atrás (TC14, TC15 y tests mergeados) ─
 
     // wrapper → enterSignupNameAndEmail() — alias usado en TC14

@@ -174,6 +174,37 @@ class CheckoutPage {
             .should('be.visible')
             .and('contain.text', 'Order Placed!')
     }
+
+    // ─── Acciones — TC23 ─────────────────────────────────────────────────────
+
+    // Alias de clickCartButton() con assert de visibilidad (TC23)
+    clickCartLink() {
+        this.cartLink.should('be.visible').click()
+    }
+
+    verifyDeliveryAddress(userData) {
+        this.deliveryAddressSection.within(() => {
+            cy.get('li').should('contain.text', userData.firstName)
+            cy.get('li').should('contain.text', userData.lastName)
+            cy.get('li').should('contain.text', userData.address)
+            cy.get('li').should('contain.text', userData.city)
+            cy.get('li').should('contain.text', userData.state)
+            cy.get('li').should('contain.text', userData.zipcode)
+            cy.get('li').should('contain.text', userData.country)
+        })
+    }
+
+    verifyBillingAddress(userData) {
+        this.billingAddressSection.within(() => {
+            cy.get('li').should('contain.text', userData.firstName)
+            cy.get('li').should('contain.text', userData.lastName)
+            cy.get('li').should('contain.text', userData.address)
+            cy.get('li').should('contain.text', userData.city)
+            cy.get('li').should('contain.text', userData.state)
+            cy.get('li').should('contain.text', userData.zipcode)
+            cy.get('li').should('contain.text', userData.country)
+        })
+    }
 }
 
 export default CheckoutPage
