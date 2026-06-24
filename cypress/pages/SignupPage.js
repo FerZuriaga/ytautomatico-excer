@@ -136,6 +136,12 @@ class SignupPage {
         return cy.get('[data-qa="account-deleted"]')
     }
 
+    // ─── Selectores — Error email existente ──────────────────────────────────
+
+    get emailExistsErrorMessage() {
+        return cy.contains('Email Address already exist!')
+    }
+
     // ─── Acciones — API granular (TC1) ────────────────────────────────────────
 
     verifyNewUserSignupVisible() {
@@ -199,6 +205,12 @@ class SignupPage {
 
     verifyAccountDeleted() {
         this.accountDeletedTitle.should('be.visible').and('have.text', 'Account Deleted!')
+    }
+
+    // ─── Acciones — API granular (TC5) ───────────────────────────────────────
+
+    verifyEmailAlreadyExists() {
+        this.emailExistsErrorMessage.should('be.visible')
     }
 
     // ─── Acciones — API granular (TC23) ──────────────────────────────────────────
