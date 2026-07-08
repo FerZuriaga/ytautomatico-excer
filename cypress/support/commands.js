@@ -60,3 +60,9 @@ Cypress.Commands.add("twoRandomNum", (number) => {
 Cypress.Commands.add("gotoBDUrl", (route) => {
    cy.visit(`https://blazedemo.com${route}`, { timeout: 120000 })
 })
+
+// ─── OrangeHRM Commands ───────────────────────────────────────────────────────
+
+Cypress.Commands.add("gotoOHUrl", (route) => {
+   cy.visit(`https://opensource-demo.orangehrmlive.com${route}`, { timeout: 120000 })
+})
