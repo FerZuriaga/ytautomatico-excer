@@ -1,65 +1,61 @@
 /**
- * Agente autónomo: crea o actualiza un Test Case en Jira.
- * Uso: node scripts/create-jira-task.js [issueKey]
- *   Sin argumento  → crea un nuevo issue
- *   Con argumento  → actualiza el issue existente (ej: SCRUM-2)
+ * Agente autónomo: crea o actualiza un issue (Historia/Bug/Tarea) en Jira.
+ * Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey]
+ *   Sin issueKey  → crea un nuevo issue a partir del JSON
+ *   Con issueKey  → actualiza el issue existente (ej: SCRUM-2)
  */
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 const HOSTNAME  = new URL(process.env.JIRA_URL).hostname;
 const AUTH      = 'Basic ' + Buffer.from(process.env.JIRA_EMAIL + ':' + process.env.JIRA_API_TOKEN).toString('base64');
-const PROJECT   = process.env.JIRA_PROJECT_KEY;
-const ISSUE_KEY = process.argv[2] || null;
+const PROJECT = process.env.JIRA_PROJECT_KEY;
 
-const TEST_CASE = {
-  summary: 'Test Case 9 - Search Product',
-  steps: [
-    'Abrir el navegador.',
-    'Navegar a http://automationexercise.com.',
-    'Verificar que la página principal se visualiza correctamente.',
-    'Hacer clic en el botón Products.',
-    'Verificar que el usuario es redirigido a la página All Products.',
-    'Ingresar el nombre de un producto en el campo de búsqueda.',
-    'Hacer clic en el botón de búsqueda.',
-    'Verificar que el texto SEARCHED PRODUCTS sea visible.',
-    'Verificar que todos los productos mostrados correspondan al texto buscado.'
-  ]
-};
+
+function parseArgs(argv) {
+  const args = { dataPath: null, issueKey: null };
+
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--data') {
+      args.dataPath = argv[i + 1];
+      i++;
+    } else if (!args.issueKey) {
+      args.issueKey = argv[i];
+    }
+  }
+
+  return args;
+}
+
+const { dataPath, issueKey } = parseArgs(process.argv.slice(2));
+const ISSUE_KEY = issueKey;
+
+if (!dataPath) {
+  console.error('Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey]');
+  process.exit(1);
+}
+
+let ISSUE;
+
+try {
+  ISSUE = JSON.parse(fs.readFileSync(path.resolve(dataPath), 'utf8'));
+} catch (e) {
+  console.error(`No se pudo leer o parsear "${dataPath}": ${e.message}`);
+  process.exit(1);
+}
+
+
+
 
 /**
- * ISSUE: objeto genérico y parametrizable para crear/actualizar cualquier tipo
- * de issue (Historia, Bug, Tarea) sin necesidad de scripts específicos por ticket.
- * Si ISSUE es null, el script conserva el comportamiento original (Historia/TEST_CASE).
+ * El objeto ISSUE se obtiene dinámicamente desde un archivo JSON externo.
  *
- * Para reutilizar en un próximo ticket: reemplazar el contenido de este objeto
- * (o dejarlo en null para volver al comportamiento por defecto).
+ * El script no contiene información específica de tickets.
+ * Toda la información del issue debe enviarse mediante --data.
  */
-const ISSUE = {
-  issuetype: 'Bug',
-  summary: 'BlazeDemo - El formulario de compra confirma la reserva sin validar campos obligatorios vacíos',
-  bug: {
-    resumen: 'El formulario de compra de BlazeDemo confirma la reserva aunque ningún campo obligatorio del formulario (nombre en tarjeta, dirección, número de tarjeta, entre otros) haya sido completado.',
-    precondiciones: 'El usuario buscó un vuelo con origen y destino distintos, y seleccionó uno de los resultados del listado, llegando a la página de compra (Purchase Flight).',
-    pasos: [
-      'Ingresar a https://blazedemo.com',
-      'Seleccionar una ciudad de origen (por ejemplo Boston) y una ciudad de destino (por ejemplo Cairo)',
-      'Hacer clic en "Find Flights"',
-      'Elegir cualquier vuelo del listado de resultados haciendo clic en "Choose This Flight"',
-      'En la página de compra, no completar ningún campo del formulario (nombre en tarjeta, dirección, número de tarjeta, entre otros)',
-      'Hacer clic en "Purchase Flight"'
-    ],
-    resultadoActual: 'El sistema navega a la página de confirmación de compra y muestra el mensaje de agradecimiento por la compra, confirmándola igualmente pese a que ningún campo del formulario fue completado.',
-    resultadoEsperado: 'El sistema debería bloquear la confirmación de la compra e indicar qué campos obligatorios faltan por completar.',
-    severidad: 'Media (defecto funcional, no bloquea el uso del sitio ni provoca errores del sistema, pero permite completar una transacción sin datos de pasajero/pago)',
-    prioridad: 'Pendiente de confirmar',
-    evidencia: 'Verificado mediante la ejecución de la automatización del caso BD-TC2 (ticket SCRUM-39), que asertó explícitamente la navegación a la página de confirmación y el mensaje de agradecimiento tras enviar el formulario vacío.',
-    entorno: 'Sitio de demo público https://blazedemo.com. Navegador y versión de Cypress no confirmados en este flujo.',
-    observaciones: 'BlazeDemo es un sitio de demostración conocido por no implementar validación real en su backend; es posible que esta ausencia de validación sea una limitación intencional del demo y no un defecto de un sistema productivo real. Se documenta igualmente como hallazgo funcional porque el comportamiento observado difiere del resultado esperado en un flujo de compra estándar.'
-  },
-  // Relaciona este issue con otro ya existente una vez creado.
-  linkTo: { key: 'SCRUM-39', type: 'Relates' }
-};
+
 
 function buildDescription(steps) {
   return {
@@ -111,6 +107,27 @@ function buildBugDescription(bug) {
   if (bug.entorno) content.push(h(2, 'Entorno'), p(bug.entorno));
   if (bug.observaciones) content.push(h(2, 'Observaciones'), p(bug.observaciones));
   return { type: 'doc', version: 1, content };
+}
+
+/**
+ * Construye la descripción ADF para una Historia siguiendo la plantilla oficial:
+ * Como/Quiero/Para, Contexto, Objetivo, Criterios de aceptación.
+ * Las Historias describen la necesidad funcional del usuario, no los pasos
+ * del Test Case ni el resultado esperado (eso pertenece al escenario funcional).
+ */
+function buildHistoriaDescription(historia) {
+  return {
+    type: 'doc', version: 1,
+    content: [
+      p(`Como ${historia.como}`),
+      p(`Quiero ${historia.quiero}`),
+      p(`Para ${historia.para}`),
+      h(2, 'Contexto'), p(historia.contexto),
+      h(2, 'Objetivo'), p(historia.objetivo),
+      h(2, 'Criterios de aceptación'),
+      { type: 'bulletList', content: historia.criterios.map(t => ({ type: 'listItem', content: [p(t)] })) }
+    ]
+  };
 }
 
 /**
@@ -167,19 +184,22 @@ function jiraRequest(method, path, body = null) {
 }
 
 async function main() {
-  // Si ISSUE está definido, tiene prioridad sobre TEST_CASE (comportamiento por defecto/legacy).
-  const issuetype = (ISSUE && ISSUE.issuetype) || 'Historia';
-  const summary = (ISSUE && ISSUE.summary) || TEST_CASE.summary;
+  // El contenido del issue proviene exclusivamente del JSON externo cargado al inicio.
+  const issuetype = ISSUE.issuetype || 'Historia';
+  const summary = ISSUE.summary;
 
   let description;
-  if (ISSUE && issuetype === 'Bug') {
+  if (issuetype === 'Bug') {
     description = buildBugDescription(ISSUE.bug);
-  } else if (ISSUE && issuetype === 'Tarea') {
+  } else if (issuetype === 'Historia' && ISSUE.historia) {
+    description = buildHistoriaDescription(ISSUE.historia);
+  } else if (issuetype === 'Tarea') {
     description = buildTareaDescription(ISSUE.tarea);
-  } else if (ISSUE && Array.isArray(ISSUE.steps)) {
+  } else if (Array.isArray(ISSUE.steps)) {
     description = buildDescription(ISSUE.steps);
   } else {
-    description = buildDescription(TEST_CASE.steps);
+    console.error(`No se pudo determinar la descripción para issuetype "${issuetype}".`);
+    process.exit(1);
   }
 
   if (ISSUE_KEY) {
