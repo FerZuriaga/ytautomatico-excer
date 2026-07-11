@@ -17,6 +17,7 @@
 Acciones soportadas actualmente:
 
 - create
+- merge
  *
  *   --head        (obligatorio) rama origen del PR, ej: feature/SCRUM-48-alta-empleado-pim
  *   --base        (opcional, default "main") rama destino del PR
@@ -94,6 +95,9 @@ function parseArgs(argv) {
       i++;
     } else if (argv[i] === '--repo') {
       args.repo = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--pr') {
+      args.pullRequestNumber = argv[i + 1];
       i++;
     }
   }
@@ -200,6 +204,30 @@ async function createPullRequest(owner, name, { head, base, title, body }) {
   process.exit(1);
 }
 
+/**
+ * Mergea un Pull Request existente.
+ *
+ * Utiliza el endpoint oficial de GitHub:
+ * PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge
+ */
+async function mergePullRequest(owner, name, pullRequestNumber) {
+
+  const res = await githubRequest(
+    'PUT',
+    `/repos/${owner}/${name}/pulls/${pullRequestNumber}/merge`
+  );
+
+  if (res.status === 200) {
+    return res.body;
+  }
+
+  console.error(
+    'Error al mergear el Pull Request:',
+    JSON.stringify(res.body, null, 2)
+  );
+  process.exit(1);
+}
+
 
 /**
  * La autenticación siempre se realiza utilizando GITHUB_TOKEN
@@ -213,18 +241,24 @@ async function main() {
     process.exit(1);
   }
 
-  const { action, head, base, title, body, bodyFile, repo } = parseArgs(process.argv.slice(2));;
+  const { action, head, base, title, body, bodyFile, repo, pullRequestNumber } = parseArgs(process.argv.slice(2));;
 
-  if (!head || !title) {
-    printUsage();
-    process.exit(1);
+  if (action === 'create') {
+    if (!head || !title) {
+      printUsage();
+      process.exit(1);
+    }
+
+    if (body && bodyFile) {
+      console.error('--body y --body-file son mutuamente excluyentes. Usá solo uno.');
+      process.exit(1);
+    }
+  } else if (action === 'merge') {
+    if (!pullRequestNumber) {
+      console.error('Debe indicar --pr <numero>.');
+      process.exit(1);
+    }
   }
-
-  if (body && bodyFile) {
-    console.error('--body y --body-file son mutuamente excluyentes. Usá solo uno.');
-    process.exit(1);
-  }
-
   let resolvedBody = body || null;
   if (bodyFile) {
     try {
@@ -236,16 +270,31 @@ async function main() {
   }
 
   const { owner, name } = resolveRepo(repo);
+  /*
+* IMPORTANTE:
+* La validación de PR existente solo aplica a CREATE.
+* MERGE trabaja sobre un PR existente por número.
+*/
 
-  console.log(`Verificando si ya existe un Pull Request abierto ${head} -> ${base} en ${owner}/${name}...`);
-  const existing = await findExistingPullRequest(owner, name, head, base);
+  if (action === 'create') {
 
-  if (existing) {
-    console.log(`Ya existe un Pull Request abierto para ${head} -> ${base}: #${existing.number}`);
-    console.log(`URL: ${existing.html_url}`);
-    return;
+    console.log(`Verificando si ya existe un Pull Request abierto ${head} -> ${base} en ${owner}/${name}...`);
+    const existing = await findExistingPullRequest(owner, name, head, base);
+
+    if (existing) {
+      console.log(`Ya existe un Pull Request abierto para ${head} -> ${base}: #${existing.number}`);
+      console.log(`URL: ${existing.html_url}`);
+      return;
+    }
   }
 
+   /**
+   * Todas las operaciones sobre Pull Requests deben implementarse como
+   * nuevas acciones dentro de este switch.
+   *
+   * No crear scripts adicionales para merge, cierre, comentarios,
+   * reviews o cualquier otra operación relacionada con Pull Requests.
+   */
   switch (action.toLowerCase()) {
 
     case 'create': {
@@ -260,6 +309,22 @@ async function main() {
 
       console.log(`Creado: #${pr.number}`);
       console.log(`URL: ${pr.html_url}`);
+      break;
+    }
+    
+    case 'merge': {
+
+      console.log(`Mergeando Pull Request #${pullRequestNumber}...`);
+
+      const result = await mergePullRequest(
+        owner,
+        name,
+        pullRequestNumber
+      );
+
+      console.log(`Merge realizado correctamente.`);
+      console.log(`SHA: ${result.sha}`);
+
       break;
     }
 
