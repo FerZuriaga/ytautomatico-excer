@@ -11,12 +11,21 @@ const leavePage = new OrangeHRMLeavePage()
 describe('OH-TC4 - Solicitud de Permiso Exitosa - Apply Leave [SCRUM-47]', () => {
 
     beforeEach(() => {
-        // Precondicion: el usuario inicia sesion exitosamente y navega al modulo Leave, opcion "Apply"
+        // Precondicion: el usuario inicia sesion exitosamente
         cy.gotoOHUrl('/web/index.php/auth/login')
         loginPage.enterCredentials('Admin', 'admin123')
         loginPage.clickLoginButton()
         loginPage.verifyDashboardVisible()
 
+        // Precondicion adicional: el entorno demo publico y compartido de
+        // OrangeHRM frecuentemente se queda sin saldo disponible en todos los
+        // tipos de permiso (por el uso concurrente de otros usuarios), lo que
+        // bloquea por completo el formulario "Apply Leave". Se otorga saldo
+        // al empleado logueado antes de continuar para que el escenario sea
+        // reproducible independientemente del estado compartido de la demo.
+        leavePage.grantLeaveEntitlement(10)
+
+        // Navega al modulo Leave, opcion "Apply"
         leavePage.navigateToLeave()
         leavePage.navigateToApplyTab()
         leavePage.verifyApplyFormVisible()
