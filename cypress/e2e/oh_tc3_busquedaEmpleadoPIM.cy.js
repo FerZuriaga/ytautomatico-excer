@@ -3,10 +3,10 @@
 // Ticket Jira: SCRUM-46
 
 import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
-import OrangeHRMPimPage from '../pages/OrangeHRMPimPage'
+import OrangeHRMAddEmployeePage from '../pages/OrangeHRMAddEmployeePage'
 
 const loginPage = new OrangeHRMLoginPage()
-const pimPage = new OrangeHRMPimPage()
+const pimPage = new OrangeHRMAddEmployeePage()
 
 describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', () => {
 
@@ -25,12 +25,12 @@ describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', ()
 
         // Paso 1: Realizar una busqueda amplia para identificar un empleado existente
         // con informacion basica completa (Id, nombre, cargo, estado)
-        pimPage.searchByEmployeeName('a')
+        pimPage.searchEmployeeByName('a')
 
         pimPage.getFirstEmployeeWithCompleteData().then((employee) => {
 
             // Paso 2: Buscar por el nombre completo de ese empleado (coincidencia exacta)
-            pimPage.searchByEmployeeName(employee.fullName)
+            pimPage.searchEmployeeByName(employee.fullName)
 
             // Paso 3: Verificar que la tabla muestra unicamente empleados cuyo nombre coincide
             pimPage.verifyResultsMatchName(employee.fullName)
@@ -43,13 +43,14 @@ describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', ()
     it('Debe mostrar los empleados cuyo nombre coincide parcialmente con el criterio ingresado', () => {
 
         // Paso 1: Identificar un empleado existente con informacion basica completa
-        pimPage.searchByEmployeeName('a')
+        pimPage.searchEmployeeByName('a')
 
         pimPage.getFirstEmployeeWithCompleteData().then((employee) => {
             const partialName = employee.fullName.substring(0, Math.max(3, Math.floor(employee.fullName.length / 2)))
 
-            // Paso 2: Buscar utilizando solo una parte del nombre del empleado
-            pimPage.searchByEmployeeName(partialName)
+            // Paso 2: Buscar utilizando solo una parte del nombre del empleado, sin
+            // seleccionar el autocomplete (colapsaria la busqueda a un solo empleado)
+            pimPage.searchEmployeeByName(partialName, { selectAutocomplete: false })
 
             // Paso 3: Verificar que todos los resultados contienen el criterio parcial ingresado
             pimPage.verifyResultsMatchName(partialName)
@@ -59,7 +60,7 @@ describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', ()
     it('No debe mostrar empleados cuando el nombre ingresado no coincide con ningun empleado existente', () => {
 
         // Paso 1: Buscar un nombre que no corresponde a ningun empleado registrado
-        pimPage.searchByEmployeeName('ZzqqNoExisteEmpleado123')
+        pimPage.searchEmployeeByName('ZzqqNoExisteEmpleado123')
 
         // Paso 2: Verificar que el sistema no muestra empleados en la tabla de resultados
         pimPage.verifyNoRecordsFound()
