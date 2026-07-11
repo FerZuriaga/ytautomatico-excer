@@ -76,6 +76,23 @@ if (dataPath) {
  * Toda la información del issue debe enviarse mediante --data.
  */
 
+/**
+ * Arquitectura oficial
+ *
+ * Este script constituye la implementación oficial para todas las operaciones
+ * sobre Jira del proyecto.
+ *
+ * Debe reutilizarse para:
+ * - crear issues
+ * - actualizar issues
+ * - transicionar estados
+ * - agregar comentarios
+ * - vincular issues
+ *
+ * No crear scripts paralelos para operaciones específicas.
+ * Toda nueva capacidad deberá incorporarse extendiendo este archivo.
+ */
+
 
 function buildDescription(steps) {
   return {

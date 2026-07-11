@@ -4,7 +4,19 @@
  * exclusivamente este script.
  *
  * Uso:
- *   node scripts/create-pull-request.js --head <rama-origen> [--base <rama-destino>] --title "<titulo>" [--body "<texto>" | --body-file <archivo.md>] [--repo <owner>/<name>]
+ *   Uso:
+
+  node scripts/create-pull-request.js \
+      --action create \
+      --head <rama-origen> \
+      [--base <rama-destino>] \
+      --title "<titulo>" \
+      [--body "<texto>" | --body-file <archivo.md>] \
+      [--repo <owner>/<name>]
+
+Acciones soportadas actualmente:
+
+- create
  *
  *   --head        (obligatorio) rama origen del PR, ej: feature/SCRUM-48-alta-empleado-pim
  *   --base        (opcional, default "main") rama destino del PR
@@ -26,6 +38,20 @@
  * indicada, el script informa su número y URL por stdout y termina sin
  * crear un duplicado (exit code 0).
  */
+
+/**
+ * Arquitectura oficial
+ *
+ * Este script constituye la implementación oficial para la creación
+ * de Pull Requests del proyecto.
+ *
+ * Debe reutilizarse para cualquier flujo que necesite abrir Pull Requests.
+ *
+ * No crear scripts alternativos ni implementaciones paralelas.
+ *
+ * Toda nueva capacidad relacionada con Pull Requests deberá incorporarse
+ * extendiendo este archivo.
+ */
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const https = require('https');
 const fs = require('fs');
@@ -37,10 +63,21 @@ const API_HOSTNAME = 'api.github.com';
 const API_VERSION = '2022-11-28';
 
 function parseArgs(argv) {
-  const args = { head: null, base: 'main', title: null, body: null, bodyFile: null, repo: null };
+  const args = {
+    action: 'create',
+    head: null,
+    base: 'main',
+    title: null,
+    body: null,
+    bodyFile: null,
+    repo: null
+  };
 
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--head') {
+    if (argv[i] === '--action') {
+      args.action = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--head') {
       args.head = argv[i + 1];
       i++;
     } else if (argv[i] === '--base') {
@@ -163,13 +200,20 @@ async function createPullRequest(owner, name, { head, base, title, body }) {
   process.exit(1);
 }
 
+
+/**
+ * La autenticación siempre se realiza utilizando GITHUB_TOKEN
+ * definido en .env.
+ *
+ * No utilizar GitHub CLI ni mecanismos alternativos.
+ */
 async function main() {
   if (!GITHUB_TOKEN) {
     console.error('Falta la variable GITHUB_TOKEN en el archivo .env de la raíz del proyecto.');
     process.exit(1);
   }
 
-  const { head, base, title, body, bodyFile, repo } = parseArgs(process.argv.slice(2));
+  const { action, head, base, title, body, bodyFile, repo } = parseArgs(process.argv.slice(2));;
 
   if (!head || !title) {
     printUsage();
@@ -202,11 +246,27 @@ async function main() {
     return;
   }
 
-  console.log(`Creando Pull Request ${head} -> ${base}...`);
-  const pr = await createPullRequest(owner, name, { head, base, title, body: resolvedBody });
+  switch (action.toLowerCase()) {
 
-  console.log(`Creado: #${pr.number}`);
-  console.log(`URL: ${pr.html_url}`);
+    case 'create': {
+      console.log(`Creando Pull Request ${head} -> ${base}...`);
+
+      const pr = await createPullRequest(owner, name, {
+        head,
+        base,
+        title,
+        body: resolvedBody
+      });
+
+      console.log(`Creado: #${pr.number}`);
+      console.log(`URL: ${pr.html_url}`);
+      break;
+    }
+
+    default:
+      console.error(`Acción no soportada: "${action}".`);
+      process.exit(1);
+  }
 }
 
 main().catch(e => { console.error(e.message); process.exit(1); });
