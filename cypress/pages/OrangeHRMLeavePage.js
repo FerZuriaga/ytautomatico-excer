@@ -410,13 +410,26 @@ class OrangeHRMLeavePage {
         this.myLeaveTable.should('be.visible')
     }
 
-    // Verifica que exista una solicitud en "My Leave" que coincida con el tipo
-    // de permiso indicado y cuyo estado sea "Pending Approval"
-    verifyLeaveRequestPending(leaveTypeText) {
+    // Verifica que exista una solicitud en "My Leave" que coincida con el
+    // tipo de permiso Y la fecha de inicio indicados (no solo el tipo), y
+    // cuyo estado sea "Pending Approval". Filtrar solo por tipo no alcanza:
+    // el entorno demo publico y compartido acumula historial entre
+    // corridas, por lo que puede haber varias filas con el mismo tipo de
+    // permiso en distintos estados (Cancelled, Pending Approval de
+    // corridas anteriores) y cy.contains matchearia la primera fila del
+    // DOM en vez de la recien creada. La fecha se muestra en la tabla como
+    // "yyyy-dd-MM to yyyy-dd-MM" (dia y mes invertidos respecto al formato
+    // "yyyy-MM-dd" que acepta el input de fechas), por eso se convierte
+    // antes de buscarla.
+    verifyLeaveRequestPending(leaveTypeText, fromDate) {
         this.myLeaveRows.should('have.length.greaterThan', 0)
 
-        cy.contains('.oxd-table-body .oxd-table-row', leaveTypeText, { timeout: 30000 })
+        const [yyyy, mm, dd] = fromDate.split('-')
+        const displayFromDate = `${yyyy}-${dd}-${mm}`
+
+        cy.contains('.oxd-table-body .oxd-table-row', displayFromDate, { timeout: 30000 })
             .should('be.visible')
+            .and('contain.text', leaveTypeText)
             .within(() => {
                 cy.contains('Pending Approval').should('be.visible')
             })
