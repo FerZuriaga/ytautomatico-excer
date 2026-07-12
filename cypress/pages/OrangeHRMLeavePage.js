@@ -147,7 +147,7 @@ class OrangeHRMLeavePage {
     searchLoggedInEmployee() {
         this.loggedInUserName.invoke('text').then((fullName) => {
             const firstName = fullName.trim().split(' ')[0]
-            this.entitlementEmployeeNameInput.should('be.visible').type(firstName)
+            this.entitlementEmployeeNameInput.should('be.visible').clear().type(firstName)
         })
 
         this.entitlementEmployeeAutocompleteOption
@@ -156,13 +156,6 @@ class OrangeHRMLeavePage {
             .and('not.contain.text', 'No Records Found')
 
         this.entitlementEmployeeAutocompleteOption.first().click()
-    }
-
-    // Selecciona el primer tipo de permiso disponible en el formulario de
-    // alta de entitlement. Devuelve (via .then) el texto seleccionado.
-    selectEntitlementLeaveType() {
-        this.entitlementLeaveTypeDropdown.should('be.visible').click()
-        return this._selectFirstAvailableOption()
     }
 
     // Selecciona el periodo de licencia correspondiente al anio actual
@@ -185,15 +178,85 @@ class OrangeHRMLeavePage {
     // confirmacion ("Existing Entitlement value X will be updated to Y")
     // cuando el empleado ya tiene un registro de saldo para ese tipo/periodo
     // (aunque sea 0.00); debe confirmarse explicitamente para completar la
-    // operacion.
+    // operacion. El dialogo no aparece de forma sincronica con el click (no
+    // hay ningun toast ni llamada de red que sirva de senal para esperarlo),
+    // por lo que se sondea un par de veces con esperas cortas antes de
+    // asumir que el guardado no requiere confirmacion.
     saveEntitlement() {
         this.saveEntitlementButton.should('be.visible').click()
+        this._confirmEntitlementDialogIfPresent()
+    }
 
-        cy.get('body').then(($body) => {
-            const $confirmButton = $body.find('button:contains("Confirm")')
+    _confirmEntitlementDialogIfPresent(attempt = 0) {
+        return cy.get('body').then(($body) => {
+            const $confirmButton = $body.find('.oxd-dialog-container-default--inner button:contains("Confirm")')
+
             if ($confirmButton.length > 0) {
-                cy.wrap($confirmButton.first()).click()
+                return cy.wrap($confirmButton.first()).click()
             }
+
+            if (attempt >= 4) {
+                return
+            }
+
+            cy.wait(200)
+            return this._confirmEntitlementDialogIfPresent(attempt + 1)
+        })
+    }
+
+    // Consulta el mismo endpoint que utiliza "Apply Leave" para listar los
+    // tipos de permiso con saldo utilizable por el empleado actual. Se usa
+    // para verificar, con el comportamiento real del sistema, si un tipo de
+    // permiso recien otorgado quedo efectivamente disponible para autoservicio
+    // (otorgar saldo no lo garantiza: el entorno demo publico y compartido
+    // puede tener tipos de permiso que, aun con saldo asignado, el sistema no
+    // reconoce como utilizables por motivos fuera de nuestro control).
+    _hasEligibleLeaveTypeWithBalance() {
+        return cy.request('GET', '/web/index.php/api/v2/leave/leave-types/eligible')
+            .then((response) => response.body.data.length > 0)
+    }
+
+    // Otorga saldo al tipo de permiso indicado (debe estar en el formulario
+    // de Add Entitlements, con el empleado ya buscado) y confirma el guardado.
+    // Si el dropdown de Leave Type ya esta abierto (dropdownOpen=true), no lo
+    // vuelve a abrir: un click sobre un dropdown ya abierto lo cierra en vez
+    // de abrirlo, lo que dejaba a la opcion buscada inalcanzable.
+    _grantEntitlementForType(leaveTypeText, days, dropdownOpen = false) {
+        if (!dropdownOpen) {
+            this.entitlementLeaveTypeDropdown.should('be.visible').click()
+        }
+        cy.contains('.oxd-select-dropdown .oxd-select-option', leaveTypeText).click()
+        this.selectCurrentYearLeavePeriod()
+        this.enterEntitlementDays(days)
+        this.saveEntitlement()
+    }
+
+    // Prueba, en orden, cada tipo de permiso disponible en el formulario de
+    // Entitlements hasta que el endpoint real de "Apply Leave" lo reconozca
+    // como utilizable. Devuelve (via .then) el tipo de permiso que quedo
+    // disponible. Si ninguno de los tipos existentes queda disponible tras
+    // otorgarles saldo, falla explicitamente en vez de continuar con un
+    // escenario que de todas formas fallaria mas adelante en "Apply Leave".
+    _grantUntilUsable(candidateTypes, index, days, dropdownOpen = false) {
+        if (index >= candidateTypes.length) {
+            throw new Error(`Se otorgo saldo a los ${candidateTypes.length} tipos de permiso disponibles y ninguno quedo utilizable en Apply Leave.`)
+        }
+
+        const leaveTypeText = candidateTypes[index]
+        this._grantEntitlementForType(leaveTypeText, days, dropdownOpen)
+
+        return this._hasEligibleLeaveTypeWithBalance().then((isUsable) => {
+            if (isUsable) {
+                return cy.wrap(leaveTypeText)
+            }
+
+            // Se recarga la URL directamente (en lugar de renavegar por menu)
+            // para garantizar un formulario limpio: el SPA no siempre resetea
+            // los campos ya completados (Employee Name, Leave Period) al
+            // volver a entrar por el menu a la misma ruta.
+            cy.gotoOHUrl('/web/index.php/leave/addLeaveEntitlement')
+            this.searchLoggedInEmployee()
+            return this._grantUntilUsable(candidateTypes, index + 1, days, false)
         })
     }
 
@@ -203,17 +266,22 @@ class OrangeHRMLeavePage {
     // saldo disponible en todos los tipos de permiso (por el uso concurrente
     // de otros usuarios), lo que hace que "Apply Leave" oculte el formulario
     // y muestre "No Leave Types with Leave Balance" en su lugar. Devuelve
-    // (via .then) el tipo de permiso al que se le otorgo saldo.
+    // (via .then) el tipo de permiso al que se le otorgo saldo utilizable.
     grantLeaveEntitlement(days = 10) {
         this.navigateToAddEntitlementsForm()
         this.searchLoggedInEmployee()
+        this.entitlementLeaveTypeDropdown.should('be.visible').click()
 
-        return this.selectEntitlementLeaveType().then((leaveTypeText) => {
-            this.selectCurrentYearLeavePeriod()
-            this.enterEntitlementDays(days)
-            this.saveEntitlement()
-            return cy.wrap(leaveTypeText)
-        })
+        return cy.get('.oxd-select-dropdown .oxd-select-option', { timeout: 10000 })
+            .should('have.length.greaterThan', 1)
+            .then(($options) => {
+                const candidateTypes = Array.from($options)
+                    .slice(1)
+                    .map((el) => Cypress.$(el).text().trim())
+                    .filter((text) => text.length > 0)
+
+                return this._grantUntilUsable(candidateTypes, 0, days, true)
+            })
     }
 
     // Verifica que el formulario de Apply Leave este visible
