@@ -342,10 +342,17 @@ class OrangeHRMLeavePage {
     // Se suma un offset aleatorio a daysFromToday porque corridas repetidas
     // en el mismo dia calculan siempre el mismo rango base, lo que genera
     // solicitudes superpuestas ("overlap") con ejecuciones anteriores
-    // propias sobre el mismo entorno compartido. Se acota a 150 dias para
-    // que la fecha resultante se mantenga dentro del mismo anio calendario
-    // que el entitlement otorgado (que se registra para el periodo del
-    // anio actual, ver selectCurrentYearLeavePeriod).
+    // propias sobre el mismo entorno compartido. El offset se acota
+    // dinamicamente segun los dias que quedan hasta el 31/12 del anio
+    // actual (en vez de un tope fijo de 150), para que la fecha resultante
+    // se mantenga dentro del mismo anio calendario que el entitlement
+    // otorgado (que se registra para el periodo del anio actual, ver
+    // selectCurrentYearLeavePeriod): un tope fijo cruzaba a enero del anio
+    // siguiente con probabilidad creciente a medida que avanza el segundo
+    // semestre. Se acepta como riesgo residual los ultimos ~9 dias de
+    // diciembre, donde incluso daysFromToday sin ningun offset ya cae en el
+    // anio siguiente; resolverlo requeriria ademas seleccionar el periodo
+    // de licencia del anio siguiente, fuera del alcance de este calculo.
     _getFutureDateRange(daysFromToday = 10, durationDays = 1) {
         const formatDate = (date) => {
             const yyyy = date.getFullYear()
@@ -354,7 +361,12 @@ class OrangeHRMLeavePage {
             return `${yyyy}-${mm}-${dd}`
         }
 
-        const randomOffset = Math.floor(Math.random() * 150)
+        const today = new Date()
+        const currentYearEnd = new Date(today.getFullYear(), 11, 31)
+        const daysUntilYearEnd = Math.floor((currentYearEnd - today) / (1000 * 60 * 60 * 24))
+        const maxOffset = Math.max(0, Math.min(150, daysUntilYearEnd - daysFromToday - durationDays))
+
+        const randomOffset = Math.floor(Math.random() * (maxOffset + 1))
         const fromDate = new Date()
         fromDate.setDate(fromDate.getDate() + daysFromToday + randomOffset)
 
