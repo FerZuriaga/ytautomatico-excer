@@ -186,19 +186,40 @@ class OrangeHRMAddEmployeePage {
             .should('be.visible')
     }
 
-    // Mapeo de columnas de la tabla de resultados de Employee List (confirmado
-    // inspeccionando el DOM real): [0] checkbox, [1] Id, [2] First (& Middle) Name,
-    // [3] Last Name, [4] Job Title, [5] Employment Status, [6] Sub Unit,
-    // [7] Supervisor, [8] Actions
-    _extractRowData($row) {
+    // Construye un mapa {nombreDeColumna: indice} a partir de los encabezados
+    // reales de la tabla, en vez de asumir columnas fijas por posicion.
+    // OrangeHRM permite reordenar/agregar columnas de Employee List
+    // configurando "Optional Fields" desde Admin > Job, lo que rompe un
+    // mapeo fijo por posicion de forma silenciosa (leeria el dato de la
+    // columna equivocada sin que el test falle). Se descarta el texto de
+    // los controles de orden ("AscendingDescending") que el DOM real
+    // incluye embebido en cada encabezado.
+    _getColumnIndexMap() {
+        return cy.get('.oxd-table-header-cell', { timeout: 10000 }).then(($headers) => {
+            const map = {}
+            Array.from($headers).forEach((el, index) => {
+                const text = Cypress.$(el).text().replace(/AscendingDescending$/, '').trim()
+                if (text) {
+                    map[text] = index
+                }
+            })
+            return map
+        })
+    }
+
+    // Extrae los datos basicos de una fila de resultados usando el mapa de
+    // columnas real (ver _getColumnIndexMap).
+    _extractRowData($row, columnIndexMap) {
         const cells = $row.find('.oxd-table-cell')
-        const firstMiddleName = cells.eq(2).text().trim()
-        const lastName = cells.eq(3).text().trim()
+        const textAt = (columnName) => cells.eq(columnIndexMap[columnName]).text().trim()
+
+        const firstMiddleName = textAt('First (& Middle) Name')
+        const lastName = textAt('Last Name')
         return {
-            id: cells.eq(1).text().trim(),
+            id: textAt('Id'),
             fullName: `${firstMiddleName} ${lastName}`.replace(/\s+/g, ' ').trim(),
-            jobTitle: cells.eq(4).text().trim(),
-            status: cells.eq(5).text().trim()
+            jobTitle: textAt('Job Title'),
+            status: textAt('Employment Status')
         }
     }
 
@@ -208,22 +229,28 @@ class OrangeHRMAddEmployeePage {
     // publico y compartido de OrangeHRM.
     getFirstEmployeeWithCompleteData() {
         return this.resultsRows.should('have.length.greaterThan', 0).then(($rows) => {
-            for (let i = 0; i < $rows.length; i++) {
-                const data = this._extractRowData($rows.eq(i))
-                if (data.id && data.fullName && data.jobTitle && data.status) {
-                    return data
+            return this._getColumnIndexMap().then((columnIndexMap) => {
+                for (let i = 0; i < $rows.length; i++) {
+                    const data = this._extractRowData($rows.eq(i), columnIndexMap)
+                    if (data.id && data.fullName && data.jobTitle && data.status) {
+                        return data
+                    }
                 }
-            }
-            throw new Error('No se encontro ningun empleado con informacion basica completa (Id, nombre, cargo, estado) entre los resultados visibles.')
+                throw new Error('No se encontro ningun empleado con informacion basica completa (Id, nombre, cargo, estado) entre los resultados visibles.')
+            })
         })
     }
 
     // Verifica que todas las filas de resultados correspondan al nombre buscado
     // (comparando contra la concatenacion de First(&Middle) Name + Last Name)
     verifyResultsMatchName(name) {
-        this.resultsRows.should('have.length.greaterThan', 0).each(($row) => {
-            const data = this._extractRowData($row)
-            expect(data.fullName.toLowerCase()).to.include(name.trim().toLowerCase())
+        this.resultsRows.should('have.length.greaterThan', 0).then(($rows) => {
+            return this._getColumnIndexMap().then((columnIndexMap) => {
+                Array.from($rows).forEach((row) => {
+                    const data = this._extractRowData(Cypress.$(row), columnIndexMap)
+                    expect(data.fullName.toLowerCase()).to.include(name.trim().toLowerCase())
+                })
+            })
         })
     }
 
@@ -231,14 +258,16 @@ class OrangeHRMAddEmployeePage {
     // Id, nombre completo, cargo (Job Title) y estado (Employment Status)
     verifyEmployeeBasicInfoDisplayed(expectedData) {
         this.resultsRows.should('have.length.greaterThan', 0).then(($rows) => {
-            const match = Array.from($rows).map((row) => this._extractRowData(Cypress.$(row)))
-                .find((data) => data.fullName.toLowerCase() === expectedData.fullName.toLowerCase())
+            return this._getColumnIndexMap().then((columnIndexMap) => {
+                const match = Array.from($rows).map((row) => this._extractRowData(Cypress.$(row), columnIndexMap))
+                    .find((data) => data.fullName.toLowerCase() === expectedData.fullName.toLowerCase())
 
-            expect(match, `Empleado "${expectedData.fullName}" encontrado en los resultados`).to.exist
-            expect(match.id).to.not.be.empty
-            expect(match.fullName).to.not.be.empty
-            expect(match.jobTitle).to.not.be.empty
-            expect(match.status).to.not.be.empty
+                expect(match, `Empleado "${expectedData.fullName}" encontrado en los resultados`).to.exist
+                expect(match.id).to.not.be.empty
+                expect(match.fullName).to.not.be.empty
+                expect(match.jobTitle).to.not.be.empty
+                expect(match.status).to.not.be.empty
+            })
         })
     }
 
