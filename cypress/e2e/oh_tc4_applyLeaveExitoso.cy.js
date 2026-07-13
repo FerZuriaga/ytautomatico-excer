@@ -51,7 +51,7 @@ describe('OH-TC4 - Solicitud de Permiso Exitosa - Apply Leave [SCRUM-47]', () =>
             // con estado "Pending Approval"
             leavePage.navigateToMyLeave()
             leavePage.verifyMyLeaveListVisible()
-            leavePage.verifyLeaveRequestPending(leaveTypeText)
+            leavePage.verifyLeaveRequestPending(leaveTypeText, fromDate)
         })
     })
 })
