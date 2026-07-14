@@ -67,21 +67,9 @@ class OrangeHRMAddEmployeePage {
             .find('input')
     }
 
-    // Boton "Save" de la seccion Contact Details. Mismo selector generico que el
-    // resto de los formularios de OrangeHRM (un unico submit button por pantalla).
-    get contactDetailsSaveButton() {
-        return cy.get('button[type="submit"]').contains('Save')
-    }
-
     // Mensaje de confirmacion (toast) que muestra OrangeHRM tras un guardado exitoso.
     get saveConfirmationToast() {
         return cy.get('.oxd-toast-content--success').contains('Successfully Updated')
-    }
-
-    // Boton de accion "editar" (icono lapiz) de una fila de Employee List. Permite
-    // reingresar a la ficha completa (Personal Details) de un empleado ya existente.
-    get rowEditButton() {
-        return cy.get('.oxd-table-cell-action-space').first()
     }
 
     // ─── Selectores - Employee List ───────────────────────────────────────────
@@ -393,7 +381,7 @@ class OrangeHRMAddEmployeePage {
     saveContactDetails() {
         cy.intercept('PUT', '**/contact-details**').as('updateContactDetails')
 
-        this.contactDetailsSaveButton.should('be.visible').click()
+        this.saveButton.should('be.visible').click()
 
         cy.wait('@updateContactDetails', { timeout: 30000 })
     }
