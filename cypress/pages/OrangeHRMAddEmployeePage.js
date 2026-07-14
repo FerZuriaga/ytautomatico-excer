@@ -51,6 +51,39 @@ class OrangeHRMAddEmployeePage {
         return cy.get('.orangehrm-edit-employee-name, .oxd-topbar-header-breadcrumb')
     }
 
+    // Pestana "Contact Details" dentro de la ficha del empleado. Vive dentro del
+    // mismo grupo de tabs que "Personal Details" (.orangehrm-tabs-item).
+    get contactDetailsTabLink() {
+        return cy.get('a.orangehrm-tabs-item').contains('Contact Details')
+    }
+
+    // Campo "Mobile" dentro de la seccion "Telephone" de Contact Details. No expone
+    // un label individual distinto de "Home"/"Mobile"/"Work" bajo un mismo titulo de
+    // seccion, por lo que se ubica por su label propio siguiendo el mismo patron ya
+    // usado para Employee Id/Employee Name (label + .oxd-input-group + input).
+    get mobileInput() {
+        return cy.contains('label', 'Mobile')
+            .parents('.oxd-input-group')
+            .find('input')
+    }
+
+    // Boton "Save" de la seccion Contact Details. Mismo selector generico que el
+    // resto de los formularios de OrangeHRM (un unico submit button por pantalla).
+    get contactDetailsSaveButton() {
+        return cy.get('button[type="submit"]').contains('Save')
+    }
+
+    // Mensaje de confirmacion (toast) que muestra OrangeHRM tras un guardado exitoso.
+    get saveConfirmationToast() {
+        return cy.get('.oxd-toast-content--success').contains('Successfully Updated')
+    }
+
+    // Boton de accion "editar" (icono lapiz) de una fila de Employee List. Permite
+    // reingresar a la ficha completa (Personal Details) de un empleado ya existente.
+    get rowEditButton() {
+        return cy.get('.oxd-table-cell-action-space').first()
+    }
+
     // ─── Selectores - Employee List ───────────────────────────────────────────
 
     get employeeNameInput() {
@@ -241,6 +274,24 @@ class OrangeHRMAddEmployeePage {
         })
     }
 
+    // Extrae el nombre completo del primer empleado visible en los resultados, sin
+    // requerir que tenga cargo/estado completos (a diferencia de
+    // getFirstEmployeeWithCompleteData). Los empleados dados de alta por esta misma
+    // suite (ver enterEmployeeNames/saveEmployee, oh_tc5) solo completan nombre y
+    // apellido: nunca tendran Job Title ni Employment Status cargados, por lo que
+    // requerir esos datos completos descartaria siempre a los empleados propios de
+    // la suite. Se usa para seleccionar el empleado propio (prefijo "QaAuto") sobre
+    // el que se realiza la edicion.
+    getFirstEmployeeFullName() {
+        return this.resultsRows.should('have.length.greaterThan', 0).then(($rows) => {
+            return this._getColumnIndexMap().then((columnIndexMap) => {
+                const data = this._extractRowData($rows.eq(0), columnIndexMap)
+                expect(data.fullName, 'Nombre completo del primer empleado en los resultados').to.not.be.empty
+                return data.fullName
+            })
+        })
+    }
+
     // Verifica que todas las filas de resultados correspondan al nombre buscado
     // (comparando contra la concatenacion de First(&Middle) Name + Last Name)
     verifyResultsMatchName(name) {
@@ -275,6 +326,88 @@ class OrangeHRMAddEmployeePage {
     verifyNoRecordsFound() {
         cy.contains('No Records Found', { timeout: 30000 }).should('be.visible')
         this.resultsRows.should('have.length', 0)
+    }
+
+    // Indica (sin aseverar) si la busqueda actual devolvio al menos un resultado.
+    // A diferencia de verifyNoRecordsFound/verifyEmployeeInList (que hacen fallar el
+    // test), este metodo permite a los specs decidir un flujo condicional: por
+    // ejemplo, crear un empleado de respaldo cuando no se encuentra ninguno propio
+    // de la suite en el entorno demo publico y compartido de OrangeHRM.
+    hasSearchResults() {
+        return cy.get('body').then(($body) => {
+            return $body.find('.oxd-table-body .oxd-table-row').length > 0
+        })
+    }
+
+    // Reingresa a la ficha completa de un empleado (Personal Details) haciendo clic
+    // en el boton "editar" (icono lapiz) de su fila en Employee List. Se usa tanto
+    // para acceder por primera vez a la ficha de un empleado existente como para
+    // verificar la persistencia de un dato luego de haber salido del modulo.
+    openEmployeeByName(fullName) {
+        cy.intercept('GET', '**/api/v2/pim/employees/*').as('getEmployee')
+
+        cy.contains('.oxd-table-body .oxd-table-row', fullName, { timeout: 30000 })
+            .find('.oxd-table-cell-action-space')
+            .first()
+            .click()
+
+        cy.wait('@getEmployee', { timeout: 30000 })
+    }
+
+    // ─── Acciones - Contact Details (edicion de datos personales) ─────────────
+
+    // Navega a la pestana "Contact Details" dentro de la ficha del empleado
+    navigateToContactDetailsTab() {
+        this.contactDetailsTabLink.should('be.visible').click()
+    }
+
+    // Verifica que la seccion Contact Details este visible, con el campo Mobile
+    // (dato personal simple elegido para esta automatizacion) cargado
+    verifyContactDetailsVisible() {
+        cy.location('pathname', { timeout: 30000 }).should('contain', '/pim/contactDetails')
+        this.mobileInput.should('be.visible')
+    }
+
+    // Lee (sin modificar) el valor actual del campo Mobile
+    getCurrentMobileNumber() {
+        return this.mobileInput.should('be.visible').invoke('val')
+    }
+
+    // Genera un numero de telefono movil unico por ejecucion (basado en timestamp),
+    // siguiendo el mismo patron que generateUniqueEmployeeName(), para evitar
+    // depender de un valor fijo y poder verificar sin ambiguedad que el nuevo valor
+    // especifico de esta ejecucion persiste.
+    generateUniqueMobileNumber() {
+        const digits = `555${Date.now()}`
+        return digits.slice(0, 10)
+    }
+
+    // Reemplaza el valor del campo Mobile por uno nuevo
+    updateMobileNumber(newMobile) {
+        this.mobileInput.should('be.visible').clear().type(newMobile)
+    }
+
+    // Confirma el guardado de Contact Details, sincronizando con la respuesta del
+    // backend antes de continuar con las validaciones posteriores (mismo patron que
+    // saveEmployee()).
+    saveContactDetails() {
+        cy.intercept('PUT', '**/contact-details**').as('updateContactDetails')
+
+        this.contactDetailsSaveButton.should('be.visible').click()
+
+        cy.wait('@updateContactDetails', { timeout: 30000 })
+    }
+
+    // Verifica que el sistema muestre la confirmacion de guardado exitoso (toast)
+    verifySaveConfirmationVisible() {
+        this.saveConfirmationToast.should('be.visible')
+    }
+
+    // Verifica que el campo Mobile muestre el valor esperado. Reutilizable tanto
+    // para comprobar la persistencia tras recargar la pagina como tras salir de la
+    // ficha y volver a ingresar mas adelante.
+    verifyMobileNumberValue(expectedMobile) {
+        this.mobileInput.should('be.visible').and('have.value', expectedMobile)
     }
 }
 
