@@ -5,6 +5,8 @@
 import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
 import OrangeHRMDashboardPage from '../pages/OrangeHRMDashboardPage'
 
+// Se sigue usando para verifyLoginFormVisible() al final del test; el login
+// en si se hace via el custom command cy.loginAsOHAdmin()
 const loginPage = new OrangeHRMLoginPage()
 const dashboardPage = new OrangeHRMDashboardPage()
 
@@ -28,20 +30,14 @@ describe('OH-TC2 - Logout Exitoso desde el Dashboard [SCRUM-44]', () => {
 
     it('Debe cerrar la sesion del usuario y redirigirlo a la pantalla de login', () => {
 
-        // Paso 1: Ingresar a la pagina de login de OrangeHRM Demo
-        cy.gotoOHUrl('/web/index.php/auth/login')
+        // Paso 1: Iniciar sesion con credenciales validas y verificar que el
+        // usuario queda autenticado en el Dashboard (precondicion)
+        cy.loginAsOHAdmin()
 
-        // Paso 2: Iniciar sesion con credenciales validas (precondicion)
-        loginPage.enterCredentials('Admin', 'admin123')
-        loginPage.clickLoginButton()
-
-        // Paso 3: Verificar que el usuario fue autenticado y se encuentra en el Dashboard
-        loginPage.verifyDashboardVisible()
-
-        // Paso 4: Abrir el menu de usuario y seleccionar la opcion "Logout"
+        // Paso 2: Abrir el menu de usuario y seleccionar la opcion "Logout"
         dashboardPage.logout()
 
-        // Paso 5: Verificar que el sistema cierra la sesion y redirige al login,
+        // Paso 3: Verificar que el sistema cierra la sesion y redirige al login,
         // mostrando nuevamente el formulario de acceso
         loginPage.verifyLoginFormVisible()
     })

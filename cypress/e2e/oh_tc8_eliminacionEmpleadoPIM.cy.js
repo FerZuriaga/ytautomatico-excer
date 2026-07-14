@@ -2,26 +2,19 @@
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
 // Ticket Jira: SCRUM-50
 
-import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
 import OrangeHRMAddEmployeePage from '../pages/OrangeHRMAddEmployeePage'
 
-const loginPage = new OrangeHRMLoginPage()
 const pimPage = new OrangeHRMAddEmployeePage()
 
-// Da de alta un empleado propio de la suite (prefijo "QaAuto") y devuelve su
-// nombre completo. Se ejecuta siempre antes de intentar eliminar, tanto en el
+// Da de alta un empleado propio de la suite (prefijo "QaAuto") reutilizando
+// pimPage.createEmployee(), y ademas verifica que quede visible en Employee
+// List (necesario en este spec porque la eliminacion actua sobre esa misma
+// vista). Se ejecuta siempre antes de intentar eliminar, tanto en el
 // escenario de eliminacion exitosa como en el de cancelacion: el entorno demo
 // es publico y compartido, por lo que nunca se opera sobre un registro
 // preexistente ajeno a esta suite (mismo criterio ya aplicado en oh_tc5/oh_tc7).
 function crearEmpleadoPropio() {
-    const { firstName, lastName } = pimPage.generateUniqueEmployeeName()
-    const fullName = `${firstName} ${lastName}`
-
-    pimPage.navigateToAddEmployeeTab()
-    pimPage.verifyAddEmployeeFormVisible()
-    pimPage.enterEmployeeNames(firstName, lastName)
-    pimPage.saveEmployee()
-    pimPage.verifyPersonalDetailsVisible(fullName)
+    const fullName = pimPage.createEmployee()
 
     pimPage.navigateToEmployeeList()
     pimPage.verifyEmployeeListVisible()
@@ -36,10 +29,7 @@ describe('OH-TC8 - Eliminacion de Empleado - PIM [SCRUM-50]', () => {
     beforeEach(() => {
         // Precondicion: el usuario inicia sesion exitosamente y navega al modulo
         // PIM, con al menos un empleado existente disponible
-        cy.gotoOHUrl('/web/index.php/auth/login')
-        loginPage.enterCredentials('Admin', 'admin123')
-        loginPage.clickLoginButton()
-        loginPage.verifyDashboardVisible()
+        cy.loginAsOHAdmin()
 
         pimPage.navigateToPim()
         pimPage.verifyEmployeeListVisible()

@@ -2,20 +2,15 @@
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
 // Ticket Jira: SCRUM-47
 
-import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
 import OrangeHRMLeavePage from '../pages/OrangeHRMLeavePage'
 
-const loginPage = new OrangeHRMLoginPage()
 const leavePage = new OrangeHRMLeavePage()
 
 describe('OH-TC4 - Solicitud de Permiso Exitosa - Apply Leave [SCRUM-47]', () => {
 
     beforeEach(() => {
         // Precondicion: el usuario inicia sesion exitosamente
-        cy.gotoOHUrl('/web/index.php/auth/login')
-        loginPage.enterCredentials('Admin', 'admin123')
-        loginPage.clickLoginButton()
-        loginPage.verifyDashboardVisible()
+        cy.loginAsOHAdmin()
 
         // Precondicion adicional: el entorno demo publico y compartido de
         // OrangeHRM frecuentemente se queda sin saldo disponible en todos los

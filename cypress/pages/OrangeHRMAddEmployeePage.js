@@ -186,6 +186,25 @@ class OrangeHRMAddEmployeePage {
         cy.wait('@createEmployee', { timeout: 30000 })
     }
 
+    // Da de alta un nuevo empleado con nombre y apellido unicos (prefijo
+    // "QaAuto") y verifica que el sistema redirige a su ficha (Personal
+    // Details). Devuelve el nombre completo generado. Se usa como precondicion
+    // en specs que necesitan un empleado propio de la suite para operar sobre
+    // el (nunca sobre un registro ajeno del entorno demo publico y
+    // compartido), como edicion (oh_tc7) o eliminacion (oh_tc8).
+    createEmployee() {
+        const { firstName, lastName } = this.generateUniqueEmployeeName()
+        const fullName = `${firstName} ${lastName}`
+
+        this.navigateToAddEmployeeTab()
+        this.verifyAddEmployeeFormVisible()
+        this.enterEmployeeNames(firstName, lastName)
+        this.saveEmployee()
+        this.verifyPersonalDetailsVisible(fullName)
+
+        return fullName
+    }
+
     // ─── Acciones - Personal Details ──────────────────────────────────────────
 
     // Verifica que el sistema redirige a la pantalla "Personal Details" del
