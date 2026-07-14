@@ -2,20 +2,15 @@
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
 // Ticket Jira: SCRUM-46
 
-import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
 import OrangeHRMAddEmployeePage from '../pages/OrangeHRMAddEmployeePage'
 
-const loginPage = new OrangeHRMLoginPage()
 const pimPage = new OrangeHRMAddEmployeePage()
 
 describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', () => {
 
     beforeEach(() => {
         // Precondicion: el usuario inicia sesion exitosamente y navega al modulo PIM
-        cy.gotoOHUrl('/web/index.php/auth/login')
-        loginPage.enterCredentials('Admin', 'admin123')
-        loginPage.clickLoginButton()
-        loginPage.verifyDashboardVisible()
+        cy.loginAsOHAdmin()
 
         pimPage.navigateToPim()
         pimPage.verifyEmployeeListVisible()

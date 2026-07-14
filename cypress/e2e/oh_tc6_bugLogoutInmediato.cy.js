@@ -5,6 +5,8 @@
 import OrangeHRMLoginPage from '../pages/OrangeHRMLoginPage'
 import OrangeHRMDashboardPage from '../pages/OrangeHRMDashboardPage'
 
+// Se sigue usando para verifyLoginFormVisible() al final del test; el login
+// en si se hace via el custom command cy.loginAsOHAdmin()
 const loginPage = new OrangeHRMLoginPage()
 const dashboardPage = new OrangeHRMDashboardPage()
 
@@ -40,21 +42,15 @@ describe('OH-TC6 - Bug Logout Inmediato desde el Dashboard [SCRUM-45]', () => {
                 return true
             })
 
-            // Paso 1: Ingresar a la pagina de login de OrangeHRM Demo
-            cy.gotoOHUrl('/web/index.php/auth/login')
+            // Paso 1: Iniciar sesion con credenciales validas y verificar que el
+            // usuario queda autenticado en el Dashboard (precondicion)
+            cy.loginAsOHAdmin()
 
-            // Paso 2: Iniciar sesion con credenciales validas (precondicion)
-            loginPage.enterCredentials('Admin', 'admin123')
-            loginPage.clickLoginButton()
-
-            // Paso 3: Verificar que el usuario fue autenticado y se encuentra en el Dashboard
-            loginPage.verifyDashboardVisible()
-
-            // Paso 4: Cerrar sesion INMEDIATAMENTE, sin esperar a que terminen de cargar
+            // Paso 2: Cerrar sesion INMEDIATAMENTE, sin esperar a que terminen de cargar
             // los widgets en segundo plano, para reproducir la condicion exacta del bug
             dashboardPage.logout()
 
-            // Paso 5 (assert funcional que responde la pregunta abierta del ticket):
+            // Paso 3 (assert funcional que responde la pregunta abierta del ticket):
             // verificar si, pese al posible error de consola, el sistema redirige
             // igualmente al formulario de login
             loginPage.verifyLoginFormVisible()
