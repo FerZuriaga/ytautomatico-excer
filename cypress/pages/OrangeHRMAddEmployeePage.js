@@ -27,8 +27,12 @@ class OrangeHRMAddEmployeePage {
     // El grupo de nombre no expone labels individuales por campo (solo un label
     // grupal "Employee Full Name*"); cada input se identifica por su placeholder,
     // que coincide con el texto del campo mostrado en el formulario real.
+    // El placeholder real del campo (verificado en vivo contra la demo,
+    // SCRUM-50) es "First name" (n minuscula), a diferencia de "Last Name"
+    // que si usa mayuscula. Se usa el flag "i" (case-insensitive) para no
+    // depender de esta inconsistencia de la aplicacion.
     get firstNameInput() {
-        return cy.get('input[placeholder="First Name"]')
+        return cy.get('input[placeholder="First name" i]')
     }
 
     get lastNameInput() {
@@ -94,6 +98,33 @@ class OrangeHRMAddEmployeePage {
 
     get resultsTable() {
         return cy.get('.oxd-table')
+    }
+
+    // Dialogo de confirmacion que muestra OrangeHRM antes de eliminar un
+    // empleado ("Are you Sure?"). Se localiza por [role="document"] (mismo
+    // patron de dialogo OXD ya usado en OrangeHRMLeavePage para el dialogo de
+    // confirmacion de entitlement), ya que el sheet no expone una clase CSS
+    // propia distinta de las genericas del componente.
+    get deleteConfirmationDialog() {
+        return cy.get('[role="document"]')
+    }
+
+    // Boton "Yes, Delete" del dialogo de confirmacion de eliminacion
+    get confirmDeleteButton() {
+        return this.deleteConfirmationDialog.contains('button', 'Yes, Delete')
+    }
+
+    // Boton "No, Cancel" del dialogo de confirmacion de eliminacion
+    get cancelDeleteButton() {
+        return this.deleteConfirmationDialog.contains('button', 'No, Cancel')
+    }
+
+    // Mensaje de confirmacion (toast) que muestra OrangeHRM tras eliminar un
+    // empleado exitosamente. Texto propio ("Successfully Deleted"), distinto
+    // al de guardado/edicion (ver saveConfirmationToast), por lo que se
+    // define un getter independiente en vez de reutilizar el existente.
+    get deleteConfirmationToast() {
+        return cy.get('.oxd-toast-content--success').contains('Successfully Deleted')
     }
 
     // ─── Acciones - Navegacion ────────────────────────────────────────────────
@@ -340,6 +371,55 @@ class OrangeHRMAddEmployeePage {
             .click()
 
         cy.wait('@getEmployee', { timeout: 30000 })
+    }
+
+    // ─── Acciones - Eliminacion de empleado (Employee List) ───────────────────
+
+    // Hace clic en el icono de eliminar (papelera) de la fila del empleado
+    // indicado. La celda de acciones de cada fila expone dos botones con la
+    // misma clase (.oxd-table-cell-action-space): el primero es "editar"
+    // (icono lapiz, bi-pencil-fill, ya usado por openEmployeeByName) y el
+    // segundo es "eliminar" (icono papelera, bi-trash). Se selecciona por
+    // posicion (.last()) dentro de la fila, ya que ambos botones comparten
+    // clase y no exponen ningun atributo distintivo (aria-label, title, etc)
+    // mas alla del icono interno.
+    clickDeleteEmployee(fullName) {
+        cy.contains('.oxd-table-body .oxd-table-row', fullName, { timeout: 30000 })
+            .find('.oxd-table-cell-action-space')
+            .last()
+            .click()
+    }
+
+    // Verifica que el dialogo de confirmacion de eliminacion este visible
+    verifyDeleteConfirmationDialogVisible() {
+        this.deleteConfirmationDialog.should('be.visible')
+        this.deleteConfirmationDialog.contains('Are you Sure?').should('be.visible')
+    }
+
+    // Confirma la eliminacion haciendo clic en "Yes, Delete", sincronizando
+    // con la respuesta del backend (mismo patron que saveEmployee() /
+    // saveContactDetails()) antes de continuar con las validaciones
+    // posteriores.
+    confirmDeleteEmployee() {
+        cy.intercept('DELETE', '**/api/v2/pim/employees**').as('deleteEmployee')
+
+        this.confirmDeleteButton.should('be.visible').click()
+
+        cy.wait('@deleteEmployee', { timeout: 30000 })
+    }
+
+    // Cancela la eliminacion haciendo clic en "No, Cancel". Esta accion no
+    // dispara ninguna peticion DELETE, por lo que unicamente se espera a que
+    // el dialogo se cierre antes de continuar (a diferencia de
+    // confirmDeleteEmployee(), que sincroniza con la respuesta del backend).
+    cancelDeleteEmployee() {
+        this.cancelDeleteButton.should('be.visible').click()
+        this.deleteConfirmationDialog.should('not.exist')
+    }
+
+    // Verifica que el sistema muestre la confirmacion de eliminacion exitosa (toast)
+    verifyDeleteConfirmationVisible() {
+        this.deleteConfirmationToast.should('be.visible')
     }
 
     // ─── Acciones - Contact Details (edicion de datos personales) ─────────────
