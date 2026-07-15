@@ -441,6 +441,63 @@ class OrangeHRMAddEmployeePage {
         this.deleteConfirmationToast.should('be.visible')
     }
 
+    // ─── Selectores - Eliminacion multiple (Employee List) ────────────────────
+
+    // Checkbox de seleccion individual de una fila, ubicado por el nombre completo
+    // del empleado (mismo patron de localizacion de fila que clickDeleteEmployee).
+    // Verificado en vivo contra la demo (SCRUM-51): cada fila expone su propio
+    // checkbox dentro de .oxd-table-card-cell-checkbox en la primera celda. Se
+    // evita deliberadamente el checkbox "seleccionar todos" del encabezado de la
+    // tabla (.oxd-table-header), ya que seleccionaria tambien empleados ajenos a
+    // esta suite en el entorno demo publico y compartido.
+    employeeRowCheckbox(fullName) {
+        return cy.contains('.oxd-table-body .oxd-table-row', fullName, { timeout: 30000 })
+            .find('.oxd-table-card-cell-checkbox input[type="checkbox"]')
+    }
+
+    // Boton de eliminacion masiva ("Delete Selected"). Verificado en vivo contra la
+    // demo (SCRUM-51): este boton no existe en el DOM cuando no hay ningun
+    // empleado seleccionado (no solo deshabilitado), y aparece unicamente al
+    // seleccionar al menos un checkbox de fila.
+    get bulkDeleteButton() {
+        return cy.contains('button', 'Delete Selected')
+    }
+
+    // ─── Acciones - Eliminacion multiple (Employee List) ───────────────────────
+
+    // Selecciona el checkbox de cada empleado de la lista de nombres indicada. Se
+    // usa click({force: true}) porque el input nativo del checkbox esta oculto
+    // visualmente detras del span estilizado (patron OXD ya observado en el
+    // formulario). Reutilizado tanto para la eliminacion multiple (CA-01) como
+    // para verificar la disponibilidad del control de eliminacion masiva (CA-03),
+    // evitando duplicar el loop de seleccion en el spec.
+    selectEmployeesByName(fullNames) {
+        fullNames.forEach((fullName) => {
+            this.employeeRowCheckbox(fullName).should('exist').click({ force: true })
+        })
+    }
+
+    // Hace clic en el boton de eliminacion masiva, abriendo el mismo dialogo de
+    // confirmacion generico ya usado por clickDeleteEmployee() (ver
+    // verifyDeleteConfirmationDialogVisible/confirmDeleteEmployee mas abajo: el
+    // dialogo y el toast de exito son identicos para ambos triggers, verificado
+    // en vivo contra la demo).
+    clickBulkDeleteButton() {
+        this.bulkDeleteButton.should('be.visible').click()
+    }
+
+    // Verifica que el control de eliminacion masiva no este disponible (ausente
+    // del DOM), esperado cuando no hay ningun empleado seleccionado.
+    verifyBulkDeleteButtonNotAvailable() {
+        cy.contains('button', 'Delete Selected').should('not.exist')
+    }
+
+    // Verifica que el control de eliminacion masiva este disponible, esperado
+    // luego de seleccionar al menos un empleado.
+    verifyBulkDeleteButtonAvailable() {
+        this.bulkDeleteButton.should('be.visible')
+    }
+
     // ─── Acciones - Contact Details (edicion de datos personales) ─────────────
 
     // Navega a la pestana "Contact Details" dentro de la ficha del empleado
