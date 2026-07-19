@@ -2,9 +2,9 @@
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
 // Ticket Jira: SCRUM-46
 
-import OrangeHRMAddEmployeePage from '../../pages/orangehrm/OrangeHRMAddEmployeePage'
+import OrangeHRMEmployeeListPage from '../../pages/orangehrm/OrangeHRMEmployeeListPage'
 
-const pimPage = new OrangeHRMAddEmployeePage()
+const pimPage = new OrangeHRMEmployeeListPage()
 
 describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', () => {
 

@@ -3,8 +3,10 @@
 // Ticket Jira: SCRUM-48
 
 import OrangeHRMAddEmployeePage from '../../pages/orangehrm/OrangeHRMAddEmployeePage'
+import OrangeHRMEmployeeListPage from '../../pages/orangehrm/OrangeHRMEmployeeListPage'
 
 const addEmployeePage = new OrangeHRMAddEmployeePage()
+const employeeListPage = new OrangeHRMEmployeeListPage()
 
 describe('OH-TC5 - Alta Exitosa de Empleado con Datos Obligatorios - PIM [SCRUM-48]', () => {
 
@@ -13,7 +15,7 @@ describe('OH-TC5 - Alta Exitosa de Empleado con Datos Obligatorios - PIM [SCRUM-
         // PIM, opcion "Add Employee"
         cy.loginAsOHAdmin()
 
-        addEmployeePage.navigateToPim()
+        employeeListPage.navigateToPim()
         addEmployeePage.navigateToAddEmployeeTab()
         addEmployeePage.verifyAddEmployeeFormVisible()
     })
@@ -41,10 +43,10 @@ describe('OH-TC5 - Alta Exitosa de Empleado con Datos Obligatorios - PIM [SCRUM-
 
             // Paso 5: Navegar a "Employee List" y verificar que el empleado
             // creado quede visible en el listado
-            addEmployeePage.navigateToEmployeeList()
-            addEmployeePage.verifyEmployeeListVisible()
-            addEmployeePage.searchEmployeeByName(fullName)
-            addEmployeePage.verifyEmployeeInList(fullName)
+            employeeListPage.navigateToEmployeeList()
+            employeeListPage.verifyEmployeeListVisible()
+            employeeListPage.searchEmployeeByName(fullName)
+            employeeListPage.verifyEmployeeInList(fullName)
         })
     })
 })
