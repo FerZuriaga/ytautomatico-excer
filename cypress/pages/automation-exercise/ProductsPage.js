@@ -177,6 +177,70 @@ class ProductsPage {
     clickViewCartFromModal() {
         cy.get('#cartModal .modal-body a[href="/view_cart"]').should('be.visible').click()
     }
+
+    // ─── Selectores y acciones: Filtros por categoria y marca (TC18/TC19) ─────
+
+    get categoryHeadings() {
+        return cy.get('.category-products [data-toggle="collapse"]')
+    }
+
+    get brandLinks() {
+        return cy.get('.brands_products li a')
+    }
+
+    // Hace click en una categoria aleatoria del panel lateral (la expande) y luego
+    // hace click en una subcategoria aleatoria dentro de ese panel, que es lo que
+    // dispara la navegacion a /category_products
+    clickRandomCategory() {
+        this.categoryHeadings.should('be.visible').then((categories) => {
+            cy.randomNum(categories.length).then((randomIndex) => {
+                cy.wrap(categories).eq(randomIndex).invoke('text').as('categoryName')
+                cy.wrap(categories).eq(randomIndex).click()
+            })
+        })
+        cy.get('@categoryName').then((categoryName) => {
+            cy.get(`#${categoryName.trim()} .panel-body ul li a`).then((subcategories) => {
+                cy.randomNum(subcategories.length).then((randomIndex) => {
+                    cy.wrap(subcategories).eq(randomIndex).click()
+                })
+            })
+        })
+    }
+
+    // Verifica que la navegacion aterrizo en la pagina de productos filtrados por categoria
+    verifyCategoryProductsPage() {
+        cy.location('pathname').should('contain', '/category_products')
+        this.productCards.its('length').should('be.gt', 0)
+    }
+
+    // Hace click en una marca aleatoria del panel lateral y guarda su nombre y cantidad esperada de productos
+    clickRandomBrand() {
+        this.brandLinks.should('be.visible').then((brands) => {
+            cy.randomNum(brands.length).then((randomIndex) => {
+                cy.wrap(brands).eq(randomIndex).then((brand) => {
+                    const href = brand.attr('href')
+                    cy.wrap(href.split('/brand_products/')[1]).as('brandName')
+                })
+                cy.wrap(brands).eq(randomIndex).find('span').invoke('text').then((countText) => {
+                    const expectedCount = Number(countText.slice(1, countText.length - 1))
+                    cy.wrap(expectedCount).as('brandProductCount')
+                })
+                cy.wrap(brands).eq(randomIndex).click()
+            })
+        })
+    }
+
+    // Verifica que la navegacion aterrizo en la pagina de la marca filtrada,
+    // que el titulo coincide con la marca elegida y que la cantidad de productos coincide
+    verifyBrandProductsPage() {
+        cy.location('pathname').should('contain', '/brand_products/')
+        cy.get('@brandName').then((brandName) => {
+            this.pageTitle.should('contain', brandName)
+        })
+        cy.get('@brandProductCount').then((expectedCount) => {
+            this.productCards.its('length').should('eq', expectedCount)
+        })
+    }
 }
 
 export default ProductsPage

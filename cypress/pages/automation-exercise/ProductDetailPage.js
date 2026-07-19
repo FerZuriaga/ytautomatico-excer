@@ -53,62 +53,32 @@ class ProductDetailPage {
 
     // ─── Selectores: Review Form ───────────────────────────────────────────────
 
-    // Heading "Write Your Review" usado para scroll y visibilidad (TC22)
+    // Heading "Write Your Review" usado para scroll y visibilidad
     get writeYourReviewHeading() {
         return cy.contains('Write Your Review')
     }
 
-    // Titulo de la seccion de resena (enlace anchor)
-    get writeReviewTitle() {
-        return cy.get('a[href="#reviews"]')
-    }
-
     // Campo nombre del reviewer
-    get reviewNameInput() {
-        return cy.get('#name')
-    }
-
-    // Alias de reviewNameInput (nombre usado en TC22)
     get nameInput() {
         return cy.get('#name')
     }
 
     // Campo email del reviewer
-    get reviewEmailInput() {
-        return cy.get('#email')
-    }
-
-    // Alias de reviewEmailInput (nombre usado en TC22)
     get emailInput() {
         return cy.get('#email')
     }
 
     // Campo texto de la resena
-    get reviewTextInput() {
-        return cy.get('#review')
-    }
-
-    // Alias de reviewTextInput (nombre usado en TC22)
     get reviewTextarea() {
         return cy.get('#review')
     }
 
     // Boton Submit de la resena
-    get reviewSubmitBtn() {
-        return cy.get('#button-review')
-    }
-
-    // Alias de reviewSubmitBtn (nombre usado en TC22)
     get submitReviewBtn() {
         return cy.get('#button-review')
     }
 
-    // Mensaje de exito tras enviar la resena (selector sobre el span interno)
-    get reviewSuccessMessage() {
-        return cy.get('.alert-success span')
-    }
-
-    // Mensaje de exito sobre el contenedor completo (TC22)
+    // Mensaje de exito tras enviar la resena
     get successMessage() {
         return cy.get('.alert-success')
     }
@@ -139,45 +109,24 @@ class ProductDetailPage {
 
     // ─── Acciones: Review ─────────────────────────────────────────────────────
 
-    // Verifica que el heading "Write Your Review" sea visible con scroll (TC22)
+    // Verifica que el heading "Write Your Review" sea visible con scroll
     verifyWriteYourReviewVisible() {
         this.writeYourReviewHeading.scrollIntoView().should('be.visible')
     }
 
-    // Verifica que la seccion "Write Your Review" sea visible (TC21)
-    verifyWriteReviewVisible() {
-        this.writeReviewTitle
-            .should('be.visible')
-            .and('contain.text', 'Write Your Review')
-    }
-
-    // Completa el formulario de review sin hacer submit (TC22)
+    // Completa el formulario de review sin hacer submit
     fillReviewForm(name, email, review) {
         this.nameInput.should('be.visible').type(name)
         this.emailInput.should('be.visible').type(email)
         this.reviewTextarea.should('be.visible').type(review)
     }
 
-    // Completa y envía el formulario de resena.
-    // Con argumentos (TC21): llena los campos y hace click en Submit.
-    // Sin argumentos (TC22): solo hace click en Submit (campos ya llenados por fillReviewForm).
-    submitReview(name, email, review) {
-        if (name !== undefined) {
-            this.reviewNameInput.should('be.visible').type(name)
-            this.reviewEmailInput.should('be.visible').type(email)
-            this.reviewTextInput.should('be.visible').type(review)
-        }
-        this.reviewSubmitBtn.click()
+    // Hace click en Submit (campos ya llenados por fillReviewForm)
+    submitReview() {
+        this.submitReviewBtn.click()
     }
 
-    // Verifica que el mensaje de exito sea visible (TC21 — selector sobre span)
-    verifyReviewSuccessMessage() {
-        this.reviewSuccessMessage
-            .should('be.visible')
-            .and('contain.text', 'Thank you for your review.')
-    }
-
-    // Verifica que el mensaje de exito sea visible (TC22 — selector sobre contenedor)
+    // Verifica que el mensaje de exito sea visible
     verifySuccessMessage() {
         this.successMessage
             .should('be.visible')
