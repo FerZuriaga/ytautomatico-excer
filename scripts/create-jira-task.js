@@ -16,13 +16,15 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
+const zephyr = require('./lib/zephyr');
+
 const HOSTNAME  = new URL(process.env.JIRA_URL).hostname;
 const AUTH      = 'Basic ' + Buffer.from(process.env.JIRA_EMAIL + ':' + process.env.JIRA_API_TOKEN).toString('base64');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 
 function parseArgs(argv) {
-  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null };
+  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null };
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--data') {
@@ -34,6 +36,17 @@ function parseArgs(argv) {
     } else if (argv[i] === '--comment') {
       args.commentText = argv[i + 1];
       i++;
+    } else if (argv[i] === '--verify') {
+      args.verify = true;
+    } else if (argv[i] === '--verify-testcase') {
+      args.verifyTestcase = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--verify-cycle') {
+      args.verifyCycle = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--verify-status') {
+      args.verifyStatus = argv[i + 1];
+      i++;
     } else if (!args.issueKey) {
       args.issueKey = argv[i];
     }
@@ -42,11 +55,14 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
-if (!dataPath && !transitionName && !commentText) {
+if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus) {
   console.error('Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]');
+  console.error('     node scripts/create-jira-task.js <issueKey> --verify');
+  console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
+  console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
   process.exit(1);
 }
 
@@ -184,6 +200,27 @@ function buildTareaDescription(tarea) {
 }
 
 /**
+ * Resuelve el Test Cycle a usar: reutiliza testCycle.key si ya viene informado
+ * (invocaciones posteriores del mismo ciclo), o crea uno nuevo la primera vez.
+ */
+async function resolveTestCycle(testCycle, projectKey) {
+  if (testCycle.key) {
+    console.log(`Reutilizando Test Cycle existente: ${testCycle.key}`);
+    return testCycle.key;
+  }
+
+  const cycle = await zephyr.createTestCycle({
+    projectKey,
+    name: testCycle.name,
+    description: testCycle.description,
+    statusName: testCycle.statusName
+  });
+
+  console.log(`Test Cycle creado: ${cycle.key}`);
+  return cycle.key;
+}
+
+/**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
  * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud).
  */
@@ -289,6 +326,9 @@ async function main() {
     const issuetype = ISSUE.issuetype || 'Historia';
     const summary = ISSUE.summary;
 
+    const testcaseModel = ISSUE.testcaseModel || null;
+    const testCycle = ISSUE.testCycle || null;
+
     let description;
     if (issuetype === 'Bug') {
       description = buildBugDescription(ISSUE.bug);
@@ -314,6 +354,44 @@ async function main() {
         console.error('Error al actualizar:', JSON.stringify(res.body, null, 2));
         process.exit(1);
       }
+
+      if (testcaseModel) {
+        console.log('Se detectó un Modelo Canónico de Test Case.');
+
+        try {
+          const testCase = await zephyr.createTestCase(testcaseModel);
+
+          console.log(`Test Case creado: ${testCase.key}`);
+
+          if (testcaseModel.steps?.length) {
+            await zephyr.createTestSteps(testCase.key, testcaseModel.steps);
+
+            console.log('Steps creados correctamente.');
+          }
+
+          const issueRes = await jiraRequest('GET', `/rest/api/3/issue/${ISSUE_KEY}`);
+          await zephyr.linkTestCaseToIssue(testCase.key, issueRes.body.id);
+
+          console.log(`Vinculado con ${ISSUE_KEY} en Zephyr.`);
+
+          if (testCycle) {
+            const testCycleKey = await resolveTestCycle(testCycle, testcaseModel.projectKey);
+
+            await zephyr.createTestExecution({
+              projectKey: testcaseModel.projectKey,
+              testCaseKey: testCase.key,
+              testCycleKey
+            });
+
+            console.log(`Ejecución creada en ${testCycleKey} con estado "Not Executed".`);
+          }
+        } catch (err) {
+          console.error('Error creando Test Case en Zephyr');
+          console.error(err.message);
+
+          process.exit(1);
+        }
+      }
     } else {
       console.log(`Creando nuevo issue (${issuetype})...`);
       const res = await jiraRequest('POST', '/rest/api/3/issue', {
@@ -329,6 +407,50 @@ async function main() {
         console.log(`Creado: ${key}`);
         console.log(`URL: https://${HOSTNAME}/browse/${key}`);
         targetKey = key;
+        // ------------------------------------------------------------
+        // Creación automática del Test Case en Zephyr
+        // ------------------------------------------------------------
+
+        if (testcaseModel) {
+          console.log('Se detectó un Modelo Canónico de Test Case.');
+
+          try {
+            const testCase = await zephyr.createTestCase(testcaseModel);
+
+            console.log(`Test Case creado: ${testCase.key}`);
+
+            if (testcaseModel.steps?.length) {
+              await zephyr.createTestSteps(
+                testCase.key,
+                ISSUE.testcaseModel.steps
+              );
+
+              console.log('Steps creados correctamente.');
+            }
+
+            await zephyr.linkTestCaseToIssue(testCase.key, res.body.id);
+
+            console.log(`Vinculado con ${key} en Zephyr.`);
+
+            if (testCycle) {
+              const testCycleKey = await resolveTestCycle(testCycle, testcaseModel.projectKey);
+
+              await zephyr.createTestExecution({
+                projectKey: testcaseModel.projectKey,
+                testCaseKey: testCase.key,
+                testCycleKey
+              });
+
+              console.log(`Ejecución creada en ${testCycleKey} con estado "Not Executed".`);
+            }
+
+          } catch (err) {
+            console.error('Error creando Test Case en Zephyr');
+            console.error(err.message);
+
+            process.exit(1);
+          }
+        }
 
         if (ISSUE && ISSUE.linkTo && ISSUE.linkTo.key) {
           console.log(`Vinculando ${key} con ${ISSUE.linkTo.key} (${ISSUE.linkTo.type || 'Relates'})...`);
@@ -354,6 +476,49 @@ async function main() {
   if (commentText) {
     console.log(`Agregando comentario en ${targetKey}...`);
     await addComment(targetKey, commentText);
+  }
+
+  // ------------------------------------------------------------
+  // Verificación por lectura directa (read-only, no muta nada).
+  // Reutiliza jiraRequest/zephyr ya existentes en esta implementación.
+  // ------------------------------------------------------------
+  if (verify) {
+    if (!targetKey) {
+      console.error('Se requiere un issueKey para --verify.');
+      process.exit(1);
+    }
+    const res = await jiraRequest('GET', `/rest/api/3/issue/${targetKey}`);
+    if (res.status !== 200) {
+      console.error('Error al leer el issue:', JSON.stringify(res.body, null, 2));
+      process.exit(1);
+    }
+    console.log(JSON.stringify({
+      id: res.body.id,
+      key: res.body.key,
+      status: res.body.fields.status && res.body.fields.status.name,
+      summary: res.body.fields.summary,
+      description: res.body.fields.description
+    }, null, 2));
+  }
+
+  if (verifyTestcase) {
+    const [testCase, links, steps] = await Promise.all([
+      zephyr.getTestCase(verifyTestcase),
+      zephyr.getTestCaseLinks(verifyTestcase),
+      zephyr.getTestCaseSteps(verifyTestcase)
+    ]);
+    console.log(JSON.stringify({ testCase: { key: testCase.key, name: testCase.name, objective: testCase.objective, precondition: testCase.precondition }, links, steps }, null, 2));
+  }
+
+  if (verifyCycle) {
+    const cycle = await zephyr.getTestCycle(verifyCycle);
+    const executions = await zephyr.getTestExecutions(PROJECT, verifyCycle);
+    console.log(JSON.stringify({ cycle: { key: cycle.key, name: cycle.name }, executions }, null, 2));
+  }
+
+  if (verifyStatus) {
+    const status = await zephyr.getStatus(verifyStatus);
+    console.log(JSON.stringify({ id: status.id, name: status.name, type: status.type }, null, 2));
   }
 }
 
