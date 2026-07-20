@@ -24,7 +24,7 @@ const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 
 function parseArgs(argv) {
-  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null };
+  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null };
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--data') {
@@ -47,6 +47,12 @@ function parseArgs(argv) {
     } else if (argv[i] === '--verify-status') {
       args.verifyStatus = argv[i + 1];
       i++;
+    } else if (argv[i] === '--report-results') {
+      args.reportResultsPath = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--test-cycle') {
+      args.testCycleKeyArg = argv[i + 1];
+      i++;
     } else if (!args.issueKey) {
       args.issueKey = argv[i];
     }
@@ -55,14 +61,20 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
-if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus) {
+if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath) {
   console.error('Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]');
   console.error('     node scripts/create-jira-task.js <issueKey> --verify');
   console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
   console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
+  console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>');
+  process.exit(1);
+}
+
+if (reportResultsPath && !testCycleKeyArg) {
+  console.error('Se requiere --test-cycle <key> junto con --report-results.');
   process.exit(1);
 }
 
@@ -288,6 +300,84 @@ async function addComment(key, text) {
   } else {
     console.error('Error al agregar el comentario:', JSON.stringify(res.body, null, 2));
     process.exit(1);
+  }
+}
+
+/**
+ * Extrae el Test Case key de Zephyr (ej. SCRUM-T5) de un titulo de test
+ * de Cypress. Convencion: el tag va entre corchetes en el titulo del
+ * it(), ej: it('[SCRUM-T5] Buscar solicitudes...', ...).
+ */
+function extractTestCaseKey(title) {
+  const match = title && title.match(/\[(SCRUM-T\d+)\]/);
+  return match ? match[1] : null;
+}
+
+function mapMochaStateToZephyr(state) {
+  if (state === 'passed') return 'Pass';
+  if (state === 'failed') return 'Fail';
+  if (state === 'pending') return 'Blocked';
+  return null;
+}
+
+/**
+ * El reporter "json" nativo de Mocha, tal como lo integra Cypress, no
+ * incluye un campo "state" en tests[]; el estado real hay que derivarlo
+ * de en cual de los arrays passes/failures/pending aparece cada test
+ * (verificado corriendo un spec real, no asumido).
+ */
+function collectTestsWithState(results) {
+  const withState = [];
+  (results.passes || []).forEach(t => withState.push({ ...t, state: 'passed' }));
+  (results.failures || []).forEach(t => withState.push({ ...t, state: 'failed' }));
+  (results.pending || []).forEach(t => withState.push({ ...t, state: 'pending' }));
+  return withState;
+}
+
+/**
+ * Reporta a Zephyr los resultados reales de una corrida de Cypress
+ * (JSON del reporter nativo de Mocha, generado con
+ * `cypress run --reporter json > archivo.json`) contra un Test Cycle ya
+ * existente. Por cada test taggeado con [SCRUM-TXX] en el titulo,
+ * resuelve la Test Execution vigente en ese ciclo y actualiza su estado.
+ * Si no encuentra una ejecucion para ese Test Case en ese ciclo, informa
+ * y frena sin inventar nada (mismo criterio ya usado en el resto de la
+ * integracion Zephyr).
+ */
+async function reportResults(resultsPath, testCycleKey, projectKey) {
+  let results;
+  try {
+    results = JSON.parse(fs.readFileSync(path.resolve(resultsPath), 'utf8'));
+  } catch (e) {
+    console.error(`No se pudo leer o parsear "${resultsPath}": ${e.message}`);
+    process.exit(1);
+  }
+
+  const taggedTests = collectTestsWithState(results)
+    .map(t => ({ fullTitle: t.fullTitle, state: t.state, testCaseKey: extractTestCaseKey(t.fullTitle) }))
+    .filter(t => t.testCaseKey);
+
+  if (!taggedTests.length) {
+    console.log('No se encontraron tests taggeados con [SCRUM-TXX] en el titulo.');
+    return;
+  }
+
+  for (const test of taggedTests) {
+    const statusName = mapMochaStateToZephyr(test.state);
+    if (!statusName) {
+      console.error(`Estado no reconocido ("${test.state}") para ${test.testCaseKey} ("${test.fullTitle}"). Se frena sin reportar.`);
+      process.exit(1);
+    }
+
+    const execution = await zephyr.findTestExecution(projectKey, testCycleKey, test.testCaseKey);
+
+    if (!execution) {
+      console.error(`No existe una Test Execution para ${test.testCaseKey} en el ciclo ${testCycleKey}. Se frena sin inventar nada.`);
+      process.exit(1);
+    }
+
+    await zephyr.updateTestExecutionStatus(execution.id, statusName);
+    console.log(`${test.testCaseKey} -> ${statusName} (ejecucion ${execution.key || execution.id} en ${testCycleKey}).`);
   }
 }
 
@@ -519,6 +609,10 @@ async function main() {
   if (verifyStatus) {
     const status = await zephyr.getStatus(verifyStatus);
     console.log(JSON.stringify({ id: status.id, name: status.name, type: status.type }, null, 2));
+  }
+
+  if (reportResultsPath) {
+    await reportResults(reportResultsPath, testCycleKeyArg, PROJECT);
   }
 }
 

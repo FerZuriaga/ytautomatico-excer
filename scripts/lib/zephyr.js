@@ -321,6 +321,37 @@ async function getTestExecutions(projectKey, testCycleKey) {
     return res.body;
 }
 
+/**
+ * Busca la Test Execution vigente de un Test Case dentro de un Test Cycle
+ * puntual. Se usa para resolver dinamicamente, en tiempo de reporte, la
+ * ejecucion real sobre la que hay que escribir el resultado (nunca se
+ * hardcodea un ID de ejecucion en el codigo, porque es efimero por ciclo).
+ * Devuelve la primera ejecucion encontrada, o null si no existe ninguna
+ * para ese Test Case en ese ciclo (no inventa nada).
+ */
+async function findTestExecution(projectKey, testCycleKey, testCaseKey) {
+    const qs = `projectKey=${encodeURIComponent(projectKey)}&testCycle=${encodeURIComponent(testCycleKey)}&testCase=${encodeURIComponent(testCaseKey)}`;
+    const res = await zephyrRequest('GET', `/v2/testexecutions?${qs}`);
+    if (res.status !== 200) {
+        throw new Error(JSON.stringify(res.body, null, 2));
+    }
+    const values = Array.isArray(res.body) ? res.body : (res.body && res.body.values) || [];
+    return values[0] || null;
+}
+
+/**
+ * Actualiza el estado de una Test Execution existente (update parcial,
+ * PUT /testexecutions solo pisa los campos enviados). No crea ejecuciones
+ * nuevas.
+ */
+async function updateTestExecutionStatus(executionIdOrKey, statusName) {
+    const res = await zephyrRequest('PUT', `/v2/testexecutions/${executionIdOrKey}`, { statusName });
+    if (res.status !== 200 && res.status !== 204) {
+        throw new Error(JSON.stringify(res.body, null, 2));
+    }
+    return res.body;
+}
+
 module.exports = {
 
     createTestCase,
@@ -333,7 +364,9 @@ module.exports = {
     getTestCaseSteps,
     getTestCycle,
     getTestExecutions,
-    getStatus
+    getStatus,
+    findTestExecution,
+    updateTestExecutionStatus
 
 
 };
