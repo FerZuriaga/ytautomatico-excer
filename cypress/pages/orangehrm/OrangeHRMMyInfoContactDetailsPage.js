@@ -223,14 +223,6 @@ class OrangeHRMMyInfoContactDetailsPage {
     verifyEmailErrorVisible() {
         this.emailErrorMessage.should('be.visible').and('not.be.empty')
     }
-
-    verifyEmailErrorNotVisible() {
-        cy.get('body').then(($body) => {
-            if ($body.find('.oxd-input-field-error-message').length > 0) {
-                this.emailErrorMessage.should('not.exist')
-            }
-        })
-    }
 }
 
 export default OrangeHRMMyInfoContactDetailsPage
