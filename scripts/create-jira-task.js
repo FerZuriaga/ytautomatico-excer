@@ -10,6 +10,10 @@
  *   node scripts/create-jira-task.js SCRUM-2 --transition "En progreso"
  *   node scripts/create-jira-task.js SCRUM-2 --comment "Listo para QA"
  *   node scripts/create-jira-task.js SCRUM-2 --transition "Done" --comment "Cerrado"
+ *
+ * El JSON de --data acepta "testcaseModel" (un único Test Case) o
+ * "testcaseModels" (array, para crear varios Test Cases del mismo issue en
+ * un lote paralelo — ver createTestCasesBatch). Usar uno u otro, no ambos.
  */
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const https = require('https');
@@ -248,6 +252,61 @@ async function resolveTestCaseFolder(testcaseModel) {
 }
 
 /**
+ * Crea múltiples Test Cases en Zephyr en paralelo (Promise.all), todos
+ * vinculados al mismo issue de Jira. Los recursos compartidos que no son
+ * seguros de resolver en paralelo (folderId por ruta de carpeta, y el Test
+ * Cycle si corresponde) se resuelven antes, de forma secuencial: crear una
+ * carpeta o un Test Cycle es un patrón "buscar o crear", y dos llamadas
+ * concurrentes que todavía no ven el recurso creado terminarían creando
+ * cada una el suyo (carpeta/ciclo duplicado). Recién con esos ids ya
+ * resueltos se dispara en paralelo la parte que sí es independiente por
+ * Test Case: creación + steps + link + ejecución en el ciclo.
+ */
+async function createTestCasesBatch(models, testCycle, issueKey, issueId) {
+  const folderCache = new Map();
+  for (const model of models) {
+    if (model.folder && !folderCache.has(model.folder)) {
+      folderCache.set(model.folder, await resolveTestCaseFolder(model));
+    }
+  }
+
+  let testCycleKey = null;
+  if (testCycle) {
+    testCycleKey = await resolveTestCycle(testCycle, models[0].projectKey);
+  }
+
+  const keys = await Promise.all(models.map(async (model) => {
+    model.folderId = model.folder ? folderCache.get(model.folder) : null;
+
+    const testCase = await zephyr.createTestCase(model);
+
+    if (model.steps?.length) {
+      await zephyr.createTestSteps(testCase.key, model.steps);
+    }
+
+    await zephyr.linkTestCaseToIssue(testCase.key, issueId);
+
+    if (testCycleKey) {
+      await zephyr.createTestExecution({
+        projectKey: model.projectKey,
+        testCaseKey: testCase.key,
+        testCycleKey
+      });
+    }
+
+    return testCase.key;
+  }));
+
+  console.log(`Test Cases creados en paralelo: ${keys.join(', ')}`);
+  console.log(`Vinculados con ${issueKey} en Zephyr.`);
+  if (testCycleKey) {
+    console.log(`Ejecuciones creadas en ${testCycleKey} con estado "Not Executed".`);
+  }
+
+  return { keys, testCycleKey };
+}
+
+/**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
  * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud).
  */
@@ -432,6 +491,10 @@ async function main() {
     const summary = ISSUE.summary;
 
     const testcaseModel = ISSUE.testcaseModel || null;
+    // testcaseModels (plural) permite crear varios Test Cases de un mismo
+    // issue en un lote paralelo (ver createTestCasesBatch), en vez de
+    // invocar este script una vez por Test Case.
+    const testcaseModels = Array.isArray(ISSUE.testcaseModels) ? ISSUE.testcaseModels : null;
     const testCycle = ISSUE.testCycle || null;
 
     let description;
@@ -498,6 +561,18 @@ async function main() {
 
           process.exit(1);
         }
+      } else if (testcaseModels) {
+        console.log(`Se detectaron ${testcaseModels.length} Modelos Canónicos de Test Case (lote paralelo).`);
+
+        try {
+          const issueRes = await jiraRequest('GET', `/rest/api/3/issue/${ISSUE_KEY}`);
+          await createTestCasesBatch(testcaseModels, testCycle, ISSUE_KEY, issueRes.body.id);
+        } catch (err) {
+          console.error('Error creando Test Cases en Zephyr (lote paralelo)');
+          console.error(err.message);
+
+          process.exit(1);
+        }
       }
     } else {
       console.log(`Creando nuevo issue (${issuetype})...`);
@@ -555,6 +630,17 @@ async function main() {
 
           } catch (err) {
             console.error('Error creando Test Case en Zephyr');
+            console.error(err.message);
+
+            process.exit(1);
+          }
+        } else if (testcaseModels) {
+          console.log(`Se detectaron ${testcaseModels.length} Modelos Canónicos de Test Case (lote paralelo).`);
+
+          try {
+            await createTestCasesBatch(testcaseModels, testCycle, key, res.body.id);
+          } catch (err) {
+            console.error('Error creando Test Cases en Zephyr (lote paralelo)');
             console.error(err.message);
 
             process.exit(1);
