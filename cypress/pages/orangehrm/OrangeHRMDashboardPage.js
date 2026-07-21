@@ -16,6 +16,12 @@ class OrangeHRMDashboardPage {
             .contains('a', 'Logout')
     }
 
+    // Item de menu principal "My Info", mismo patron que pimMenuLink en
+    // OrangeHRMEmployeeListPage (.oxd-main-menu-item--name).
+    get myInfoMenuLink() {
+        return cy.get('.oxd-main-menu-item--name').contains('My Info')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     // Abre el menu de usuario ubicado en la esquina superior derecha
@@ -32,6 +38,11 @@ class OrangeHRMDashboardPage {
     logout() {
         this.openUserMenu()
         this.clickLogout()
+    }
+
+    // Navega al modulo "My Info" desde el menu principal
+    navigateToMyInfo() {
+        this.myInfoMenuLink.should('be.visible').click()
     }
 }
 
