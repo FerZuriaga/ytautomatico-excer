@@ -233,6 +233,21 @@ async function resolveTestCycle(testCycle, projectKey) {
 }
 
 /**
+ * Resuelve la propiedad "folder" del Modelo Canónico (ruta funcional tipo
+ * "/03 - Leave Management/Leave List") a un folderId real de Zephyr,
+ * buscando o creando cada segmento de la ruta (ver
+ * zephyr.resolveFolderPath). Si el Modelo Canónico no trae "folder", el
+ * Test Case se crea sin carpeta (comportamiento previo, sin cambios).
+ */
+async function resolveTestCaseFolder(testcaseModel) {
+  if (!testcaseModel.folder) return null;
+
+  const folderId = await zephyr.resolveFolderPath(testcaseModel.projectKey, testcaseModel.folder);
+  console.log(`Carpeta resuelta: "${testcaseModel.folder}" -> folderId ${folderId}.`);
+  return folderId;
+}
+
+/**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
  * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud).
  */
@@ -449,6 +464,8 @@ async function main() {
         console.log('Se detectó un Modelo Canónico de Test Case.');
 
         try {
+          testcaseModel.folderId = await resolveTestCaseFolder(testcaseModel);
+
           const testCase = await zephyr.createTestCase(testcaseModel);
 
           console.log(`Test Case creado: ${testCase.key}`);
@@ -505,6 +522,8 @@ async function main() {
           console.log('Se detectó un Modelo Canónico de Test Case.');
 
           try {
+            testcaseModel.folderId = await resolveTestCaseFolder(testcaseModel);
+
             const testCase = await zephyr.createTestCase(testcaseModel);
 
             console.log(`Test Case creado: ${testCase.key}`);
