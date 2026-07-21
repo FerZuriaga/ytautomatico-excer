@@ -110,6 +110,10 @@ async function createTestCase(testcase) {
 
     };
 
+    if (testcase.folderId) {
+        body.folderId = testcase.folderId;
+    }
+
     const res = await zephyrRequest(
         'POST',
         '/v2/testcases',
@@ -352,6 +356,73 @@ async function updateTestExecutionStatus(executionIdOrKey, statusName) {
     return res.body;
 }
 
+/**
+ * Busca un folder existente por nombre y folderType dentro de un proyecto,
+ * bajo un parentId puntual (null para carpetas raíz). GET /folders no
+ * filtra por nombre ni por parentId (solo por projectKey/folderType), así
+ * que se recorren todas las páginas del proyecto y se filtra del lado del
+ * cliente. Devuelve el folder encontrado o null (nunca inventa).
+ */
+async function findFolder(projectKey, folderType, name, parentId) {
+    let startAt = 0;
+    const maxResults = 100;
+
+    while (true) {
+        const qs = `projectKey=${encodeURIComponent(projectKey)}&folderType=${encodeURIComponent(folderType)}&maxResults=${maxResults}&startAt=${startAt}`;
+        const res = await zephyrRequest('GET', `/v2/folders?${qs}`);
+        if (res.status !== 200) {
+            throw new Error(JSON.stringify(res.body, null, 2));
+        }
+
+        const values = (res.body && res.body.values) || [];
+        const match = values.find(f => f.name === name && (f.parentId || null) === (parentId || null));
+        if (match) return match;
+
+        if (res.body.isLast || values.length === 0) return null;
+        startAt += values.length;
+    }
+}
+
+/**
+ * Crea un folder nuevo. parentId null (u omitido) crea un folder raíz.
+ * Devuelve { id, self } (Zephyr no devuelve "key" para folders, solo el
+ * id numérico).
+ */
+async function createFolder(projectKey, folderType, name, parentId) {
+    const body = { projectKey, folderType, name };
+    if (parentId) body.parentId = parentId;
+
+    const res = await zephyrRequest('POST', '/v2/folders', body);
+    if (res.status !== 201) {
+        throw new Error(JSON.stringify(res.body, null, 2));
+    }
+    return res.body;
+}
+
+/**
+ * Resuelve una ruta de carpetas tipo "/03 - Leave Management/Leave List"
+ * al folderId real del último nivel: busca (o crea, si no existe) cada
+ * segmento de la ruta como su propio folder, encadenado por parentId.
+ * Los nombres de folder de Zephyr no admiten "/" ni "\", por eso la ruta
+ * se parte en segmentos individuales en vez de usarse como un único
+ * nombre con barras.
+ */
+async function resolveFolderPath(projectKey, folderPath, folderType = 'TEST_CASE') {
+    const segments = folderPath.split('/').map(s => s.trim()).filter(Boolean);
+
+    let parentId = null;
+
+    for (const segment of segments) {
+        let folder = await findFolder(projectKey, folderType, segment, parentId);
+        if (!folder) {
+            folder = await createFolder(projectKey, folderType, segment, parentId);
+        }
+        parentId = folder.id;
+    }
+
+    return parentId;
+}
+
 module.exports = {
 
     createTestCase,
@@ -366,7 +437,10 @@ module.exports = {
     getTestExecutions,
     getStatus,
     findTestExecution,
-    updateTestExecutionStatus
+    updateTestExecutionStatus,
+    findFolder,
+    createFolder,
+    resolveFolderPath
 
 
 };
