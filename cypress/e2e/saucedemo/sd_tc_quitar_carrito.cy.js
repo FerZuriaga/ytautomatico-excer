@@ -2,10 +2,12 @@
 // Sitio bajo prueba: https://www.saucedemo.com
 // Ticket Jira: SCRUM-56
 //
-// Cubre los 2 Test Cases del Modelo Canonico publicados en Zephyr
-// (SCRUM-T31, SCRUM-T32, Test Cycle SCRUM-R5), bajo el criterio CA-01
-// (Quitar producto del carrito): quitar desde el listado de productos y
-// quitar desde la pagina del carrito.
+// Cubre los 3 Test Cases del Modelo Canonico publicados en Zephyr
+// (SCRUM-T31, SCRUM-T32, SCRUM-T33, Test Cycle SCRUM-R5), reorganizados en
+// 3 criterios de aceptacion atomicos por punto de entrada/UI:
+// - CA-01 (Quitar desde Inventario): TC-01.1
+// - CA-02 (Quitar desde vista del Carrito): TC-02.1
+// - CA-03 (Estado Vacio tras remover): TC-03.1
 
 import SauceDemoProductsPage from '../../pages/saucedemo/SauceDemoProductsPage'
 import SauceDemoCartPage from '../../pages/saucedemo/SauceDemoCartPage'
@@ -28,12 +30,24 @@ describe('SD-TC-QUITAR-CARRITO - Quitar producto del carrito en SauceDemo [SCRUM
         productsPage.verifyCartBadgeNotVisible()
     })
 
-    it('[CA-01][TC-01.2][SCRUM-T31] Debe quitar un producto desde la pagina del carrito', () => {
+    it('[CA-02][TC-02.1][SCRUM-T31] Debe quitar un producto desde la pagina del carrito', () => {
         productsPage.addProductToCart('Sauce Labs Backpack')
         productsPage.goToCart()
         cartPage.verifyProductInCart('Sauce Labs Backpack', '$29.99')
 
         cartPage.removeProductFromCart('Sauce Labs Backpack')
+
+        cartPage.verifyCartEmpty()
+    })
+
+    it('[CA-03][TC-03.1][SCRUM-T33] Debe dejar el carrito vacio al remover todos los productos agregados', () => {
+        productsPage.addProductToCart('Sauce Labs Backpack')
+        productsPage.addProductToCart('Sauce Labs Bike Light')
+        productsPage.verifyCartBadgeCount(2)
+
+        productsPage.goToCart()
+        cartPage.removeProductFromCart('Sauce Labs Backpack')
+        cartPage.removeProductFromCart('Sauce Labs Bike Light')
 
         cartPage.verifyCartEmpty()
     })
