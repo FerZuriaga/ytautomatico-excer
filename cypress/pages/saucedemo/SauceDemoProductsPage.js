@@ -20,8 +20,16 @@ class SauceDemoProductsPage {
         this.getInventoryItem(productName).find('button').click()
     }
 
+    removeProductFromCart(productName) {
+        this.getInventoryItem(productName).find('button').click()
+    }
+
     verifyCartBadgeCount(count) {
         this.cartBadge.should('be.visible').and('have.text', String(count))
+    }
+
+    verifyCartBadgeNotVisible() {
+        this.cartBadge.should('not.exist')
     }
 
     goToCart() {

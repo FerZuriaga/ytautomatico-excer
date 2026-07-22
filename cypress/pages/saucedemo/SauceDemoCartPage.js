@@ -24,6 +24,10 @@ class SauceDemoCartPage {
             cy.get('.inventory_item_price').should('have.text', price)
         })
     }
+
+    removeProductFromCart(productName) {
+        cy.contains('.cart_item', productName).find('button').click()
+    }
 }
 
 export default SauceDemoCartPage
