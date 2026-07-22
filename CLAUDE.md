@@ -18,21 +18,25 @@ Objetivo: el flujo completo de una User Story (Jira/Zephyr -> spec Cypress -> ej
 
 Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tarea en curso. No requieren re-confirmarse en cada tarea.
 
-1. **Granularidad y alcance de Historias de Usuario (HU).** Cada HU debe representar una única Capacidad de Negocio Principal. No combinar múltiples capacidades independientes en una misma HU. La verificación o visualización del estado resultante de una acción se considera parte de la validación de esa misma HU, no una HU independiente (ej: "ver el carrito tras agregar un producto" es parte de la HU de agregar, no una HU aparte). Si una funcionalidad requiere acciones adicionales o destructivas (eliminar, editar, aplicar cupones, etc.), proponer explícitamente dividirlas en HUs independientes antes de automatizar.
+1. **Granularidad y alcance de Historias de Usuario (HU).** Las HU deben representar capacidades de negocio, no pantallas ni escenarios. Se pueden agrupar funcionalidades cuando forman parte de una misma capacidad y entregan valor conjuntamente (ej: "ver el carrito tras agregar un producto" es parte de la HU de agregar). Deben considerarse HU independientes cuando una funcionalidad:
+   - representa un objetivo diferente;
+   - puede evolucionar de forma autónoma;
+   - puede implementarse de forma independiente;
+   - incrementa significativamente la complejidad de la HU (ej: acciones destructivas como eliminar, editar, aplicar cupones, etc.).
 
-2. **Estructura y atomicidad de Criterios de Aceptación (CA).** Cada CA debe representar una única regla de negocio, aislada de las demás, con un identificador unívoco CA-01, CA-02, CA-03... La numeración es global dentro de la HU y nunca se reinicia entre criterios.
+   No existe una regla rígida — cada decisión de agrupar o separar debe justificarse explícitamente (ver regla 6, Justificación obligatoria).
 
-3. **Atomicidad de CAs por puntos de entrada / UI.** Un Criterio de Aceptación representa una regla de negocio aislada. NUNCA combines en un mismo CA acciones que se ejecutan desde pantallas, componentes o vistas distintas (ej. catálogo vs. vista de carrito). Si una capacidad tiene múltiples puntos de entrada o interfaces, DEBES crear un CA independiente para cada uno (CA-01, CA-02, etc.).
+2. **Estructura y atomicidad de Criterios de Aceptación (CA).** Cada CA representa una única regla de negocio — no un escenario ni un caso de prueba aislado — con un identificador unívoco CA-01, CA-02, CA-03... (numeración global dentro de la HU, nunca se reinicia entre criterios). Crear un CA independiente únicamente cuando cambie la regla de negocio, el estado final o el comportamiento esperado. Distintos puntos de acceso de la interfaz (ej. listado vs. detalle, catálogo vs. carrito) PUEDEN compartir un mismo CA si validan exactamente la misma regla; se separan en CA distintos solo cuando el punto de entrada conlleva una regla, un estado o un comportamiento diferente — no por el solo hecho de estar en una pantalla distinta.
 
-4. **Método de análisis para generar CAs.** Al analizar cualquier Historia de Usuario, NUNCA te limites a 1 solo Criterio de Aceptación. Debes evaluar obligatoriamente:
+3. **Método de análisis para generar CAs.** Al analizar cualquier Historia de Usuario, NUNCA te limites a 1 solo Criterio de Aceptación. Debes evaluar obligatoriamente:
 
-   1. Puntos de entrada de UI (¿se ejecuta desde más de una pantalla o componente?).
+   1. Puntos de entrada de UI (¿se ejecuta desde más de una pantalla o componente, y eso cambia la regla de negocio?).
    2. Estados resultantes (¿cómo afecta a contadores, listas vacías o elementos visibles?).
    3. Variaciones de flujo/límites (¿qué ocurre con 1 elemento vs. múltiples elementos?).
 
    **Regla de cantidad:** toda HU debe contar con un mínimo de 2 a 4 Criterios de Aceptación (CA) atómicos según esta matriz.
 
-5. **Nomenclatura y trazabilidad en pruebas (Cypress/Zephyr).** Todo Test Case creado en Zephyr y todo bloque `it(...)` de Cypress debe incluir en su título el identificador del CA y del TC que valida, con la convención:
+4. **Nomenclatura y trazabilidad en pruebas (Cypress/Zephyr).** Todo Test Case creado en Zephyr y todo bloque `it(...)` de Cypress debe incluir en su título el identificador del CA y del TC que valida, con la convención:
 
    ```js
    it('[CA-XX][TC-XX.X][SCRUM-Txx] Descripción clara de lo que prueba', () => { ... })
@@ -40,7 +44,7 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
    El tag `[SCRUM-Txx]` (key real del Test Case en Zephyr) se mantiene junto a `[CA-XX][TC-XX.X]` porque el mecanismo de reporte automático (`--report-results`) depende de él para resolver la Test Execution a actualizar — sin ese tag el reporte a Zephyr deja de funcionar.
 
-6. **Integración de reportes con Zephyr (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
+5. **Integración de reportes con Zephyr (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
 
    ```
    npx cypress run --quiet --reporter json > archivo.json
@@ -48,4 +52,9 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
    El flag `--quiet` es imprescindible: sin él, Cypress mezcla sus propias cajas decorativas de la CLI con el JSON del reporter Mocha en el mismo `stdout`, y el archivo resultante no es JSON válido. Luego reportar con `node scripts/create-jira-task.js --report-results archivo.json --test-cycle <TestCycleKey>` para que las Test Executions queden en "Pass"/"Fail" reales, nunca en "Not Executed" por defecto. El archivo de resultados es un artefacto temporal: generarlo en el directorio de scratchpad, nunca commitearlo al repo.
 
-7. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-4, implementar el Page Object y el spec de Cypress correspondiente (regla 5), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 6), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
+6. **Justificación obligatoria.** Al finalizar la propuesta de una HU (o de su reestructuración), incluir siempre un apartado de explicación que detalle:
+   - por qué se agruparon determinadas funcionalidades;
+   - por qué otras se separaron;
+   - qué criterio arquitectónico se utilizó (regla 1 para HU, regla 2-3 para CA).
+
+7. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-3, justificar explícitamente el agrupamiento/separación (regla 6), implementar el Page Object y el spec de Cypress correspondiente (regla 4), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 5), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
