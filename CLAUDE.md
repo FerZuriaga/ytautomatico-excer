@@ -22,7 +22,17 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
 2. **Estructura y atomicidad de Criterios de Aceptación (CA).** Cada CA debe representar una única regla de negocio, aislada de las demás, con un identificador unívoco CA-01, CA-02, CA-03... La numeración es global dentro de la HU y nunca se reinicia entre criterios.
 
-3. **Nomenclatura y trazabilidad en pruebas (Cypress/Zephyr).** Todo Test Case creado en Zephyr y todo bloque `it(...)` de Cypress debe incluir en su título el identificador del CA y del TC que valida, con la convención:
+3. **Atomicidad de CAs por puntos de entrada / UI.** Un Criterio de Aceptación representa una regla de negocio aislada. NUNCA combines en un mismo CA acciones que se ejecutan desde pantallas, componentes o vistas distintas (ej. catálogo vs. vista de carrito). Si una capacidad tiene múltiples puntos de entrada o interfaces, DEBES crear un CA independiente para cada uno (CA-01, CA-02, etc.).
+
+4. **Método de análisis para generar CAs.** Al analizar cualquier Historia de Usuario, NUNCA te limites a 1 solo Criterio de Aceptación. Debes evaluar obligatoriamente:
+
+   1. Puntos de entrada de UI (¿se ejecuta desde más de una pantalla o componente?).
+   2. Estados resultantes (¿cómo afecta a contadores, listas vacías o elementos visibles?).
+   3. Variaciones de flujo/límites (¿qué ocurre con 1 elemento vs. múltiples elementos?).
+
+   **Regla de cantidad:** toda HU debe contar con un mínimo de 2 a 4 Criterios de Aceptación (CA) atómicos según esta matriz.
+
+5. **Nomenclatura y trazabilidad en pruebas (Cypress/Zephyr).** Todo Test Case creado en Zephyr y todo bloque `it(...)` de Cypress debe incluir en su título el identificador del CA y del TC que valida, con la convención:
 
    ```js
    it('[CA-XX][TC-XX.X][SCRUM-Txx] Descripción clara de lo que prueba', () => { ... })
@@ -30,7 +40,7 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
    El tag `[SCRUM-Txx]` (key real del Test Case en Zephyr) se mantiene junto a `[CA-XX][TC-XX.X]` porque el mecanismo de reporte automático (`--report-results`) depende de él para resolver la Test Execution a actualizar — sin ese tag el reporte a Zephyr deja de funcionar.
 
-4. **Integración de reportes con Zephyr (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
+6. **Integración de reportes con Zephyr (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
 
    ```
    npx cypress run --quiet --reporter json > archivo.json
@@ -38,4 +48,4 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
    El flag `--quiet` es imprescindible: sin él, Cypress mezcla sus propias cajas decorativas de la CLI con el JSON del reporter Mocha en el mismo `stdout`, y el archivo resultante no es JSON válido. Luego reportar con `node scripts/create-jira-task.js --report-results archivo.json --test-cycle <TestCycleKey>` para que las Test Executions queden en "Pass"/"Fail" reales, nunca en "Not Executed" por defecto. El archivo de resultados es un artefacto temporal: generarlo en el directorio de scratchpad, nunca commitearlo al repo.
 
-5. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-2, implementar el Page Object y el spec de Cypress correspondiente (regla 3), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 4), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
+7. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-4, implementar el Page Object y el spec de Cypress correspondiente (regla 5), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 6), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
