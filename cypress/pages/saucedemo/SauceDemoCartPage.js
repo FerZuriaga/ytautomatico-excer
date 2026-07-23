@@ -10,7 +10,15 @@ class SauceDemoCartPage {
         return cy.get('.shopping_cart_badge')
     }
 
+    get checkoutButton() {
+        return cy.get('#checkout')
+    }
+
     // ─── Acciones ─────────────────────────────────────────────────────────────
+
+    clickCheckout() {
+        this.checkoutButton.click()
+    }
 
     verifyCartEmpty() {
         this.cartItems.should('not.exist')
