@@ -58,3 +58,11 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
    - qué criterio arquitectónico se utilizó (regla 1 para HU, regla 2-3 para CA).
 
 7. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-3, justificar explícitamente el agrupamiento/separación (regla 6), implementar el Page Object y el spec de Cypress correspondiente (regla 4), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 5), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
+
+8. **Script npm por aplicación.** Al crear el primer spec de Cypress para una aplicación/página nueva (carpeta nueva bajo `cypress/e2e/<app>/`), agregar en `package.json` un script `test:<app>` siguiendo el patrón ya existente:
+
+   ```json
+   "test:<app>": "cypress run --spec \"cypress/e2e/<app>/**/*.cy.js\""
+   ```
+
+   Esto se hace una sola vez por aplicación (no por spec ni por HU); si el script `test:<app>` ya existe, no se toca.
