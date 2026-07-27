@@ -5,6 +5,12 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
-    pageLoadTimeout: 180000,
+    pageLoadTimeout: 20000,
+    retries: {
+      runMode: 1,
+      openMode: 0,
+    },
+    screenshotOnRunFailure: true,
+    trashAssetsBeforeRuns: true,
   },
 });

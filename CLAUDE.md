@@ -66,3 +66,11 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
    ```
 
    Esto se hace una sola vez por aplicación (no por spec ni por HU); si el script `test:<app>` ya existe, no se toca.
+
+# Estándares y Performance de Cypress
+
+- **Timeouts Realistas:** `pageLoadTimeout` debe estar configurado en máximo 15000-30000ms en `cypress.config.js`.
+- **Cero Retries Infinitos:** En ejecuciones locales/desarrollo usar `retries: 0` o `1` para detectar fallos al instante sin desperdiciar tiempo.
+- **Sin Esperas Estáticas:** Queda prohibido el uso de `cy.wait(ms)` fijos. Utilizar siempre esperas dinámicas basadas en la visibilidad de elementos (`.should('be.visible')`) o intercepción de red (`cy.intercept()`).
+- **Selectores Resilientes:** Priorizar atributos estáticos, roles o texto. Evitar clases CSS generadas dinámicamente por frameworks (hashes o sufijos tipo `-1-x-`).
+- **Proyectos y Entornos:** Los casos de prueba principales deben automatizarse prioritariamente sobre aplicaciones objetivo controladas (ej. SauceDemo / AutomationExercise).
