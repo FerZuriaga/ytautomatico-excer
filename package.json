@@ -9,7 +9,8 @@
     "test:automation-exercise": "cypress run --spec \"cypress/e2e/automation-exercise/**/*.cy.js\"",
     "test:orangehrm": "cypress run --spec \"cypress/e2e/orangehrm/**/*.cy.js\"",
     "test:blazedemo": "cypress run --spec \"cypress/e2e/blazedemo/**/*.cy.js\"",
-    "test:saucedemo": "cypress run --spec \"cypress/e2e/saucedemo/**/*.cy.js\""
+    "test:saucedemo": "cypress run --spec \"cypress/e2e/saucedemo/**/*.cy.js\"",
+    "test:disco": "cypress run --spec \"cypress/e2e/disco/**/*.cy.js\""
   },
   "keywords": [],
   "author": "",
