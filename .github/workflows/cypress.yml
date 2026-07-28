@@ -20,5 +20,13 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Disco Online queda afuera del CI: es un sitio real de terceros con
+      # latencia de carga variable (ya documentado en su propio spec) que en
+      # el runner de GitHub Actions genera falsos negativos. Sigue
+      # corriendo local con "npm run test:disco"; acá se prioriza CI estable
+      # sobre las apps controladas (regla de "Proyectos y Entornos" del
+      # CLAUDE.md).
       - name: Ejecutar tests de Cypress
         uses: cypress-io/github-action@v6
+        with:
+          spec: "cypress/e2e/automation-exercise/**/*.cy.js,cypress/e2e/blazedemo/**/*.cy.js,cypress/e2e/orangehrm/**/*.cy.js,cypress/e2e/rentascordoba/**/*.cy.js,cypress/e2e/saucedemo/**/*.cy.js"
