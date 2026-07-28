@@ -252,15 +252,23 @@ async function resolveTestCaseFolder(testcaseModel) {
 }
 
 /**
- * Crea múltiples Test Cases en Zephyr en paralelo (Promise.all), todos
- * vinculados al mismo issue de Jira. Los recursos compartidos que no son
- * seguros de resolver en paralelo (folderId por ruta de carpeta, y el Test
- * Cycle si corresponde) se resuelven antes, de forma secuencial: crear una
- * carpeta o un Test Cycle es un patrón "buscar o crear", y dos llamadas
+ * Crea múltiples Test Cases en Zephyr en paralelo (Promise.allSettled),
+ * todos vinculados al mismo issue de Jira. Los recursos compartidos que no
+ * son seguros de resolver en paralelo (folderId por ruta de carpeta, y el
+ * Test Cycle si corresponde) se resuelven antes, de forma secuencial: crear
+ * una carpeta o un Test Cycle es un patrón "buscar o crear", y dos llamadas
  * concurrentes que todavía no ven el recurso creado terminarían creando
  * cada una el suyo (carpeta/ciclo duplicado). Recién con esos ids ya
  * resueltos se dispara en paralelo la parte que sí es independiente por
  * Test Case: creación + steps + link + ejecución en el ciclo.
+ *
+ * Se usa Promise.allSettled (no Promise.all) a propósito: si un Test Case
+ * falla, no debe frenar a los demás que ya están en vuelo. Con Promise.all,
+ * el primer rechazo corta main() vía process.exit antes de que los que ya
+ * habían creado el testcase lleguen a steps/link/ejecución, y quedan
+ * huérfanos (ya pasó: SCRUM-62 necesitó reparación manual por esto). La
+ * carrera de labels nuevos en sí se resuelve con retry en
+ * zephyr.createTestCase; esto cubre cualquier otro fallo parcial del batch.
  */
 async function createTestCasesBatch(models, testCycle, issueKey, issueId) {
   const folderCache = new Map();
@@ -275,7 +283,7 @@ async function createTestCasesBatch(models, testCycle, issueKey, issueId) {
     testCycleKey = await resolveTestCycle(testCycle, models[0].projectKey);
   }
 
-  const keys = await Promise.all(models.map(async (model) => {
+  const results = await Promise.allSettled(models.map(async (model) => {
     model.folderId = model.folder ? folderCache.get(model.folder) : null;
 
     const testCase = await zephyr.createTestCase(model);
@@ -297,13 +305,28 @@ async function createTestCasesBatch(models, testCycle, issueKey, issueId) {
     return testCase.key;
   }));
 
-  console.log(`Test Cases creados en paralelo: ${keys.join(', ')}`);
-  console.log(`Vinculados con ${issueKey} en Zephyr.`);
-  if (testCycleKey) {
-    console.log(`Ejecuciones creadas en ${testCycleKey} con estado "Not Executed".`);
+  const succeeded = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value);
+  const failed = results
+    .map((r, i) => ({ r, model: models[i] }))
+    .filter(({ r }) => r.status === 'rejected');
+
+  if (succeeded.length) {
+    console.log(`Test Cases creados: ${succeeded.join(', ')}`);
+    console.log(`Vinculados con ${issueKey} en Zephyr.`);
+    if (testCycleKey) {
+      console.log(`Ejecuciones creadas en ${testCycleKey} con estado "Not Executed".`);
+    }
   }
 
-  return { keys, testCycleKey };
+  if (failed.length) {
+    console.error(`${failed.length} de ${models.length} Test Case(s) fallaron al crearse:`);
+    failed.forEach(({ r, model }) => console.error(`  - "${model.name}": ${r.reason.message}`));
+    throw new Error(`${failed.length} Test Case(s) fallaron. Los ${succeeded.length} que sí se crearon ya quedaron completos (steps + link + ejecución) — no hace falta re-crearlos, solo reintentar los fallidos.`);
+  }
+
+  return { keys: succeeded, testCycleKey };
 }
 
 /**
