@@ -81,6 +81,10 @@ function zephyrRequest(method, path, body = null) {
 
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Crea un Test Case vacío.
  * Devuelve:
@@ -89,8 +93,15 @@ function zephyrRequest(method, path, body = null) {
  *   key,
  *   self
  * }
+ *
+ * Cuando varios Test Cases del mismo batch paralelo (ver
+ * createTestCasesBatch en create-jira-task.js) introducen una etiqueta
+ * nueva al mismo tiempo, Zephyr devuelve 409 ("Option Value with the
+ * given name already exists") a todos menos al que gana la carrera. Para
+ * cuando llega ese 409 la etiqueta ya existe, asi que reintentar la misma
+ * request alcanza para que pase — no hace falta cambiar nada del payload.
  */
-async function createTestCase(testcase) {
+async function createTestCase(testcase, attempt = 0) {
 
     const body = {
 
@@ -121,6 +132,16 @@ async function createTestCase(testcase) {
     );
 
     if (res.status !== 201) {
+
+        const isLabelRace = res.status === 409
+            && typeof res.body?.message === 'string'
+            && res.body.message.includes('Option Value')
+            && res.body.message.includes('already exists');
+
+        if (isLabelRace && attempt < 3) {
+            await sleep(300 + Math.random() * 400);
+            return createTestCase(testcase, attempt + 1);
+        }
 
         throw new Error(
             JSON.stringify(res.body, null, 2)
