@@ -76,3 +76,20 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 - **Sin Esperas Estáticas:** Queda prohibido el uso de `cy.wait(ms)` fijos. Utilizar siempre esperas dinámicas basadas en la visibilidad de elementos (`.should('be.visible')`) o intercepción de red (`cy.intercept()`).
 - **Selectores Resilientes:** Priorizar atributos estáticos, roles o texto. Evitar clases CSS generadas dinámicamente por frameworks (hashes o sufijos tipo `-1-x-`).
 - **Proyectos y Entornos:** Los casos de prueba principales deben automatizarse prioritariamente sobre aplicaciones objetivo controladas (ej. SauceDemo / AutomationExercise).
+
+# Estándar de Redacción de Casos de Prueba (Zephyr)
+
+Al crear o editar casos de prueba en Zephyr / Jira, se deben seguir estrictamente estas reglas:
+
+1. **PROHIBICIONES EN PASOS:**
+   - NUNCA usar verbos ambiguos como "Identificar", "Verificar", "Observar", "Notar" o "Revisar" en la columna PASO.
+   - NUNCA dejar la columna "RESULTADO ESPERADO" vacía o con un simple "Ninguno", "Ok" o "Pasa".
+   - NUNCA asumir datos de prueba implícitos; deben declararse explícitamente
+
+2. **ESTRUCTURA OBLIGATORIA DE CADA PASO:**
+   - **PASO:** Acción concreta y ejecutable (ej: "Navegar a...", "Hacer clic en...", "Localizar la celda correspondiente al día X...").
+   - **DATOS DE PRUEBA:** Especificar valores exactos usados en el paso (ej: URL completa, día `4`, texto `Automotor`, CUIT `20-XXXXXXXX-X`). Si no aplica, colocar "N/A".
+   - **RESULTADO ESPERADO:** Lista numerada con los cambios visuales y del DOM observables (ej: "1. La celda X se visualiza sin el badge azul. 2. No existen elementos de lista dentro del contenedor").
+
+3. **ALINEACIÓN CON CYPRESS:**
+   - Cada paso y resultado esperado debe redactarse pensando en cómo se traducirá a una aserción de Cypress (`cy.get()`, `should('not.exist')`, `should('be.visible')`).
