@@ -67,6 +67,8 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
    Esto se hace una sola vez por aplicación (no por spec ni por HU); si el script `test:<app>` ya existe, no se toca.
 
+9. **Organización de specs por Módulo/Flujo Funcional.** Los specs de Cypress se agrupan por módulo o flujo funcional de la aplicación (ej: autenticación, empleados, carrito), no un spec por Test Case individual. Cada bloque `it(...)` dentro del spec sigue siendo un Test Case atómico con su tag `[CA-XX][TC-XX.X][SCRUM-Txx]` (regla 4); lo que cambia es que varios `it(...)` relacionados por el mismo módulo conviven en un único archivo `describe(...)`, en vez de un archivo `.cy.js` por cada uno. Al implementar un nuevo Test Case, primero verificar si ya existe un spec del mismo módulo en `cypress/e2e/<app>/` y agregar el `it(...)` ahí antes de crear un archivo nuevo.
+
 # Estándares y Performance de Cypress
 
 - **Timeouts Realistas:** `pageLoadTimeout` debe estar configurado en máximo 15000-30000ms en `cypress.config.js`.

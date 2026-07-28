@@ -1,12 +1,12 @@
-// Test Case 6 - Contact Us Form
+// Modulo: Contacto (Contact Us) - AutomationExercise
 // Sitio bajo prueba: https://automationexercise.com
+// Agrupa: TC6 - Contact Us Form
 
 import ContactPage from '../../pages/automation-exercise/ContactPage'
 
-describe('Contact Us Form - Page Object Model', () => {
+const contactPage = new ContactPage()
 
-    // Instancia del Page Object
-    const contactPage = new ContactPage()
+describe('Contact Us Form - Page Object Model', () => {
 
     // Datos de prueba fijos
     const NAME = 'Test User'

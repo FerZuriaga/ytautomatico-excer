@@ -1,17 +1,16 @@
-// Test Case 1 - Register User
+// Modulo: Registro de Usuario (Signup) - AutomationExercise
 // Sitio bajo prueba: https://automationexercise.com
-// Ticket Jira: SCRUM-24
-// Fuente oficial: https://automationexercise.com/test_cases
+// Agrupa: TC1 - Register User [SCRUM-24], TC5 - Register with Existing Email
 
 import HomePage from '../../pages/automation-exercise/HomePage'
 import SignupPage from '../../pages/automation-exercise/SignupPage'
 import LoginPage from '../../pages/automation-exercise/LoginPage'
 
-describe('Register User - Page Object Model [SCRUM-24]', () => {
+const homePage = new HomePage()
+const signupPage = new SignupPage()
+const loginPage = new LoginPage()
 
-    const homePage   = new HomePage()
-    const signupPage = new SignupPage()
-    const loginPage  = new LoginPage()
+describe('Register User - Page Object Model [SCRUM-24]', () => {
 
     // Datos de prueba — email con timestamp para garantizar unicidad
     const TIMESTAMP   = Date.now()
@@ -88,4 +87,25 @@ describe('Register User - Page Object Model [SCRUM-24]', () => {
         // Click Continue final para completar el flujo
         signupPage.clickContinue()
     })
+})
+
+describe('TC5 - Register User with Existing Email', () => {
+  it('should show error when registering with an already registered email', () => {
+    // Paso 1-2: navegar y verificar home
+    cy.visit('https://automationexercise.com')
+    homePage.verifyHomePageVisible()
+
+    // Paso 3: click Signup/Login
+    homePage.clickSignupLogin()
+
+    // Paso 4: verificar sección New User Signup visible
+    signupPage.verifyNewUserSignupVisible()
+
+    // Paso 5-6: ingresar nombre y email ya registrado, hacer click en Signup
+    signupPage.enterSignupNameAndEmail('Test User', 'testops@test.com')
+    signupPage.clickSignupButton()
+
+    // Paso 7: verificar mensaje de error email ya existe
+    signupPage.verifyEmailAlreadyExists()
+  })
 })

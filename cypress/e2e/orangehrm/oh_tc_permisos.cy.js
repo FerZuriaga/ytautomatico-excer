@@ -1,6 +1,6 @@
-// Test Case OH-TC4 - Solicitud de permiso exitosa - Modulo Leave (Apply Leave)
+// Modulo: Permisos (Leave) - OrangeHRM
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
-// Ticket Jira: SCRUM-47
+// Agrupa: OH-TC4 [SCRUM-47]
 
 import OrangeHRMLeavePage from '../../pages/orangehrm/OrangeHRMLeavePage'
 
