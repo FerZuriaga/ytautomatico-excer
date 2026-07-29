@@ -3,7 +3,7 @@
 import OrangeHRMLoginPage from '../../pages/orangehrm/OrangeHRMLoginPage'
 
 Cypress.Commands.add("gotoOHUrl", (route) => {
-   cy.visit(`https://opensource-demo.orangehrmlive.com${route}`, { timeout: 120000 })
+   cy.visit(`${Cypress.env('orangehrmUrl')}${route}`, { timeout: 120000 })
 })
 
 // Login con el usuario Admin de la demo, hasta confirmar que el Dashboard

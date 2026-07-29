@@ -3,7 +3,7 @@
 import SauceDemoLoginPage from '../../pages/saucedemo/SauceDemoLoginPage'
 
 Cypress.Commands.add("gotoSDUrl", (route) => {
-   cy.visit(`https://www.saucedemo.com${route}`, { timeout: 120000 })
+   cy.visit(`${Cypress.env('saucedemoUrl')}${route}`, { timeout: 120000 })
 })
 
 // Login con el usuario estandar de la demo, hasta confirmar que el
