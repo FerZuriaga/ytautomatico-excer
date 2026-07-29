@@ -79,17 +79,24 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
 # Estándar de Redacción de Casos de Prueba (Zephyr)
 
-Al crear o editar casos de prueba en Zephyr / Jira, se deben seguir estrictamente estas reglas:
+Al crear, editar o presentar casos de prueba en Zephyr / Jira, se deben seguir **estrictamente** estas reglas. No agregar texto de relleno ni pasos ambiguos o "sin sentido".
 
-1. **PROHIBICIONES EN PASOS:**
-   - NUNCA usar verbos ambiguos como "Identificar", "Verificar", "Observar", "Notar" o "Revisar" en la columna PASO.
-   - NUNCA dejar la columna "RESULTADO ESPERADO" vacía o con un simple "Ninguno", "Ok" o "Pasa".
-   - NUNCA asumir datos de prueba implícitos; deben declararse explícitamente
+1. **Estructura general del Caso de Prueba:**
+   - **ID y Título:** claro, descriptivo y enfocado en la funcionalidad (convención `[CA-XX][TC-XX.X] Descripción`, ver regla 4 de "Reglas de Arquitectura" más arriba).
+   - **Precondiciones:** requisitos previos necesarios antes de ejecutar el primer paso. Si no aplica, `N/A`.
 
-2. **ESTRUCTURA OBLIGATORIA DE CADA PASO:**
-   - **PASO:** Acción concreta y ejecutable (ej: "Navegar a...", "Hacer clic en...", "Localizar la celda correspondiente al día X...").
-   - **DATOS DE PRUEBA:** Especificar valores exactos usados en el paso (ej: URL completa, día `4`, texto `Automotor`, CUIT `20-XXXXXXXX-X`). Si no aplica, colocar "N/A".
-   - **RESULTADO ESPERADO:** Lista numerada con los cambios visuales y del DOM observables (ej: "1. La celda X se visualiza sin el badge azul. 2. No existen elementos de lista dentro del contenedor").
+2. **Tabla de pasos (estilo Zephyr Scale/Squad).** Cada paso se arma como una fila con tres columnas — al crear el Test Case en Zephyr esto se traduce 1:1 a los campos `description`/`testData`/`expectedResult` de cada `step`; al presentar o revisar Test Cases en la conversación, se muestra literalmente como esta tabla:
 
-3. **ALINEACIÓN CON CYPRESS:**
+   | Paso (Step) | Datos de Prueba (Test Data) | Resultado Esperado (Expected Result) |
+   | :--- | :--- | :--- |
+   | **Paso X:** Acción concreta que realiza el usuario (ej. "Navegar a...", "Hacer clic en...") | URLs, parámetros, credenciales, o `N/A` si no aplica | **1.** Efecto visual o de sistema inmediato.<br>**2.** Efecto secundario, estado o cambio en interfaz. |
+
+3. **Reglas de calidad e integridad de los pasos:**
+   - **Relación directa:** cada Paso N debe tener uno o más Resultados Esperados N numerados y específicos que verifiquen únicamente la acción de ese paso.
+   - **Precisión en Test Data:** si un paso requiere ingresar información o usar una URL, debe figurar en la columna de Datos de Prueba (ej. `Año seleccionado: 2025`, `URL: https://...`). Si no requiere datos, colocar `N/A`.
+   - **Cero ambigüedad:** prohibido usar frases genéricas como "El sistema funciona correctamente" o "Probar la opción". Los resultados esperados deben detallar qué se visualiza, qué cambia en la pantalla o qué URL/estado se actualiza.
+   - **Prohibiciones en Paso:** nunca usar verbos ambiguos como "Identificar", "Verificar", "Observar", "Notar" o "Revisar" en la columna Paso.
+   - **Prohibiciones en Resultado Esperado:** nunca dejar la columna vacía ni con un simple "Ninguno", "Ok" o "Pasa"; nunca asumir datos de prueba implícitos, deben declararse explícitamente.
+
+4. **Alineación con Cypress:**
    - Cada paso y resultado esperado debe redactarse pensando en cómo se traducirá a una aserción de Cypress (`cy.get()`, `should('not.exist')`, `should('be.visible')`).
