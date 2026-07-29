@@ -12,3 +12,7 @@ Cypress.Commands.add("gotoArgentinaDocumentacion", () => {
 Cypress.Commands.add("gotoArgentinaEmergencias", () => {
     cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/emergencias`, { timeout: 30000 })
 })
+
+Cypress.Commands.add("gotoArgentinaEducacion", () => {
+    cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/educacion`, { timeout: 30000 })
+})
