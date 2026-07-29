@@ -69,6 +69,23 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
 
 9. **Organización de specs por Módulo/Flujo Funcional.** Los specs de Cypress se agrupan por módulo o flujo funcional de la aplicación (ej: autenticación, empleados, carrito), no un spec por Test Case individual. Cada bloque `it(...)` dentro del spec sigue siendo un Test Case atómico con su tag `[CA-XX][TC-XX.X][SCRUM-Txx]` (regla 4); lo que cambia es que varios `it(...)` relacionados por el mismo módulo conviven en un único archivo `describe(...)`, en vez de un archivo `.cy.js` por cada uno. Al implementar un nuevo Test Case, primero verificar si ya existe un spec del mismo módulo en `cypress/e2e/<app>/` y agregar el `it(...)` ahí antes de crear un archivo nuevo.
 
+# Estándar de Redacción de Historias de Usuario (HU)
+
+Al redactar o revisar Historias de Usuario, se deben seguir **estrictamente** estas pautas para garantizar su calidad y compatibilidad con las pruebas de QA (Zephyr). Aplica de forma automática a toda HU nueva o ajuste solicitado, sin necesidad de reconfirmarlo.
+
+1. **Estructura de la HU:**
+   - **Formato estándar:** "Como [Rol], Quiero [Acción], Para [Beneficio]".
+   - **Contexto:** descripción breve del entorno (flujo público, autenticado, de solo lectura, sitio de producción real, etc.).
+   - **Objetivo:** propósito funcional a validar.
+
+2. **Criterios de Aceptación (CA):**
+   - Definir el estado inicial por defecto (ej. qué pestaña, período o filtro se carga al ingresar).
+   - Describir el comportamiento funcional visible desde la perspectiva del usuario (qué se muestra u oculta al interactuar con filtros, pestañas o navegaciones).
+   - **PROHIBIDO** incluir selectores técnicos (IDs, clases CSS, tags HTML como `.js-current-year` o `#btn-submit`) en los Criterios ni en sus Resultados Esperados — la implementación técnica queda reservada exclusivamente para los scripts de automatización (Cypress). Mismo criterio de lenguaje funcional que la regla de Test Cases (ver "Estándar de Redacción de Casos de Prueba" más abajo).
+   - Incluir la interacción completa con elementos dinámicos (qué pasa al cambiar de pestaña, navegar entre fechas, o aplicar/quitar filtros), no solo describir el estado inicial.
+
+   Esta sección define el contenido y lenguaje de cada CA; la granularidad de la HU y la atomicidad/numeración de los CA siguen definidas por las reglas 1-3 de "Reglas de Arquitectura, Diseño de HUs y Pruebas Automatizadas" de más arriba.
+
 # Estándares y Performance de Cypress
 
 - **Timeouts Realistas:** `pageLoadTimeout` debe estar configurado en máximo 15000-30000ms en `cypress.config.js`.
