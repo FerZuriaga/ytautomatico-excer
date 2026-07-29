@@ -6,6 +6,7 @@
   "scripts": {
     "open": "cypress open",
     "test": "cypress run",
+    "test:argentinagobar": "cypress run --spec \"cypress/e2e/argentinagobar/**/*.cy.js\"",
     "test:automation-exercise": "cypress run --spec \"cypress/e2e/automation-exercise/**/*.cy.js\"",
     "test:orangehrm": "cypress run --spec \"cypress/e2e/orangehrm/**/*.cy.js\"",
     "test:blazedemo": "cypress run --spec \"cypress/e2e/blazedemo/**/*.cy.js\"",
