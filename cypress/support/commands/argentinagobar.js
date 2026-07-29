@@ -16,3 +16,7 @@ Cypress.Commands.add("gotoArgentinaEmergencias", () => {
 Cypress.Commands.add("gotoArgentinaEducacion", () => {
     cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/educacion`, { timeout: 30000 })
 })
+
+Cypress.Commands.add("gotoArgentinaTransporte", () => {
+    cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/transito-transporte`, { timeout: 30000 })
+})
