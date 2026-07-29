@@ -1,5 +1,5 @@
 // ─── BlazeDemo Commands ───────────────────────────────────────────────────
 
 Cypress.Commands.add("gotoBDUrl", (route) => {
-   cy.visit(`https://blazedemo.com${route}`, { timeout: 120000 })
+   cy.visit(`${Cypress.env('blazedemoUrl')}${route}`, { timeout: 120000 })
 })

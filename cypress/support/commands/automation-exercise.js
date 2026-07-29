@@ -1,7 +1,7 @@
 // ─── AutomationExercise Commands ───────────────────────────────────────────
 
 Cypress.Commands.add("gotoAEUrl", (route) => {
-    cy.visit(`https://automationexercise.com${route}`, { timeout: 120000 })
+    cy.visit(`${Cypress.env('automationExerciseUrl')}${route}`, { timeout: 120000 })
 
 })
 

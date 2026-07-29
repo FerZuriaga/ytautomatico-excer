@@ -1,5 +1,5 @@
 // ─── Disco Online Commands ──────────────────────────────────────────────────
 
 Cypress.Commands.add("gotoDiscoUrl", (route) => {
-   cy.visit(`https://www.disco.com.ar${route}`, { timeout: 120000 })
+   cy.visit(`${Cypress.env('discoUrl')}${route}`, { timeout: 120000 })
 })
