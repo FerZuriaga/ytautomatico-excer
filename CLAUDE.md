@@ -95,8 +95,9 @@ Al crear, editar o presentar casos de prueba en Zephyr / Jira, se deben seguir *
    - **Relación directa:** cada Paso N debe tener uno o más Resultados Esperados N numerados y específicos que verifiquen únicamente la acción de ese paso.
    - **Precisión en Test Data:** si un paso requiere ingresar información o usar una URL, debe figurar en la columna de Datos de Prueba (ej. `Año seleccionado: 2025`, `URL: https://...`). Si no requiere datos, colocar `N/A`.
    - **Cero ambigüedad:** prohibido usar frases genéricas como "El sistema funciona correctamente" o "Probar la opción". Los resultados esperados deben detallar qué se visualiza, qué cambia en la pantalla o qué URL/estado se actualiza.
+   - **Lenguaje funcional, no técnico, en Resultado Esperado:** describir el comportamiento visible para el usuario (qué ve, qué cambia en pantalla), nunca selectores HTML, clases CSS ni nombres de atributos del DOM. Ej: "Se muestra en pantalla el año en curso (ej. 2026)" en vez de "El elemento con clase `.js-current-year` contiene el año". Esto aplica al texto que se crea en Zephyr y al que se muestra en la conversación — el mapeo a selectores técnicos ocurre después, únicamente al implementar el spec de Cypress (ver regla 4).
    - **Prohibiciones en Paso:** nunca usar verbos ambiguos como "Identificar", "Verificar", "Observar", "Notar" o "Revisar" en la columna Paso.
    - **Prohibiciones en Resultado Esperado:** nunca dejar la columna vacía ni con un simple "Ninguno", "Ok" o "Pasa"; nunca asumir datos de prueba implícitos, deben declararse explícitamente.
 
 4. **Alineación con Cypress:**
-   - Cada paso y resultado esperado debe redactarse pensando en cómo se traducirá a una aserción de Cypress (`cy.get()`, `should('not.exist')`, `should('be.visible')`).
+   - Al implementar el spec (no al redactar el Test Case), cada resultado esperado funcional se traduce a una aserción de Cypress (`cy.get()`, `should('not.exist')`, `should('be.visible')`) usando el selector técnico correspondiente.
