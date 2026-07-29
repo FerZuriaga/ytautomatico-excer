@@ -8,3 +8,7 @@ Cypress.Commands.add("gotoArgentinaFeriados", (anio) => {
 Cypress.Commands.add("gotoArgentinaDocumentacion", () => {
     cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/documentacion`, { timeout: 30000 })
 })
+
+Cypress.Commands.add("gotoArgentinaEmergencias", () => {
+    cy.visit(`${Cypress.env('argentinagobarUrl')}/tema/emergencias`, { timeout: 30000 })
+})
