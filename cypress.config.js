@@ -5,6 +5,7 @@ module.exports = defineConfig({
   // Se pueden overridear sin tocar este archivo, ej:
   // CYPRESS_ORANGEHRM_URL=https://staging.orangehrmlive.com npx cypress run
   env: {
+    argentinagobarUrl: "https://www.argentina.gob.ar",
     automationExerciseUrl: "https://automationexercise.com",
     blazedemoUrl: "https://blazedemo.com",
     discoUrl: "https://www.disco.com.ar",

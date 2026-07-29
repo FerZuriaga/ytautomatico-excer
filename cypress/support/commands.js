@@ -8,6 +8,7 @@
 // ***********************************************
 
 import './commands/shared'
+import './commands/argentinagobar'
 import './commands/automation-exercise'
 import './commands/blazedemo'
 import './commands/orangehrm'
