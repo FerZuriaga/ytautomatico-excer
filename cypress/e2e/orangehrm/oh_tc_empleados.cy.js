@@ -23,11 +23,11 @@ describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', ()
 
     it('Debe mostrar unicamente al empleado cuyo nombre coincide de forma exacta con el criterio, junto con su informacion basica', () => {
 
-        // Paso 1: Realizar una busqueda amplia para identificar un empleado existente
-        // con informacion basica completa (Id, nombre, cargo, estado)
-        employeeListPage.searchEmployeeByName('a')
-
-        employeeListPage.getFirstEmployeeWithCompleteData().then((employee) => {
+        // Paso 1: Identificar un empleado existente con informacion basica
+        // completa (Id, nombre, cargo, estado), filtrando por Employment
+        // Status para no depender de la suerte de una busqueda amplia (ver
+        // findExistingEmployeeWithCompleteData)
+        employeeListPage.findExistingEmployeeWithCompleteData().then((employee) => {
 
             // Paso 2: Buscar por el nombre completo de ese empleado (coincidencia exacta)
             employeeListPage.searchEmployeeByName(employee.fullName)
@@ -43,9 +43,7 @@ describe('OH-TC3 - Busqueda Exitosa de Empleado por Nombre - PIM [SCRUM-46]', ()
     it('Debe mostrar los empleados cuyo nombre coincide parcialmente con el criterio ingresado', () => {
 
         // Paso 1: Identificar un empleado existente con informacion basica completa
-        employeeListPage.searchEmployeeByName('a')
-
-        employeeListPage.getFirstEmployeeWithCompleteData().then((employee) => {
+        employeeListPage.findExistingEmployeeWithCompleteData().then((employee) => {
             const partialName = employee.fullName.substring(0, Math.max(3, Math.floor(employee.fullName.length / 2)))
 
             // Paso 2: Buscar utilizando solo una parte del nombre del empleado, sin

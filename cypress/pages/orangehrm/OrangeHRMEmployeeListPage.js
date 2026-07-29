@@ -40,6 +40,10 @@ class OrangeHRMEmployeeListPage {
         return cy.get('.oxd-table')
     }
 
+    get employmentStatusSelect() {
+        return cy.contains('label', 'Employment Status').parents('.oxd-input-group').find('.oxd-select-text')
+    }
+
     // Dialogo de confirmacion que muestra OrangeHRM antes de eliminar un
     // empleado ("Are you Sure?"). Se localiza por [role="document"] (mismo
     // patron de dialogo OXD ya usado en OrangeHRMLeavePage para el dialogo de
@@ -133,6 +137,47 @@ class OrangeHRMEmployeeListPage {
 
         this.searchButton.click()
         cy.wait('@searchEmployees', { timeout: 30000 })
+    }
+
+    // Filtra el listado por Employment Status (ej. "Full-Time Permanent") y
+    // ejecuta la busqueda. A diferencia del nombre, este campo es un select
+    // fijo (no autocomplete): abrir el dropdown y clickear la opcion por texto.
+    filterByEmploymentStatus(status) {
+        cy.intercept('GET', '**/api/v2/pim/employees**').as('filterByStatus')
+
+        this.employmentStatusSelect.click()
+        cy.get('.oxd-select-dropdown .oxd-select-option').contains(status).click()
+        this.searchButton.click()
+
+        cy.wait('@filterByStatus', { timeout: 30000 })
+    }
+
+    // Vuelve a dejar el filtro de Employment Status en "-- Select --" (sin
+    // reejecutar la busqueda), para que una busqueda posterior por nombre no
+    // quede acotada silenciosamente por el status usado en
+    // findExistingEmployeeWithCompleteData().
+    resetEmploymentStatusFilter() {
+        this.employmentStatusSelect.click()
+        cy.get('.oxd-select-dropdown .oxd-select-option').contains('-- Select --').click()
+    }
+
+    // Localiza un empleado existente en el entorno demo publico y compartido
+    // que garantice tener su informacion basica completa (Id, nombre, cargo,
+    // estado). Buscar por un nombre amplio ("a") no alcanza: el listado
+    // acumulo una cantidad enorme de registros de otras suites de
+    // automatizacion sin Job Title ni Employment Status cargados, que ademas
+    // ordenan alfabeticamente antes que los empleados reales (verificado en
+    // vivo: los primeros 50 resultados de "a" no tenian ni un solo registro
+    // con datos completos). Filtrar por Employment Status = "Full-Time
+    // Permanent" acota el listado a empleados con ficha de RRHH cargada,
+    // donde Job Title y Employment Status siempre vienen completos.
+    findExistingEmployeeWithCompleteData() {
+        this.filterByEmploymentStatus('Full-Time Permanent')
+
+        return this.getFirstEmployeeWithCompleteData().then((employee) => {
+            this.resetEmploymentStatusFilter()
+            return cy.wrap(employee)
+        })
     }
 
     // Verifica que el empleado buscado quede visible entre los resultados
