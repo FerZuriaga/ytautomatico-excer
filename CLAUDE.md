@@ -2,11 +2,13 @@
 
 Objetivo: el flujo completo de una User Story (Jira/Zephyr -> spec Cypress -> ejecución -> git) debe tardar menos de 7 minutos. Estas reglas son de aplicación directa, no requieren re-confirmarlas en cada tarea.
 
+> **Nota de estado (2026-09-11):** el trial de Zephyr venció y esa integración está fuera de servicio. Mientras no se haga el cutover a `v3/` (ver `docs/architecture/domain-model.md`), toda creación/publicación de Test Cases y todo reporte de resultados debe hacerse con `v3/scripts/create-jira-task.js` (adapter Xray — misma sintaxis de flags: `--data`, `testcaseModels`, `--report-results`, `--test-cycle`), **no** con el `scripts/create-jira-task.js` de la raíz (Zephyr, no funcional hoy). Los Test Case Keys que devuelve Xray son keys de issue de Jira normales (ej. `SCRUM-125`), no el formato `SCRUM-Txx` de Zephyr. El resto de estas reglas (formato de HU/CA/TC, convención de tags, estándares de Cypress) sigue vigente sin cambios.
+
 1. **Ejecución monolítica.** Un único agente ejecuta el flujo completo de forma lineal (Jira/Zephyr -> spec Cypress -> ejecución -> git), sin delegar en cadena entre roles (Manager -> QA -> Dev) ni esperar confirmaciones intermedias entre esos pasos.
 
    Excepción: **mergear una rama a `main` sigue requiriendo confirmación explícita del usuario antes de ejecutarlo.** Es una acción sobre estado compartido y visible del repositorio, no overhead de agentes — no se elimina por esta regla.
 
-2. **Paralelización de llamadas a Zephyr.** Al crear varios Test Cases del mismo issue, usar `scripts/create-jira-task.js` con el campo `testcaseModels` (array, plural) en vez de invocar el script una vez por Test Case. Internamente (`createTestCasesBatch` en `scripts/create-jira-task.js`) se resuelve primero, de forma secuencial, el `folderId` de cada ruta de carpeta única y el Test Cycle (si corresponde) — son operaciones "buscar o crear" que no son seguras de paralelizar (dos llamadas concurrentes podrían no ver el recurso recién creado y duplicarlo). Recién con esos ids ya resueltos, la creación de cada Test Case (+ steps + link + ejecución) se dispara en paralelo con `Promise.all`.
+2. **Paralelización de llamadas al gestor de Test Cases.** Al crear varios Test Cases del mismo issue, usar `v3/scripts/create-jira-task.js` (ver nota de estado arriba) con el campo `testcaseModels` (array, plural) en vez de invocar el script una vez por Test Case. Internamente (`publishTestCasesBatch` en `v3/scripts/lib/xray.js`) se resuelve primero, de forma secuencial, el `folderId` de cada ruta de carpeta única y el Test Cycle (si corresponde) — son operaciones "buscar o crear" que no son seguras de paralelizar (dos llamadas concurrentes podrían no ver el recurso recién creado y duplicarlo, o directamente fallar contra la API si dos intentan crear la misma carpeta al mismo tiempo). Recién con esos ids ya resueltos, la creación de cada Test Case (+ steps + link + ejecución) se dispara en paralelo con `Promise.allSettled`.
 
 3. **No auditar archivos fuera del scope de la tarea actual.** No revisar, diffear ni preguntar por specs, Page Objects o código de otras tareas/tickets que no sean los de la User Story en curso.
 
@@ -42,15 +44,15 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
    it('[CA-XX][TC-XX.X][SCRUM-Txx] Descripción clara de lo que prueba', () => { ... })
    ```
 
-   El tag `[SCRUM-Txx]` (key real del Test Case en Zephyr) se mantiene junto a `[CA-XX][TC-XX.X]` porque el mecanismo de reporte automático (`--report-results`) depende de él para resolver la Test Execution a actualizar — sin ese tag el reporte a Zephyr deja de funcionar.
+   El tag `[SCRUM-Txx]` en el ejemplo corresponde al formato de key de Zephyr; con la integración actual (Xray, ver nota de estado arriba) el Test Case es un issue de Jira normal, así que el tag real es simplemente su key (ej. `[SCRUM-125]`). Sea cual sea la herramienta, ese tag va **al final** del título y se mantiene junto a `[CA-XX][TC-XX.X]` porque el mecanismo de reporte automático (`--report-results`) depende de él —tomando siempre el último tag entre corchetes— para resolver la Test Execution a actualizar; sin ese tag, o si no es el último, el reporte deja de funcionar.
 
-5. **Integración de reportes con Zephyr (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
+5. **Integración de reportes con el gestor de Test Cases (export a archivo real).** Los resultados de cada corrida de Cypress deben guardarse en un archivo físico en disco, no confiar solo en el `stdout`. Comando validado:
 
    ```
    npx cypress run --quiet --reporter json > archivo.json
    ```
 
-   El flag `--quiet` es imprescindible: sin él, Cypress mezcla sus propias cajas decorativas de la CLI con el JSON del reporter Mocha en el mismo `stdout`, y el archivo resultante no es JSON válido. Luego reportar con `node scripts/create-jira-task.js --report-results archivo.json --test-cycle <TestCycleKey>` para que las Test Executions queden en "Pass"/"Fail" reales, nunca en "Not Executed" por defecto. El archivo de resultados es un artefacto temporal: generarlo en el directorio de scratchpad, nunca commitearlo al repo.
+   El flag `--quiet` es imprescindible: sin él, Cypress mezcla sus propias cajas decorativas de la CLI con el JSON del reporter Mocha en el mismo `stdout`, y el archivo resultante no es JSON válido. Luego reportar con `node v3/scripts/create-jira-task.js --report-results archivo.json --test-cycle <TestCycleKey>` (ver nota de estado arriba) para que las Test Executions queden en "Pass"/"Fail" reales, nunca en "Not Executed" por defecto. El archivo de resultados es un artefacto temporal: generarlo en el directorio de scratchpad, nunca commitearlo al repo.
 
 6. **Justificación obligatoria.** Al finalizar la propuesta de una HU (o de su reestructuración), incluir siempre un apartado de explicación que detalle:
    - por qué se agruparon determinadas funcionalidades;
