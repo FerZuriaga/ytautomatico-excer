@@ -44,13 +44,12 @@ describe('[SCRUM-108] Directory - Busqueda de empleados', () => {
         })
     })
 
-    it('[CA-03][TC-03.2][SCRUM-110] Reiniciar filtros debe limpiar tambien el filtro de Job Title', () => {
-        directoryPage.selectFirstJobTitle().then(() => {
+    it('[CA-03][TC-03.2][SCRUM-110] Combinar Employee Name y Job Title filtra por ambos criterios', () => {
+        directoryPage.getEmployeeWithJobTitle().then(({ name, jobTitle }) => {
+            directoryPage.employeeNameInput.should('be.visible').clear().type(name).type('{esc}')
+            directoryPage.selectJobTitle(jobTitle)
             directoryPage.search()
-            directoryPage.verifyResultsListVisible()
-
-            directoryPage.reset()
-            directoryPage.verifyResultsListVisible()
+            directoryPage.verifyEmployeeVisible(name)
         })
     })
 })

@@ -40,6 +40,10 @@ class OrangeHRMDirectoryPage {
         return cy.contains('No Records Found')
     }
 
+    get directoryCards() {
+        return cy.get('.orangehrm-directory-card')
+    }
+
     // ─── Acciones - Navegacion ────────────────────────────────────────────────
 
     navigateToDirectory() {
@@ -84,6 +88,38 @@ class OrangeHRMDirectoryPage {
                 cy.contains('.oxd-select-dropdown .oxd-select-option', validOption).click()
                 return cy.wrap(validOption)
             })
+    }
+
+    // Recorre el listado por defecto de Directory (sin filtros) y devuelve
+    // (via .then) el nombre y el puesto de la primera tarjeta que tiene un
+    // Job Title visible. El entorno demo publico y compartido acumula muchos
+    // registros sin puesto asignado (la tarjeta oculta el subtitulo via
+    // display:none cuando no tiene dato) — no alcanza con tomar la primera
+    // tarjeta a secas, hace falta encontrar una con ambos datos poblados.
+    getEmployeeWithJobTitle() {
+        return this.directoryCards
+            .should('have.length.greaterThan', 0)
+            .then(($cards) => {
+                const match = Array.from($cards).find((card) => {
+                    const subtitle = card.querySelector('.orangehrm-directory-card-subtitle')
+                    return subtitle && subtitle.style.display !== 'none' && subtitle.textContent.trim().length > 0
+                })
+
+                expect(match, 'Existe al menos un empleado con Job Title visible en el listado por defecto').to.exist
+
+                const name = match.querySelector('.orangehrm-directory-card-header').textContent.trim()
+                const jobTitle = match.querySelector('.orangehrm-directory-card-subtitle').textContent.trim()
+
+                return cy.wrap({ name, jobTitle })
+            })
+    }
+
+    // Selecciona en el dropdown Job Title la opcion cuyo texto coincide
+    // exactamente con el puesto indicado (a diferencia de selectFirstJobTitle,
+    // que toma cualquier opcion disponible).
+    selectJobTitle(jobTitle) {
+        this.jobTitleDropdown.should('be.visible').click()
+        cy.contains('.oxd-select-dropdown .oxd-select-option', jobTitle, { timeout: 10000 }).click()
     }
 
     search() {
