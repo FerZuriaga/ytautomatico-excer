@@ -1,6 +1,6 @@
-// Test Case OH-TC11 - Edicion de Datos de Contacto en My Info
+// Modulo: Mi Info (My Info) - OrangeHRM
 // Sitio bajo prueba: https://opensource-demo.orangehrmlive.com
-// Ticket Jira: SCRUM-53
+// Agrupa: OH-TC11 [SCRUM-53]
 //
 // Cubre los 10 Test Cases del Modelo Canonico publicados en Zephyr
 // (SCRUM-T10 a SCRUM-T19, Test Cycle SCRUM-R2): 5 de persistencia de datos
@@ -14,9 +14,11 @@
 
 import OrangeHRMDashboardPage from '../../pages/orangehrm/OrangeHRMDashboardPage'
 import OrangeHRMMyInfoContactDetailsPage from '../../pages/orangehrm/OrangeHRMMyInfoContactDetailsPage'
+import OrangeHRMMyInfoPersonalDetailsPage from '../../pages/orangehrm/OrangeHRMMyInfoPersonalDetailsPage'
 
 const dashboardPage = new OrangeHRMDashboardPage()
 const myInfoContactDetailsPage = new OrangeHRMMyInfoContactDetailsPage()
+const myInfoPersonalDetailsPage = new OrangeHRMMyInfoPersonalDetailsPage()
 
 describe('OH-TC11 - Edicion de Datos de Contacto en My Info', () => {
 
@@ -172,5 +174,112 @@ describe('OH-TC11 - Edicion de Datos de Contacto en My Info', () => {
         cy.reload()
         myInfoContactDetailsPage.verifyContactDetailsVisible()
         myInfoContactDetailsPage.verifyEmailValue(originalValues.email)
+    })
+})
+
+describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
+
+    let originalValues
+
+    beforeEach(() => {
+        originalValues = undefined
+
+        // Precondicion: el usuario inicia sesion exitosamente y My Info abre
+        // por defecto en la pestana Personal Details (no requiere navegacion
+        // a un tab adicional, a diferencia de Contact Details)
+        cy.loginAsOHAdmin()
+
+        dashboardPage.navigateToMyInfo()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+
+        myInfoPersonalDetailsPage.captureOriginalPersonalValues().then((values) => {
+            originalValues = values
+        })
+    })
+
+    afterEach(() => {
+        // Restaura los valores originales al finalizar cada test, mismo
+        // criterio que Contact Details: la cuenta Admin es compartida por el
+        // entorno demo publico y no debe quedar con residuos.
+        if (originalValues) {
+            myInfoPersonalDetailsPage.restoreOriginalPersonalValues(originalValues)
+        }
+    })
+
+    it('[CA-01][TC-01.1][SCRUM-84] Debe modificar la Nacionalidad y mantener el nuevo valor tras recargar la pagina', () => {
+        const newNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
+
+        myInfoPersonalDetailsPage.selectNationality(newNationality)
+        myInfoPersonalDetailsPage.savePersonalDetails()
+        myInfoPersonalDetailsPage.verifySaveConfirmationVisible()
+
+        cy.reload()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyNationalityValue(newNationality)
+    })
+
+    it('[CA-01][TC-01.2][SCRUM-79] Debe modificar Nacionalidad y Estado Civil en un mismo guardado y mantener ambos valores tras recargar la pagina', () => {
+        const newNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
+        const newMaritalStatus = originalValues.maritalStatus.includes('Single') ? 'Married' : 'Single'
+
+        myInfoPersonalDetailsPage.selectNationality(newNationality)
+        myInfoPersonalDetailsPage.selectMaritalStatus(newMaritalStatus)
+        myInfoPersonalDetailsPage.savePersonalDetails()
+        myInfoPersonalDetailsPage.verifySaveConfirmationVisible()
+
+        cy.reload()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyNationalityValue(newNationality)
+        myInfoPersonalDetailsPage.verifyMaritalStatusValue(newMaritalStatus)
+    })
+
+    it('[CA-02][TC-02.1][SCRUM-83] Debe rechazar una Fecha de Nacimiento futura y no persistir el cambio', () => {
+        const futureDate = new Date()
+        futureDate.setFullYear(futureDate.getFullYear() + 1)
+        const futureDateText = `${String(futureDate.getMonth() + 1).padStart(2, '0')}-${String(futureDate.getDate()).padStart(2, '0')}-${futureDate.getFullYear()}`
+
+        myInfoPersonalDetailsPage.updateDateOfBirth(futureDateText)
+        myInfoPersonalDetailsPage.savePersonalDetails({ expectRequest: false })
+
+        myInfoPersonalDetailsPage.verifyDateOfBirthErrorVisible()
+        cy.get('.oxd-toast-content--success').should('not.exist')
+
+        cy.reload()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyDateOfBirthValue(originalValues.dateOfBirth)
+    })
+
+    it('[CA-02][TC-02.2][SCRUM-80] Debe rechazar un formato de Fecha de Nacimiento invalido y no persistir el cambio', () => {
+        myInfoPersonalDetailsPage.updateDateOfBirth('99-99-9999')
+        myInfoPersonalDetailsPage.savePersonalDetails({ expectRequest: false })
+
+        myInfoPersonalDetailsPage.verifyDateOfBirthErrorVisible()
+        cy.get('.oxd-toast-content--success').should('not.exist')
+
+        cy.reload()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyDateOfBirthValue(originalValues.dateOfBirth)
+    })
+
+    it('[CA-03][TC-03.1][SCRUM-81] Debe mantener la Nacionalidad original al salir sin guardar y volver a ingresar a My Info', () => {
+        const unsavedNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
+
+        myInfoPersonalDetailsPage.selectNationality(unsavedNationality)
+
+        // Sale de My Info hacia Dashboard sin guardar y vuelve a ingresar
+        cy.gotoOHUrl('/web/index.php/dashboard/index')
+        dashboardPage.navigateToMyInfo()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyNationalityValue(originalValues.nationality)
+    })
+
+    it('[CA-03][TC-03.2][SCRUM-82] Debe mantener el Estado Civil original al recargar la pagina sin guardar', () => {
+        const unsavedMaritalStatus = originalValues.maritalStatus.includes('Single') ? 'Married' : 'Single'
+
+        myInfoPersonalDetailsPage.selectMaritalStatus(unsavedMaritalStatus)
+
+        cy.reload()
+        myInfoPersonalDetailsPage.verifyPersonalDetailsVisible()
+        myInfoPersonalDetailsPage.verifyMaritalStatusValue(originalValues.maritalStatus)
     })
 })
