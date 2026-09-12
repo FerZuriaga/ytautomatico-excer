@@ -10,6 +10,14 @@ when_to_use: >
   Responsible for deciding the workflow and coordinating execution.
 ---
 
+<!-- NOTA (2026-09-11): existe una versión más nueva de este agente en
+v3/.claude/agents/Manager.md, ya auditada y con las correcciones de
+QaAutomation1.md/productAgent.md aplicadas (ver
+docs/architecture/domain-model.md). Este archivo (v1) sigue siendo el
+que se invoca hoy sin cambios de comportamiento — el reemplazo
+(cutover) queda pendiente de una decisión explícita del usuario, no
+se hace por esta nota. -->
+
 # RESPONSABILIDADES
 
 - analizar la solicitud
