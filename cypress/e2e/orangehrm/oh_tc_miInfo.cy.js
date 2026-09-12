@@ -206,7 +206,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         }
     })
 
-    it('[CA-01][TC-01.1][SCRUM-70] Debe modificar la Nacionalidad y mantener el nuevo valor tras recargar la pagina', () => {
+    it('[CA-01][TC-01.1][SCRUM-84] Debe modificar la Nacionalidad y mantener el nuevo valor tras recargar la pagina', () => {
         const newNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
 
         myInfoPersonalDetailsPage.selectNationality(newNationality)
@@ -218,7 +218,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         myInfoPersonalDetailsPage.verifyNationalityValue(newNationality)
     })
 
-    it('[CA-01][TC-01.2][SCRUM-70] Debe modificar Nacionalidad y Estado Civil en un mismo guardado y mantener ambos valores tras recargar la pagina', () => {
+    it('[CA-01][TC-01.2][SCRUM-79] Debe modificar Nacionalidad y Estado Civil en un mismo guardado y mantener ambos valores tras recargar la pagina', () => {
         const newNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
         const newMaritalStatus = originalValues.maritalStatus.includes('Single') ? 'Married' : 'Single'
 
@@ -233,7 +233,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         myInfoPersonalDetailsPage.verifyMaritalStatusValue(newMaritalStatus)
     })
 
-    it('[CA-02][TC-02.1][SCRUM-70] Debe rechazar una Fecha de Nacimiento futura y no persistir el cambio', () => {
+    it('[CA-02][TC-02.1][SCRUM-83] Debe rechazar una Fecha de Nacimiento futura y no persistir el cambio', () => {
         const futureDate = new Date()
         futureDate.setFullYear(futureDate.getFullYear() + 1)
         const futureDateText = `${String(futureDate.getMonth() + 1).padStart(2, '0')}-${String(futureDate.getDate()).padStart(2, '0')}-${futureDate.getFullYear()}`
@@ -249,7 +249,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         myInfoPersonalDetailsPage.verifyDateOfBirthValue(originalValues.dateOfBirth)
     })
 
-    it('[CA-02][TC-02.2][SCRUM-70] Debe rechazar un formato de Fecha de Nacimiento invalido y no persistir el cambio', () => {
+    it('[CA-02][TC-02.2][SCRUM-80] Debe rechazar un formato de Fecha de Nacimiento invalido y no persistir el cambio', () => {
         myInfoPersonalDetailsPage.updateDateOfBirth('99-99-9999')
         myInfoPersonalDetailsPage.savePersonalDetails({ expectRequest: false })
 
@@ -261,7 +261,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         myInfoPersonalDetailsPage.verifyDateOfBirthValue(originalValues.dateOfBirth)
     })
 
-    it('[CA-03][TC-03.1][SCRUM-70] Debe mantener la Nacionalidad original al salir sin guardar y volver a ingresar a My Info', () => {
+    it('[CA-03][TC-03.1][SCRUM-81] Debe mantener la Nacionalidad original al salir sin guardar y volver a ingresar a My Info', () => {
         const unsavedNationality = originalValues.nationality.includes('Afghan') ? 'American' : 'Afghan'
 
         myInfoPersonalDetailsPage.selectNationality(unsavedNationality)
@@ -273,7 +273,7 @@ describe('[SCRUM-70] Edicion de Personal Details en My Info', () => {
         myInfoPersonalDetailsPage.verifyNationalityValue(originalValues.nationality)
     })
 
-    it('[CA-03][TC-03.2][SCRUM-70] Debe mantener el Estado Civil original al recargar la pagina sin guardar', () => {
+    it('[CA-03][TC-03.2][SCRUM-82] Debe mantener el Estado Civil original al recargar la pagina sin guardar', () => {
         const unsavedMaritalStatus = originalValues.maritalStatus.includes('Single') ? 'Married' : 'Single'
 
         myInfoPersonalDetailsPage.selectMaritalStatus(unsavedMaritalStatus)
