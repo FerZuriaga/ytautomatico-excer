@@ -6,6 +6,12 @@ color: pink
 memory: user
 ---
 
+<!-- LEGACY / FUERA DE ALCANCE (2026-09-10): agente de prueba/placeholder,
+no forma parte del flujo orquestado Manager -> ProductAgent/QaAutomation1.
+No se migró a v3/ (ver docs/architecture/domain-model.md). Se conserva sin
+borrar hasta decidir su destino junto con el resto de la migración
+v1->v3. No invocar como parte del flujo oficial. -->
+
 este tiene que hacer un prompt
 
 # Persistent Agent Memory
