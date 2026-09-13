@@ -7,6 +7,7 @@ module.exports = defineConfig({
   env: {
     argentinagobarUrl: "https://www.argentina.gob.ar",
     automationExerciseUrl: "https://automationexercise.com",
+    automationTestStoreUrl: "https://automationteststore.com",
     blazedemoUrl: "https://blazedemo.com",
     discoUrl: "https://www.disco.com.ar",
     orangehrmUrl: "https://opensource-demo.orangehrmlive.com",

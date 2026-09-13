@@ -10,6 +10,7 @@
 import './commands/shared'
 import './commands/argentinagobar'
 import './commands/automation-exercise'
+import './commands/automation-test-store'
 import './commands/blazedemo'
 import './commands/orangehrm'
 import './commands/saucedemo'
