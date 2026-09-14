@@ -624,20 +624,26 @@ async function publishTestCase(model, { issueKey, issueId, testCycle }) {
 }
 
 /**
- * Crea múltiples Test Cases en Xray en paralelo (Promise.allSettled),
- * todos vinculados al mismo issue de Jira. El Test Cycle (si corresponde)
- * y cada carpeta única (si corresponde) se resuelven antes, de forma
- * secuencial, por el mismo motivo que en Zephyr: tanto crear un Test
- * Execution como crear una carpeta son patrones "buscar o crear" que dos
- * llamadas concurrentes con la misma ruta pueden hacer fallar o duplicar
- * (confirmado en la práctica: publicar 6 Test Cases con la misma carpeta
- * nueva sin esta resolución previa hizo fallar 4 de 6 con "folder already
- * exists", porque las 6 preguntaron "¿existe?" al mismo tiempo y las 6
- * recibieron "no").
+ * Crea múltiples Test Cases en Xray en secuencia estricta (await paso a
+ * paso, uno completo antes de arrancar el siguiente), todos vinculados al
+ * mismo issue de Jira. El Test Cycle (si corresponde) y cada carpeta única
+ * (si corresponde) se resuelven primero, también en secuencia, por el
+ * mismo motivo de siempre: tanto crear un Test Execution como crear una
+ * carpeta son patrones "buscar o crear" que dos llamadas concurrentes con
+ * la misma ruta pueden hacer fallar o duplicar.
  *
- * Se usa Promise.allSettled (no Promise.all) a propósito, por la misma
- * razón documentada en zephyr.js: si un Test Case falla, no debe frenar
- * a los demás que ya están en vuelo (lección de SCRUM-62).
+ * Se procesa en secuencia (no en paralelo) a pedido explícito del usuario
+ * (2026-09-13): necesita que los Test Cases entren en orden correlativo
+ * tanto en la Historia como en el Test Repository de Xray — algo que
+ * Promise.allSettled no garantiza, porque las respuestas de la API pueden
+ * llegar desordenadas aunque las llamadas se disparen en el orden del
+ * array. Ver Regla 2 de CLAUDE.md: prioriza orden sobre velocidad para
+ * este caso, revierte la paralelización que tenía esta función antes.
+ *
+ * Un Test Case que falla no aborta el batch completo (se sigue
+ * intentando con los siguientes, misma lección de SCRUM-62), pero sí
+ * respeta el orden: no se dispara el siguiente hasta que el actual
+ * terminó (con éxito o error).
  */
 async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
     let testCycleKey = null;
@@ -646,7 +652,7 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
     }
 
     // Resolver cada ruta de carpeta única una sola vez, en secuencia,
-    // antes del batch en paralelo (ver comentario de la función).
+    // antes de crear los Test Cases (ver comentario de la función).
     const folderIdByPath = new Map();
     for (const model of models) {
         if (model.folder && !folderIdByPath.has(model.folder)) {
@@ -654,37 +660,37 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
         }
     }
 
-    const results = await Promise.allSettled(models.map(async (model) => {
-        model.folderId = model.folder ? folderIdByPath.get(model.folder) : null;
+    const succeeded = [];
+    const failed = [];
 
-        const testCase = await createTestCase(model);
+    for (const model of models) {
+        try {
+            model.folderId = model.folder ? folderIdByPath.get(model.folder) : null;
 
-        if (model.steps?.length) {
-            await createTestSteps(testCase.key, model.steps);
+            const testCase = await createTestCase(model);
+
+            if (model.steps?.length) {
+                await createTestSteps(testCase.key, model.steps);
+            }
+
+            await linkTestCaseToIssue(testCase.key, issueId);
+
+            if (testCycleKey) {
+                await createTestExecution({
+                    projectKey: model.projectKey,
+                    testCaseKey: testCase.key,
+                    testCycleKey
+                });
+            }
+
+            succeeded.push(testCase.key);
+        } catch (err) {
+            failed.push({ model, err });
         }
-
-        await linkTestCaseToIssue(testCase.key, issueId);
-
-        if (testCycleKey) {
-            await createTestExecution({
-                projectKey: model.projectKey,
-                testCaseKey: testCase.key,
-                testCycleKey
-            });
-        }
-
-        return testCase.key;
-    }));
-
-    const succeeded = results
-        .filter(r => r.status === 'fulfilled')
-        .map(r => r.value);
-    const failed = results
-        .map((r, i) => ({ r, model: models[i] }))
-        .filter(({ r }) => r.status === 'rejected');
+    }
 
     if (succeeded.length) {
-        console.log(`Test Cases creados: ${succeeded.join(', ')}`);
+        console.log(`Test Cases creados en orden: ${succeeded.join(', ')}`);
         console.log(`Vinculados con ${issueKey} en Xray.`);
         if (testCycleKey) {
             console.log(`Ejecuciones creadas en ${testCycleKey} con estado "TO DO".`);
@@ -693,7 +699,7 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
 
     if (failed.length) {
         console.error(`${failed.length} de ${models.length} Test Case(s) fallaron al crearse:`);
-        failed.forEach(({ r, model }) => console.error(`  - "${model.name}": ${r.reason.message}`));
+        failed.forEach(({ model, err }) => console.error(`  - "${model.name}": ${err.message}`));
         throw new Error(`${failed.length} Test Case(s) fallaron. Los ${succeeded.length} que sí se crearon ya quedaron completos (steps + link + ejecución) — no hace falta re-crearlos, solo reintentar los fallidos.`);
     }
 
