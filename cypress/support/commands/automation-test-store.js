@@ -8,19 +8,20 @@ Cypress.Commands.add("gotoATSUrl", (route) => {
 
 // Automation Test Store no publica credenciales de demo fijas (a diferencia
 // de SauceDemo/OrangeHRM): cada corrida registra su propia cuenta de cliente
-// descartable via la UI de registro, y la reutiliza durante todo el spec de
-// Login. Devuelve { loginName, password } para que el spec los use.
+// descartable via la UI de registro, y la reutiliza durante el spec que la
+// necesite (Login, Registro, etc). Devuelve { loginName, password, email }.
 Cypress.Commands.add("registerATSTestAccount", () => {
     const registerPage = new AutomationTestStoreRegisterPage()
     const uniqueId = Date.now()
     const loginName = `qatester_${uniqueId}`
     const password = 'Qatest123!'
+    const email = `qatester_${uniqueId}@example.com`
 
     cy.gotoATSUrl('/index.php?rt=account/create')
     registerPage.fillMandatoryFields({
         firstName: 'QA',
         lastName: 'Tester',
-        email: `qatester_${uniqueId}@example.com`,
+        email,
         address: 'Test Street 123',
         city: 'Buenos Aires',
         postcode: '1000',
@@ -30,5 +31,5 @@ Cypress.Commands.add("registerATSTestAccount", () => {
     registerPage.submit()
     registerPage.verifyAccountCreated()
 
-    return cy.wrap({ loginName, password })
+    return cy.wrap({ loginName, password, email })
 })
