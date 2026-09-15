@@ -43,6 +43,48 @@ Cypress.Commands.add("reconPage", (label, url) => {
    })
 })
 
+// Reconocimiento de comportamiento dinamico: complementa a reconPage (que
+// solo lee estructura estatica via GET) para el caso en que hace falta
+// saber que responde un formulario al enviarlo -- mensajes de exito/error
+// reales, no supuestos. Navega a `url` (absoluta, igual que reconPage),
+// completa `fields` (mapa selector -> valor; un valor vacio/undefined deja
+// el campo vacio a proposito, para casos de campo obligatorio faltante),
+// hace click en `submitSelector` (OBLIGATORIO: la pagina puede tener mas
+// de un <form> -- ej. buscador, newsletter -- asi que adivinar un selector
+// generico tipo 'form button[type="submit"]' matchea de mas; el llamador
+// ya conoce el id exacto del form por reconPage, ej.
+// '#forgottenFrm button[type="submit"]') y vuelca el resultado a un
+// objeto plano. Generico y agnostico de aplicacion, igual que reconPage:
+// no asume nombres de campos ni mensajes de ninguna app en particular.
+//
+// Pensado para usarse junto a reconPage en un unico spec descartable que
+// recorra TODA la matriz de escenarios de una sola vez (exito, cada campo
+// vacio, variantes de formato, etc.) en un solo cy.writeFile al final --
+// no un spec por escenario ni multiples corridas de `cypress run`. Un
+// formulario que hace submit real (no AJAX) recarga la pagina completa;
+// Cypress espera esa recarga automaticamente al encadenar cy.get() despues
+// del click, sin necesidad de cy.wait(ms) fijo.
+Cypress.Commands.add("reconSubmit", (label, url, fields, submitSelector, options = {}) => {
+   const messageSelector = options.messageSelector || '.alert, .messages, .alert-danger, .alert-success, .text-danger, .text-success, .error'
+
+   cy.visit(url, { timeout: 120000 })
+
+   Object.entries(fields).forEach(([selector, value]) => {
+      const field = cy.get(selector)
+      field.clear()
+      if (value) field.type(value, { parseSpecialCharSequences: false })
+   })
+
+   cy.get(submitSelector).click()
+
+   return cy.url().then(urlAfter => cy.get('body').then($body => ({
+      label,
+      url: urlAfter,
+      heading: $body.find('h1').first().text().trim(),
+      message: $body.find(messageSelector).first().text().trim()
+   })))
+})
+
 Cypress.Commands.add("randomNum", (number) => {
    let randomNum = Math.floor(Math.random() * number)
    return randomNum

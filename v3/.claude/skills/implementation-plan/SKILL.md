@@ -215,6 +215,15 @@ Antes de definir MÉTODOS A CREAR para esa página, correr `cy.reconPage` (Comma
 
 Esto no reemplaza la ejecución real del Test Case, solo evita perder tiempo adivinando o iterando selectores durante la implementación.
 
+### Comportamiento dinámico (qué responde un formulario al enviarlo)
+
+`cy.reconPage` solo lee estructura estática (GET). Si el plan necesita saber qué mensaje/estado real devuelve un formulario al enviarlo (éxito, error, campo obligatorio faltante, etc.) — no inventar ni asumir el texto del mensaje — usar el Command complementario `cy.reconSubmit(label, url, fields, submitSelector)` (mismo archivo `commands/shared.js`):
+
+- `fields`: mapa `selector -> valor` (un valor vacío deja el campo vacío a propósito, para casos de campo obligatorio faltante).
+- `submitSelector` es **obligatorio y debe ir scopeado al form concreto** (ej. `#miForm button[type="submit"]`), nunca un selector genérico tipo `form button[type="submit"]` — la página puede tener más de un `<form>` (buscador, newsletter, etc.) y un selector sin scope matchea de más y rompe el click.
+- Planificar **toda la matriz de escenarios de antemano** (éxito + cada variante negativa/límite) y recorrerla con un `forEach` plano que llame a `cy.reconSubmit` una vez por escenario dentro de un único `it()`, acumulando cada resultado y volcándolos con un solo `cy.writeFile` al final — nunca un spec por escenario ni múltiples corridas de `cypress run`. No envolver las llamadas en `.reduce()`/`.then()` anidados: alcanza con un `forEach` directo seguido de `cy.then()` para el volcado final.
+- Igual que con `reconPage`: spec descartable en `cypress/e2e/<app>/_recon.cy.js`, nunca commitear ni el spec ni el fixture de resultados.
+
 ## Riesgos
 
 Identificar riesgos técnicos como:
