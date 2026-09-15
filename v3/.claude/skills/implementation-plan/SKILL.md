@@ -207,6 +207,14 @@ Si el framework actual no tiene un patrón establecido para leer errores de la U
 
 Esta estrategia debe quedar reflejada en el plan; nunca dejarla implícita ni delegarla a la etapa de implementación sin definición previa.
 
+## EXPLORACIÓN DE PÁGINAS NUEVAS
+
+Si el plan involucra una página o flujo para el cual el framework no tiene todavía Page Object, Command ni selectores conocidos (no apareció como reutilizable en `framework-analysis`), no asumir ni adivinar selectores.
+
+Antes de definir MÉTODOS A CREAR para esa página, correr `cy.reconPage` (Command genérico en `commands/shared.js`) sobre la URL correspondiente para relevar de forma rápida los selectores reales (forms, campos, botones, links, mensajes) y basar el plan en eso.
+
+Esto no reemplaza la ejecución real del Test Case, solo evita perder tiempo adivinando o iterando selectores durante la implementación.
+
 ## Riesgos
 
 Identificar riesgos técnicos como:
