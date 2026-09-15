@@ -47,15 +47,27 @@ Cypress.Commands.add("reconPage", (label, url) => {
 // solo lee estructura estatica via GET) para el caso en que hace falta
 // saber que responde un formulario al enviarlo -- mensajes de exito/error
 // reales, no supuestos. Navega a `url` (absoluta, igual que reconPage),
-// completa `fields` (mapa selector -> valor; un valor vacio/undefined deja
-// el campo vacio a proposito, para casos de campo obligatorio faltante),
-// hace click en `submitSelector` (OBLIGATORIO: la pagina puede tener mas
-// de un <form> -- ej. buscador, newsletter -- asi que adivinar un selector
-// generico tipo 'form button[type="submit"]' matchea de mas; el llamador
-// ya conoce el id exacto del form por reconPage, ej.
-// '#forgottenFrm button[type="submit"]') y vuelca el resultado a un
-// objeto plano. Generico y agnostico de aplicacion, igual que reconPage:
-// no asume nombres de campos ni mensajes de ninguna app en particular.
+// completa `fields` (mapa selector -> valor) detectando el tipo real de
+// cada control -- texto/textarea: value es el string a tipear (vacio/
+// undefined deja el campo vacio a proposito, para casos de campo
+// obligatorio faltante); checkbox/radio: value es true/false (marcar/
+// desmarcar; undefined = no tocarlo); select: value es la opcion a elegir
+// por texto visible u value (vacio/undefined = no tocarlo, queda la
+// opcion por defecto). Hace click en `submitSelector` (OBLIGATORIO: la
+// pagina puede tener mas de un <form> -- ej. buscador, newsletter -- asi
+// que adivinar un selector generico tipo 'form button[type="submit"]'
+// matchea de mas; el llamador ya conoce el id exacto del form por
+// reconPage, ej. '#forgottenFrm button[type="submit"]') y vuelca el
+// resultado a un objeto plano. Generico y agnostico de aplicacion, igual
+// que reconPage: no asume nombres de campos ni mensajes de ninguna app
+// en particular.
+//
+// Limitacion conocida: no resuelve selects encadenados que dependen de
+// AJAX (ej. Pais -> Provincia/Estado, donde las opciones del segundo
+// select se repueblan recien despues de elegir el primero) -- para ese
+// caso puntual seguir usando un metodo propio del Page Object con
+// cy.intercept (ver AutomationTestStoreRegisterPage.selectCountry), este
+// comando es para reconocimiento rapido, no reemplaza esa logica.
 //
 // Pensado para usarse junto a reconPage en un unico spec descartable que
 // recorra TODA la matriz de escenarios de una sola vez (exito, cada campo
@@ -70,9 +82,22 @@ Cypress.Commands.add("reconSubmit", (label, url, fields, submitSelector, options
    cy.visit(url, { timeout: 120000 })
 
    Object.entries(fields).forEach(([selector, value]) => {
-      const field = cy.get(selector)
-      field.clear()
-      if (value) field.type(value, { parseSpecialCharSequences: false })
+      cy.get(selector).then($el => {
+         const tag = $el.prop('tagName').toLowerCase()
+         const type = ($el.attr('type') || '').toLowerCase()
+
+         if (tag === 'select') {
+            if (value) cy.wrap($el).select(value)
+         } else if (type === 'checkbox') {
+            if (value === true) cy.wrap($el).check()
+            else if (value === false) cy.wrap($el).uncheck()
+         } else if (type === 'radio') {
+            if (value === true) cy.wrap($el).check()
+         } else {
+            cy.wrap($el).clear()
+            if (value) cy.wrap($el).type(value, { parseSpecialCharSequences: false })
+         }
+      })
    })
 
    cy.get(submitSelector).click()
