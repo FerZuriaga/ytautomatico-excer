@@ -72,6 +72,16 @@ QaAutomation1 ejecuta esta secuencia, sin saltarse pasos:
 
 `bug-reporting` se invoca en cualquier momento que se detecte un posible defecto (ver GESTIÓN DE BUGS). `executive-summary` es independiente de esta secuencia (ver INFORME FINAL).
 
+## PIPELINE DE EJECUCIÓN OBLIGATORIO (3 PASOS)
+
+Definido en `CLAUDE.md` (aplica a todo el proyecto). Se ejecuta dentro de la SECUENCIA DE SKILLS de más arriba, no la reemplaza ni la reordena:
+
+1. **Discovery estático primero** (durante `implementation-plan`, antes de escribir código): ejecutar `cy.reconPage` antes de escribir cualquier código o de suponer selectores. Guardar los elementos extraídos en `cypress/fixtures/selectors/<modulo>.json` — es un artefacto del repo, no uno de los archivos temporales prohibidos más arriba. Prohibido adivinar selectores CSS/IDs/names sin haberlos confirmado así; prohibido crear specs temporales o borradores para esta exploración.
+
+2. **Discovery dinámico**: usar `cy.reconSubmit` junto con los selectores ya confirmados del Paso 1 para mapear las respuestas reales (mensajes de éxito/error, redirecciones) antes de dar por válido cualquier comportamiento supuesto durante `ticket-analysis`. Si ese comportamiento real difiere de lo que asumía la Historia recibida, informarlo — publicar o actualizar la Historia, los Test Cases y el Test Cycle en Jira/Xray sigue siendo exclusivo de ProductAgent (ver PROHIBICIONES), manteniendo el orden correlativo ya establecido.
+
+3. **Ejecución en una sola pasada** (durante `branch-management` y la implementación): verificar la rama activa con `git branch` antes de tocar cualquier archivo, confirmando que parte de la base correcta según el estado real de las ramas dependientes del módulo — nunca asumir ciegamente `main` ni ninguna otra base sin comprobarlo. Recién entonces escribir el `.page.js` (consumiendo el JSON de selectores del Paso 1) y el spec `.cy.js`, y durante `test-execution` ejecutar Cypress una sola vez filtrando por esa spec puntual (`npx cypress run --spec <ruta>`) — no correr la suite completa ni repetir la corrida salvo que falle.
+
 ## INSTANCIA ÚNICA
 
 QaAutomation1 nunca deberá iniciar una nueva automatización sobre un Ticket que ya tenga una instancia activa.

@@ -16,6 +16,16 @@ Objetivo: el flujo completo de una User Story (Jira/Zephyr -> spec Cypress -> ej
 
 4. **Flujo directo post-ejecución.** Si Cypress corre y devuelve exit code 0 (`passing`), eso es evidencia suficiente: hacer commit y push directo a la rama de feature de inmediato, sin pedir capturas ni evidencia adicional, y sin abrir debates internos sobre el resultado.
 
+# Pipeline de Ejecución Obligatorio
+
+Antes de iniciar cualquier módulo, escenario o funcionalidad nueva (no aplica a continuar un ticket ya en curso), seguir este pipeline de 3 pasos en orden estricto — no se puede saltar un paso ni adelantar el siguiente sin haber cerrado el anterior. Aplica de forma automática a todo el proyecto, no requiere re-confirmarse en cada tarea.
+
+1. **Discovery estático primero.** Ejecutar `cy.reconPage` (ver `implementation-plan`, sección "EXPLORACIÓN DE PÁGINAS NUEVAS") ANTES de escribir cualquier código o de intentar adivinar selectores. Guardar los elementos extraídos en `cypress/fixtures/selectors/<modulo>.json` — este archivo es un artefacto del repo, no un temporal (a diferencia de los specs de debug descartables, no se borra al terminar la tarea). **Prohibido:** adivinar selectores CSS, IDs o names sin haberlos confirmado con `cy.reconPage`; prohibido crear specs temporales o borradores para esta exploración.
+
+2. **Discovery dinámico.** Usar `cy.reconSubmit` junto con los selectores ya confirmados del Paso 1 para mapear las respuestas reales del formulario o flujo (mensajes de éxito/error, redirecciones) — nunca asumir un mensaje o comportamiento sin haberlo verificado así. Con ese comportamiento real ya confirmado, generar la Historia de Usuario, los Test Cases y el Test Cycle en Jira/Xray, manteniendo el orden correlativo estricto ya establecido (ver Regla 2 de "Reglas de ejecución rápida": `testcaseModels` + creación secuencial).
+
+3. **Ejecución en una sola pasada.** Verificar la rama activa con `git branch` antes de tocar cualquier archivo: confirmar que parte de la base correcta según el estado real de las ramas dependientes de ese módulo (si existe una rama feature del mismo módulo todavía sin mergear de la que depende, partir de ella; si ya está todo mergeado, partir de `main` actualizado) — nunca asumir ciegamente cuál es la base sin comprobarlo con `git branch`. Recién entonces escribir el `.page.js` (consumiendo el JSON de selectores del Paso 1) y el spec `.cy.js`, y ejecutar Cypress **una sola vez** filtrando únicamente por esa spec puntual: `npx cypress run --spec <ruta>` — no correr la suite completa ni repetir la corrida salvo que falle.
+
 # Reglas de Arquitectura, Diseño de HUs y Pruebas Automatizadas
 
 Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tarea en curso. No requieren re-confirmarse en cada tarea.
@@ -59,7 +69,7 @@ Aplican a todo el desarrollo del proyecto de aquí en adelante, no solo a la tar
    - por qué otras se separaron;
    - qué criterio arquitectónico se utilizó (regla 1 para HU, regla 2-3 para CA).
 
-7. **Flujo de trabajo por tarea.** Para cada nueva tarea: analizar el requerimiento, estructurar la HU y sus CA bajo las reglas 1-3, justificar explícitamente el agrupamiento/separación (regla 6), implementar el Page Object y el spec de Cypress correspondiente (regla 4), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 5), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
+7. **Flujo de trabajo por tarea.** Para cada nueva tarea: seguir primero el "Pipeline de Ejecución Obligatorio" de más arriba (discovery estático y dinámico antes de tocar código), estructurar la HU y sus CA bajo las reglas 1-3 ya con el comportamiento real verificado, justificar explícitamente el agrupamiento/separación (regla 6), implementar el Page Object y el spec de Cypress correspondiente (regla 4), ejecutar `npx cypress run` localmente y reportar a Zephyr (regla 5), y completar el ciclo de Git (commit, push, Pull Request) según las Reglas de ejecución rápida de más arriba.
 
 8. **Script npm por aplicación.** Al crear el primer spec de Cypress para una aplicación/página nueva (carpeta nueva bajo `cypress/e2e/<app>/`), agregar en `package.json` un script `test:<app>` siguiendo el patrón ya existente:
 
