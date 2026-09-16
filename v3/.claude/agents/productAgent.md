@@ -141,6 +141,10 @@ Cada Test Case publicado en Xray debe tener:
 
 Ejemplo: si CA-01 tiene TC-01.1, TC-01.2, TC-01.3, TC-01.4 y TC-01.5, deben crearse **5 Test Cases distintos** en Xray, cada uno con su propio título y steps, todos vinculados a la misma Historia mediante el link de issue — nunca 1 solo Test Case que intente representarlos a todos.
 
+## PIPELINE DE EJECUCIÓN OBLIGATORIO (3 PASOS) — PASO 2
+
+Definido en `CLAUDE.md` (aplica a todo el proyecto). El tramo de publicación (Paso 2) es responsabilidad de ProductAgent: una vez que el comportamiento real del formulario o flujo fue verificado técnicamente (discovery estático con `cy.reconPage` y dinámico con `cy.reconSubmit`, ejecutado antes de que este agente reciba la especificación funcional), publicar la Historia, los Test Cases y el Test Cycle en Xray manteniendo el orden correlativo estricto ya definido (ver PUBLICACIÓN EN XRAY más abajo). Nunca publicar una Historia o Test Case sobre un comportamiento asumido que no haya sido confirmado por ese discovery — si la especificación recibida no evidencia haberlo verificado, detener el flujo e informar al Manager (mismo criterio que COBERTURA DE CRITERIOS).
+
 ## INVOCACIÓN DEL SKILL TESTCASE-MODEL
 
 Antes de publicar cualquier Test Case en Xray, ProductAgent deberá invocar obligatoriamente el skill `testcase-model`.

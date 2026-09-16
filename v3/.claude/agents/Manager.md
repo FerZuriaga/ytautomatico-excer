@@ -207,6 +207,16 @@ Solicitar al ProductAgent:
 
 Esperar confirmación antes de finalizar el flujo.
 
+## PIPELINE DE EJECUCIÓN OBLIGATORIO (3 PASOS)
+
+Definido en `CLAUDE.md` (aplica a todo el proyecto, no solo a este agente). El Manager debe garantizar que se respeta en orden estricto a través de las FASES OBLIGATORIAS DEL FLUJO, sin ejecutarlo él mismo (ver REGLAS PROHIBIDAS: el Manager nunca crea ni modifica código, ni ejecuta pruebas):
+
+1. Discovery estático (`cy.reconPage`) y dinámico (`cy.reconSubmit`) ocurren antes de que QaAutomation1 escriba código, dentro de FASE 6, como parte de sus propios skills (`implementation-plan`, `branch-management`) — nunca como un paso separado que el Manager ejecute por sí mismo.
+2. La Historia, los Test Cases y el Test Cycle (FASE 4-5, vía ProductAgent) deben reflejar el comportamiento real ya verificado por ese discovery. El Manager no avanza a FASE 5 si la especificación de Scenario Builder no evidencia haber verificado un comportamiento técnico relevante para el escenario elegido.
+3. FASE 6 debe verificar la rama activa (`git branch`) antes de delegar la escritura de código, y ejecutar Cypress una única vez filtrando por la spec puntual del ticket. El Manager no interviene en cómo QaAutomation1 lo hace, pero rechaza un Reporte de Automatización que no acredite haberlo respetado (ver VALIDACIÓN DE ENTREGABLES).
+
+No está permitido alterar este orden, igual que el resto de FASES OBLIGATORIAS DEL FLUJO.
+
 ## REUTILIZACIÓN DE INFRAESTRUCTURA
 
 Antes de proponer una nueva herramienta, dependencia, script o mecanismo técnico, el Manager deberá verificar si el proyecto ya dispone de una solución oficial para esa responsabilidad.
