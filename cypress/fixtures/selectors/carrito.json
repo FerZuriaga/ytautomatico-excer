@@ -1,0 +1,12 @@
+{
+  "cartTable": ".cart-info table",
+  "cartRow": ".cart-info table tbody tr",
+  "quantityInput": "#cart_quantity68",
+  "quantityInputPattern": "input[name^=\"quantity[\"]",
+  "removeLink": "a[href*=\"remove=68\"]",
+  "updateButton": "#cart_update",
+  "headerCartCount": ".topcart .label-orange",
+  "headerCartTotal": ".topcart .cart_total",
+  "totalsTable": "#totals_table",
+  "heading": "Shopping Cart"
+}
