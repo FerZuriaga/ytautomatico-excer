@@ -1,0 +1,24 @@
+{
+  "categoryUrlPattern": "index.php?rt=product/category&path={pathId}&sort={sort}&limit=20",
+  "sortSelectId": "sort",
+  "sortOptions": {
+    "nameAsc": "pd.name-ASC",
+    "nameDesc": "pd.name-DESC",
+    "priceAsc": "p.price-ASC",
+    "priceDesc": "p.price-DESC"
+  },
+  "productNameSelector": ".prdocutname:visible",
+  "productPriceSelector": ".oneprice",
+  "testCategory": {
+    "name": "Makeup",
+    "pathId": 36
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo (sin Cypress), por instruccion explicita del usuario 2026-09-18 -- cy.reconPage/cy.reconSubmit quedaron prohibidos.",
+    "mecanismo": "El <select id=sort> dispara Resort() (JS) en el evento change, que hace location=url -- navegacion GET real a rt=product/category con el parametro sort, no AJAX.",
+    "ordenNombreAscConfirmado": "Delicate Oil-Free Powder Blush, L'EXTREME Instant Extensions Lengthening Mascara, Product with stock locations, Tropiques Minerale Loose Bronzer, Viva Glam Lipstick, Waterproof Protective Undereye Concealer",
+    "ordenPrecioAscConfirmado": "5.00, 25.00, 29.50, 29.50, 34.00, 38.50",
+    "typoRealDelSitio": "la clase del nombre de producto es literalmente '.prdocutname' (typo del propio sitio, no error de tipeo propio -- confirmado en el HTML real).",
+    "elementosDuplicadosGridVsList": "El HTML trae 2 grillas de productos con la misma clase .prdocutname cada una (vista 'grid' visible por defecto + vista 'list' oculta por CSS externo via el toggle #grid/#list) -- 12 elementos en el DOM para 6 productos reales. No detectable leyendo el HTML crudo con curl (sin CSS aplicado no se sabe cual esta oculta); se detecto recien en la corrida real de Cypress ('Found 12, expected 6') y se corrigio filtrando por :visible en el selector."
+  }
+}
