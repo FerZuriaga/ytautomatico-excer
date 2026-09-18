@@ -70,16 +70,38 @@ Cypress.Commands.add("reconPage", (label, url) => {
 // comando es para reconocimiento rapido, no reemplaza esa logica.
 //
 // Pensado para usarse junto a reconPage en un unico spec descartable que
-// recorra TODA la matriz de escenarios de una sola vez (exito, cada campo
-// vacio, variantes de formato, etc.) en un solo cy.writeFile al final --
-// no un spec por escenario ni multiples corridas de `cypress run`. Un
-// formulario que hace submit real (no AJAX) recarga la pagina completa;
-// Cypress espera esa recarga automaticamente al encadenar cy.get() despues
-// del click, sin necesidad de cy.wait(ms) fijo.
+// recorra TODA la matriz de escenarios (exito, cada campo vacio, variantes
+// de formato, etc.) en una sola corrida de `cypress run` -- no un spec por
+// escenario. Un formulario que hace submit real (no AJAX) recarga la
+// pagina completa; Cypress espera esa recarga automaticamente al encadenar
+// cy.get() despues del click, sin necesidad de cy.wait(ms) fijo.
+//
+// Convencion obligatoria para evitar 2 fuentes reales de perdida de tiempo
+// ya repetidas en este proyecto (ver ats_recon_recuperar_login_name.cy.js):
+// 1. UN it() POR ESCENARIO, nunca varias llamadas a reconSubmit anidadas
+//    en el mismo it() -- si una falla, un solo it() con 4 llamadas no deja
+//    saber cual sin releer stacks confusos. Aislar = diagnostico inmediato.
+// 2. Para juntar los resultados de todos los it() en un unico archivo,
+//    acumular en un objeto JS plano declarado en el describe() (persiste
+//    entre it() de la misma corrida, sin volver a leer disco) y hacer un
+//    unico cy.writeFile en un after() al final. NUNCA encadenar
+//    cy.readFile().then(prev => cy.writeFile({...prev, ...})) entre
+//    it() para "acumular" -- un archivo _recon_*.json viejo de una corrida
+//    anterior con contenido parcial/corrupto rompe el readFile siguiente
+//    en silencio. Si no hace falta un unico archivo consolidado, alternativa
+//    valida y mas simple: un archivo _recon_<escenario>.json por it().
 Cypress.Commands.add("reconSubmit", (label, url, fields, submitSelector, options = {}) => {
    const messageSelector = options.messageSelector || '.alert, .messages, .alert-danger, .alert-success, .text-danger, .text-success, .error'
 
    cy.visit(url, { timeout: 120000 })
+
+   // Chequeo temprano: si la app redirige (ej. sesion activa que ya no
+   // deja acceder a un formulario de "recuperar credencial"), fallar aca
+   // con un mensaje claro de URL en vez de dejar que cy.get(selector) mas
+   // abajo agote su timeout con un generico "elemento no encontrado" que
+   // no dice por que. No aborta el reconocimiento: solo adelanta el
+   // diagnostico real.
+   cy.url({ timeout: 10000 }).should('include', url)
 
    Object.entries(fields).forEach(([selector, value]) => {
       cy.get(selector).then($el => {

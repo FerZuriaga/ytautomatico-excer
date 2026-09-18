@@ -1,0 +1,38 @@
+{
+  "formId": "forgottenFrm",
+  "fields": [
+    {
+      "tag": "input",
+      "id": null,
+      "name": "csrftoken",
+      "type": "hidden",
+      "placeholder": null
+    },
+    {
+      "tag": "input",
+      "id": null,
+      "name": "csrfinstance",
+      "type": "hidden",
+      "placeholder": null
+    },
+    {
+      "tag": "input",
+      "id": "forgottenFrm_lastname",
+      "name": "lastname",
+      "type": "text",
+      "placeholder": null
+    },
+    {
+      "tag": "input",
+      "id": "forgottenFrm_email",
+      "name": "email",
+      "type": "text",
+      "placeholder": null
+    }
+  ],
+  "submitButton": {
+    "id": null,
+    "text": "Continue"
+  },
+  "heading": "Forgot Your Login Name?"
+}
