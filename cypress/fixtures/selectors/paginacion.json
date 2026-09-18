@@ -1,0 +1,21 @@
+{
+  "listingUrlPattern": "index.php?rt=product/search&keyword={keyword}&category_id=0&limit={limit}&page={page}",
+  "limitSelectId": "limit",
+  "limitOptions": ["10", "20", "30", "40", "50"],
+  "paginationContainerSelector": ".pagination",
+  "pageLinkPattern": ".pagination a[href*=\"page={n}\"]",
+  "productItemSelector": ".thumbnails .thumbnail:visible",
+  "testListing": {
+    "type": "busqueda",
+    "keyword": "a",
+    "note": "keyword de una sola letra devuelve mas de 50 productos reales en el catalogo -- usado para tener suficientes resultados y ejercitar los 5 valores reales del select #limit."
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real via curl directo, sin Cypress, misma regla que SCRUM-210.",
+    "mecanismoLimit": "El <select id=limit> navega por GET real via onchange (location=...&page=1&limit=X), mismo patron que #sort.",
+    "mecanismoPaginacion": "Los links de pagina (numeros, <, <<, >, >>) son <a href> reales con page=N en la URL -- no hay JS/AJAX, navegacion GET directa.",
+    "limiteMaximoReal": "Pedir un limit mayor a 50 por URL (ej. 200) se clampea silenciosamente a 50 por el backend -- 50 es el techo real, no solo el maximo de las opciones del select.",
+    "ningunaCategoriaSupera10Productos": "Ninguna categoria real del catalogo llega a 10 productos (maximo real: Fragrance con 9) -- por eso esta HU usa el listado de busqueda (keyword='a', >50 resultados) en vez de una categoria, para poder ejercitar el select #limit con sus 5 valores reales de forma significativa.",
+    "duplicacionGridList": "El listado de busqueda tambien duplica cada producto en 2 grillas (.thumbnails.grid + .thumbnails.list), mismo patron que las categorias -- se filtra por :visible (ya aplicado preventivamente en AutomationTestStoreSearchPage.resultItems, no hizo falta redescubrirlo con una corrida fallida esta vez)."
+  }
+}
