@@ -31,5 +31,5 @@ Cypress.Commands.add("registerATSTestAccount", () => {
     registerPage.submit()
     registerPage.verifyAccountCreated()
 
-    return cy.wrap({ loginName, password, email })
+    return cy.wrap({ loginName, password, email, lastName: 'Tester' })
 })
