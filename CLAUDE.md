@@ -14,3 +14,9 @@
 - **XRAY ADAPTER:** Usar exclusivamente `v3/scripts/create-jira-task.js` con `testcaseModels` para la generación masiva y orden correlativo de Test Cases.
 - **HU & CA GRANULARITY:** Respetar la matriz de 2 a 4 Criterios de Aceptación (CA) atómicos por Historia de Usuario según la regla de negocio, separando acciones destructivas en HUs independientes.
 - **CODE QUALITY STANDARDS:** Prohibido `cy.wait()` estáticos (usar esperas dinámicas), timeouts máximos de 15s y selectores resilientes.
+
+## 3. ESTÁNDARES DE XRAY/JIRA
+
+- **ESTRUCTURA DE PASOS EN XRAY (OBLIGATORIO):** Queda prohibido resumir el Test Case en 1 sola fila genérica. Cada Test Case en Xray debe contar con al menos 2 pasos estructurados en su tabla:
+  - **Paso 1 (Navegación / Precondición activa):** Declarar explícitamente la entrada a la pantalla/URL objetivo y verificar el estado inicial.
+  - **Paso 2 (Acción e Interacción):** Describir la acción concreta del usuario sobre la UI (ingresar datos, clic en botón específico) y validar los resultados esperados detallados.

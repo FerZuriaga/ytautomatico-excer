@@ -210,9 +210,9 @@ async function createTestCase(testcase) {
 }
 
 /**
- * Crea los steps de un Test Case ya existente. Xray no tiene un modo
- * OVERWRITE como Zephyr: cada step se agrega con su propia mutación,
- * en secuencia (no en paralelo, para no depender del orden de llegada).
+ * Crea los steps de un Test Case ya existente. Cada step se agrega con
+ * su propia mutación, en secuencia (no en paralelo, para no depender del
+ * orden de llegada).
  */
 async function createTestSteps(testCaseKey, steps) {
     const issueId = await issueIdOf(testCaseKey);
@@ -236,6 +236,35 @@ async function createTestSteps(testCaseKey, steps) {
     }
 
     return { count: steps.length };
+}
+
+/**
+ * Borra TODOS los steps existentes de un Test Case. Firma verificada por
+ * introspección real del schema (removeAllTestSteps(issueId, versionId)),
+ * no adivinada — Xray SÍ tiene un modo overwrite, a diferencia de lo que
+ * decía este comentario antes.
+ */
+async function removeAllTestSteps(testCaseKey) {
+    const issueId = await issueIdOf(testCaseKey);
+
+    const query = `
+        mutation($issueId: String!) {
+            removeAllTestSteps(issueId: $issueId)
+        }
+    `;
+    const res = await xrayRequest(query, { issueId });
+    assertNoErrors(res);
+    return res.body.data.removeAllTestSteps;
+}
+
+/**
+ * Reemplaza por completo los steps de un Test Case ya existente (borra
+ * los actuales y crea los nuevos), para corregir Test Cases ya
+ * publicados sin tener que borrar y recrear el issue.
+ */
+async function replaceTestSteps(testCaseKey, steps) {
+    await removeAllTestSteps(testCaseKey);
+    return createTestSteps(testCaseKey, steps);
 }
 
 /**
@@ -710,6 +739,8 @@ module.exports = {
 
     createTestCase,
     createTestSteps,
+    removeAllTestSteps,
+    replaceTestSteps,
     linkTestCaseToIssue,
     createTestCycle,
     createTestExecution,
