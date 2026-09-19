@@ -1,0 +1,18 @@
+{
+  "currencyDropdownToggleSelector": "ul.nav.language .dropdown-toggle",
+  "currencyDropdownLinkSelector": "ul.dropdown-menu.currency a[href*=\"currency={code}\"]",
+  "currencySelectedLabelSelector": "ul.nav.language .dropdown-toggle span",
+  "priceSelector": ".productfilneprice",
+  "testProduct": { "id": 50, "name": "Skinsheen Bronzer Stick" },
+  "prices": {
+    "USD": "$29.50",
+    "EUR": "27.69€",
+    "GBP": "£23.40"
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo con sesion (cookie jar), sin Cypress.",
+    "mecanismo": "El dropdown de moneda (li.dropdown.hover) es un dropdown CSS-only (sin JS toggle): los links de currency={USD|EUR|GBP} navegan por GET real a rt=index/home&currency=<codigo>, sin AJAX.",
+    "persistencia": "Confirmado con curl: el cambio de moneda persiste via cookie 'currency' (Max-Age=2592000, 30 dias), afecta tanto precios de listados como de detalle de producto en toda la sesion hasta el proximo cambio.",
+    "formatoPorMoneda": "USD y GBP muestran el simbolo como PREFIJO ($29.50 / £23.40); EUR lo muestra como SUFIJO (27.69€) -- formato real de cada moneda, no un detalle a asumir igual para las 3."
+  }
+}
