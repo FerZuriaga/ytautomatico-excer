@@ -28,6 +28,18 @@
  * publicadas cada una con su propio Test Cycle. Con un solo key sigue
  * funcionando igual que antes (ver reportResults).
  *
+ * El JSON de --data también acepta, en lugar del formato de un único
+ * issue, un array top-level "issues": [ {mismo formato de un issue de
+ * siempre}, ... ] para CREAR varias Historias (cada una con su propio
+ * historia/testcaseModels/testCycle) en una sola invocación del script
+ * -- "modo lote". Se procesan en secuencia (mismo motivo que
+ * publishTestCasesBatch: orden correlativo, sin condiciones de carrera
+ * en Jira), y las carpetas de Xray se resuelven una sola vez para todo
+ * el lote aunque varias HU compartan la misma ruta. Solo sirve para
+ * crear issues nuevos, no para actualizar (no acepta issueKey por
+ * issue) -- para actualizar seguir usando el formato de un único issue
+ * de siempre, invocando el script una vez por issueKey.
+ *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
  * responsabilidad es parsear la línea de comandos y componer, en el orden
@@ -168,10 +180,113 @@ async function reportResults(resultsPath, testCycleKeys, projectKey) {
   }
 }
 
+/**
+ * Construye la descripción ADF de un issue según su issuetype, con el
+ * mismo criterio que main() usa para el issue único de siempre.
+ */
+function buildDescriptionFor(issueDef) {
+  const issuetype = issueDef.issuetype || 'Historia';
+
+  if (issuetype === 'Bug') return jira.buildBugDescription(issueDef.bug);
+  if (issuetype === 'Historia' && issueDef.historia) return jira.buildHistoriaDescription(issueDef.historia);
+  if (issuetype === 'Tarea') return jira.buildTareaDescription(issueDef.tarea);
+  if (Array.isArray(issueDef.steps)) return jira.buildDescription(issueDef.steps);
+
+  console.error(`No se pudo determinar la descripción para issuetype "${issuetype}".`);
+  process.exit(1);
+}
+
+/**
+ * Crea UN issue nuevo (Historia/Bug/Tarea) + sus Test Cases en Xray +
+ * su link, usado por el modo lote (ISSUE.issues, ver main()). Mismo
+ * comportamiento que la rama "crear nuevo issue" de main(), extraído a
+ * función aparte para poder llamarlo varias veces en secuencia sin
+ * duplicar la lógica de creación (la rama de actualización de un issue
+ * existente no aplica al modo lote, que solo crea issues nuevos).
+ *
+ * `sharedFolderCache` se reenvía a publishTestCasesBatch para que dos
+ * HU del mismo lote que publican en la misma carpeta de Xray no la
+ * resuelvan dos veces contra la API.
+ */
+async function createSingleIssue(issueDef, sharedFolderCache) {
+  const issuetype = issueDef.issuetype || 'Historia';
+  const summary = issueDef.summary;
+  const testcaseModel = issueDef.testcaseModel || null;
+  const testcaseModels = Array.isArray(issueDef.testcaseModels) ? issueDef.testcaseModels : null;
+  const testCycle = issueDef.testCycle || null;
+  const description = buildDescriptionFor(issueDef);
+
+  console.log(`Creando nuevo issue (${issuetype})...`);
+  const res = await jira.createIssue({ projectKey: PROJECT, summary, issuetype, description });
+  if (res.status !== 201) {
+    console.error('Error al crear:', JSON.stringify(res.body, null, 2));
+    process.exit(1);
+  }
+
+  const key = res.body.key;
+  console.log(`Creado: ${key}`);
+  console.log(`URL: https://${jira.HOSTNAME}/browse/${key}`);
+
+  if (testcaseModel) {
+    console.log('Se detectó un Modelo Canónico de Test Case.');
+    try {
+      await xray.publishTestCase(testcaseModel, { issueKey: key, issueId: res.body.id, testCycle });
+    } catch (err) {
+      console.error('Error creando Test Case en Xray');
+      console.error(err.message);
+      process.exit(1);
+    }
+  } else if (testcaseModels) {
+    console.log(`Se detectaron ${testcaseModels.length} Modelos Canónicos de Test Case (lote paralelo).`);
+    try {
+      await xray.publishTestCasesBatch(testcaseModels, testCycle, key, res.body.id, sharedFolderCache);
+    } catch (err) {
+      console.error('Error creando Test Cases en Xray (lote paralelo)');
+      console.error(err.message);
+      process.exit(1);
+    }
+  }
+
+  if (issueDef.linkTo && issueDef.linkTo.key) {
+    console.log(`Vinculando ${key} con ${issueDef.linkTo.key} (${issueDef.linkTo.type || 'Relates'})...`);
+    const linkRes = await jira.linkIssue(key, issueDef.linkTo.key, issueDef.linkTo.type);
+    if (linkRes.status === 201) {
+      console.log(`Vinculado correctamente con ${issueDef.linkTo.key}.`);
+    } else {
+      console.error('Error al vincular issue:', JSON.stringify(linkRes.body, null, 2));
+    }
+  }
+
+  return key;
+}
+
 async function main() {
   // targetKey es el issue sobre el que finalmente se aplican --transition/--comment:
   // el ISSUE_KEY recibido, o el key recién creado si --data no traía issueKey.
   let targetKey = ISSUE_KEY;
+
+  if (dataPath && Array.isArray(ISSUE.issues)) {
+    if (ISSUE_KEY) {
+      console.error('El modo lote (ISSUE.issues) solo crea issues nuevos -- no pasar un issueKey junto con él.');
+      process.exit(1);
+    }
+
+    console.log(`Modo lote: se detectaron ${ISSUE.issues.length} issues para crear.`);
+    const sharedFolderCache = new Map();
+    const createdKeys = [];
+    for (const issueDef of ISSUE.issues) {
+      const key = await createSingleIssue(issueDef, sharedFolderCache);
+      createdKeys.push(key);
+    }
+    console.log(`Lote completo. Issues creados en orden: ${createdKeys.join(', ')}`);
+
+    // El lote no fija un targetKey único para --transition/--comment (no
+    // tendría sentido aplicar la misma transición/comentario a varios
+    // issues distintos sin que el usuario lo pida explícitamente por
+    // issue) -- si se necesita, seguir usando el formato de un único
+    // issue con su propio issueKey.
+    return;
+  }
 
   if (dataPath) {
     const issuetype = ISSUE.issuetype || 'Historia';
