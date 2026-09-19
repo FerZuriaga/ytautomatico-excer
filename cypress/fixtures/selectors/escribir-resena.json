@@ -1,0 +1,19 @@
+{
+  "reviewFormSelector": "#review .content",
+  "ratingRadioIds": ["rating1", "rating2", "rating3", "rating4", "rating5"],
+  "nameInputId": "name",
+  "textTextareaId": "text",
+  "captchaImageId": "captcha_img",
+  "captchaInputId": "captcha",
+  "submitButtonId": "review_submit",
+  "errorSelector": "#review .alert-danger",
+  "humanVerificationErrorText": "Human verification has failed! Please try again.",
+  "endpoint": "index.php?rt=product/review/write&product_id={productId}",
+  "testProduct": { "id": 50, "name": "Skinsheen Bronzer Stick" },
+  "hallazgos": {
+    "metodoRelevamiento": "Discovery real via curl (form HTML + prueba directa del endpoint POST rt=product/review/write con cookies de sesion), sin Cypress.",
+    "captchaAleatorioPorSesion": "Confirmado con 3 sesiones distintas via curl (rt=common/captcha) que el texto del captcha es una imagen con codigo alfanumerico aleatorio, distinto en cada sesion -- no hay valor fijo ni forma de leerlo via HTTP (headers/cookies no lo exponen).",
+    "captchaBloqueaAntesQueCualquierOtraValidacion": "Confirmado: con captcha vacio o incorrecto, el servidor devuelve siempre {\"error\":\"Human verification has failed! Please try again.\"} sin importar si rating/name/text son validos o invalidos -- ninguna otra validacion (rating faltante, nombre corto, texto corto) es alcanzable sin resolver el captcha real.",
+    "alcanceFueraDeEstaHU": "Verificacion de rating/nombre/texto y el envio exitoso de una resena real quedan fuera de alcance: requieren resolver en tiempo real un captcha de imagen aleatorio, no soportado por la automatizacion E2E de este proyecto sin agregar una dependencia de OCR (decision del usuario 2026-09-19: acotar alcance, no agregar esa dependencia en este ciclo)."
+  }
+}
