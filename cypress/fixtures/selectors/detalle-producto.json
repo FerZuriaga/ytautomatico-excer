@@ -1,0 +1,32 @@
+{
+  "productDetailUrlPattern": "index.php?rt=product/product&product_id={productId}",
+  "productNameSelector": "h1.productname",
+  "unitPriceSelector": ".productfilneprice",
+  "oldPriceSelector": ".productpageoldprice",
+  "quantityInputId": "product_quantity",
+  "totalPriceSelector": ".total-price",
+  "tabs": {
+    "description": "#description",
+    "reviews": "#review",
+    "tags": "#producttag"
+  },
+  "tabLinks": {
+    "description": "a[href=\"#description\"]",
+    "reviews": "a[href=\"#review\"]",
+    "tags": "a[href=\"#producttag\"]"
+  },
+  "descriptionInfoSelector": "#description .productinfo",
+  "noReviewsEndpoint": "index.php?rt=product/review/review&product_id={productId}",
+  "noReviewsText": "There are no reviews for this product.",
+  "tagsListSelector": "#producttag ul.tags li a",
+  "testProducts": {
+    "sinOferta": { "id": 50, "name": "Skinsheen Bronzer Stick", "price": "$29.50" },
+    "conOferta": { "id": 65, "name": "Absolue Eye Precious Cells", "priceOld": "$105.00", "priceNew": "$89.00" }
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo (sin Cypress), pipeline vigente desde 2026-09-18.",
+    "calculoPrecioTotal": "display_total_price() hace POST AJAX a rt=r/product/product/calculateTotal con el form #product serializado, y actualiza .total-price sin recargar la pagina -- se dispara en keyup del input de cantidad.",
+    "reviewsRequierenModeracion": "Confirmado con curl: tras un envio de resena EXITOSO real, rt=product/review/review sigue devolviendo 'There are no reviews for this product.' -- las resenas quedan pendientes de aprobacion del webmaster y no aparecen de inmediato.",
+    "productoSinOfertaSoloTieneUnPrecio": "product_id=50 (sin oferta) solo renderiza .productfilneprice, sin .productpageoldprice -- confirmado comparando el HTML real contra product_id=65 (con oferta activa)."
+  }
+}
