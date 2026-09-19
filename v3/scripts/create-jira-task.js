@@ -22,6 +22,12 @@
  * un lote paralelo — ver xray.publishTestCasesBatch). Usar uno u otro,
  * no ambos.
  *
+ * --report-results acepta más de un Test Cycle separados por coma
+ * (--test-cycle SCRUM-204,SCRUM-211,SCRUM-217), para poder reportar en
+ * una sola corrida de Cypress los resultados de varias HU que fueron
+ * publicadas cada una con su propio Test Cycle. Con un solo key sigue
+ * funcionando igual que antes (ver reportResults).
+ *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
  * responsabilidad es parsear la línea de comandos y componer, en el orden
@@ -83,7 +89,7 @@ if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase &
   console.error('     node scripts/create-jira-task.js <issueKey> --verify');
   console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
   console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
-  console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>');
+  console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>[,<TestCycleKey2>,...]');
   process.exit(1);
 }
 
@@ -110,12 +116,23 @@ if (dataPath) {
 
 /**
  * Reporta a Xray los resultados reales de una corrida de Cypress contra
- * un Test Cycle ya existente. Por cada test taggeado con [key] en
- * el título, resuelve la Test Execution vigente en ese ciclo y actualiza
- * su estado. Si no encuentra una ejecución para ese Test Case en ese
- * ciclo, informa y frena sin inventar nada.
+ * uno o varios Test Cycles ya existentes. Por cada test taggeado con
+ * [key] en el título, prueba los Test Cycles indicados EN ORDEN hasta
+ * encontrar aquel donde ese Test Case tiene una Test Execution (un Test
+ * Case pertenece a un solo Test Cycle en el uso real de este proyecto,
+ * así que el primero que matchea es el correcto). Si no encuentra una
+ * ejecución en NINGUNO de los ciclos indicados, informa y frena sin
+ * inventar nada.
+ *
+ * Acepta más de un Test Cycle para poder reportar, en una sola corrida
+ * de Cypress, los resultados de varias HU que fueron publicadas cada
+ * una con su propio Test Cycle (modo lote) -- antes esta función asumía
+ * un único Test Cycle para toda la corrida, y fallaba con "no existe
+ * una Test Execution" ante el primer test de una HU distinta (bug real
+ * encontrado el 2026-09-17 al intentar reportar 2 HU en una sola
+ * corrida).
  */
-async function reportResults(resultsPath, testCycleKey, projectKey) {
+async function reportResults(resultsPath, testCycleKeys, projectKey) {
   const results = testRunner.parseResultsFile(resultsPath);
   const taggedTests = testRunner.collectTaggedTests(results);
 
@@ -131,15 +148,23 @@ async function reportResults(resultsPath, testCycleKey, projectKey) {
       process.exit(1);
     }
 
-    const execution = await xray.findTestExecution(projectKey, testCycleKey, test.testCaseKey);
+    let execution = null;
+    let matchedCycleKey = null;
+    for (const cycleKey of testCycleKeys) {
+      execution = await xray.findTestExecution(projectKey, cycleKey, test.testCaseKey);
+      if (execution) {
+        matchedCycleKey = cycleKey;
+        break;
+      }
+    }
 
     if (!execution) {
-      console.error(`No existe una Test Execution para ${test.testCaseKey} en el ciclo ${testCycleKey}. Se frena sin inventar nada.`);
+      console.error(`No existe una Test Execution para ${test.testCaseKey} en ninguno de los ciclos indicados (${testCycleKeys.join(', ')}). Se frena sin inventar nada.`);
       process.exit(1);
     }
 
     await xray.updateTestExecutionStatus(execution.id, statusName);
-    console.log(`${test.testCaseKey} -> ${statusName} (ejecucion ${execution.key || execution.id} en ${testCycleKey}).`);
+    console.log(`${test.testCaseKey} -> ${statusName} (ejecucion ${execution.key || execution.id} en ${matchedCycleKey}).`);
   }
 }
 
@@ -317,7 +342,8 @@ async function main() {
   }
 
   if (reportResultsPath) {
-    await reportResults(reportResultsPath, testCycleKeyArg, PROJECT);
+    const testCycleKeys = testCycleKeyArg.split(',').map(k => k.trim()).filter(Boolean);
+    await reportResults(reportResultsPath, testCycleKeys, PROJECT);
   }
 }
 
