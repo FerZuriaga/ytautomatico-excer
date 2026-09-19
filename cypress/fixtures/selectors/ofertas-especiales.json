@@ -1,0 +1,22 @@
+{
+  "specialsUrl": "index.php?rt=product/special",
+  "pageTitleSelector": "h1.heading1 .maintext",
+  "pageTitleText": "Special Offers",
+  "thumbnailSelector": ".thumbnails .thumbnail",
+  "oldPriceSelector": ".priceold",
+  "newPriceSelector": ".pricenew",
+  "productLinkSelector": ".fixed a.prdocutname",
+  "totalCountText": "1 - 8 of 8",
+  "detailOldPriceSelector": ".productpageoldprice",
+  "detailNewPriceSelector": ".productfilneprice",
+  "testProducts": {
+    "conOferta": { "id": 65, "name": "Absolue Eye Precious Cells", "priceOld": "$105.00", "priceNew": "$89.00" },
+    "sinOferta": { "id": 50, "name": "Skinsheen Bronzer Stick", "price": "$29.50" }
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo de index.php?rt=product/product/special (sin Cypress).",
+    "totalProductosEnOferta": "La pagina de Ofertas especiales lista 8 productos en total (confirmado en el pie de pagina '1 - 8 of 8'), misma estructura de grid/sorting/paginacion que las categorias de producto ya automatizadas.",
+    "consistenciaListadoDetalle": "El mismo producto (product_id=65) muestra priceold=$105.00 / pricenew=$89.00 tanto en el listado de Ofertas especiales como en su pagina de detalle -- confirmado comparando ambos HTML reales.",
+    "productoSinOfertaNoTieneOldPrice": "product_id=50 (no listado en Ofertas especiales) solo tiene .productfilneprice en su detalle, sin .productpageoldprice -- usado como caso de contraste (TC-02.2)."
+  }
+}
