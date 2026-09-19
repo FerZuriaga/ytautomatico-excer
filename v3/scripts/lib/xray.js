@@ -673,8 +673,15 @@ async function publishTestCase(model, { issueKey, issueId, testCycle }) {
  * intentando con los siguientes, misma lección de SCRUM-62), pero sí
  * respeta el orden: no se dispara el siguiente hasta que el actual
  * terminó (con éxito o error).
+ *
+ * `sharedFolderCache` es opcional: un Map externo (folderPath -> id) que
+ * el llamador puede pasar para reutilizarlo entre varias HU de un mismo
+ * lote (ver create-jira-task.js, modo `issues` de --data) -- si dos HU
+ * publican Test Cases en la misma carpeta, la segunda no vuelve a
+ * resolverla contra la API. Sin llamador que lo pase, se crea uno nuevo
+ * por invocación (comportamiento de siempre, sin cambios).
  */
-async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
+async function publishTestCasesBatch(models, testCycle, issueKey, issueId, sharedFolderCache) {
     let testCycleKey = null;
     if (testCycle) {
         testCycleKey = await resolveTestCycle(testCycle, models[0].projectKey);
@@ -682,7 +689,7 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId) {
 
     // Resolver cada ruta de carpeta única una sola vez, en secuencia,
     // antes de crear los Test Cases (ver comentario de la función).
-    const folderIdByPath = new Map();
+    const folderIdByPath = sharedFolderCache || new Map();
     for (const model of models) {
         if (model.folder && !folderIdByPath.has(model.folder)) {
             folderIdByPath.set(model.folder, await resolveTestCaseFolder(model));
