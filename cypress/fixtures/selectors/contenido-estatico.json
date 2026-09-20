@@ -1,0 +1,33 @@
+{
+  "footerLinks": {
+    "aboutUs": "a[href*=\"content_id=1\"]",
+    "privacyPolicy": "a[href*=\"content_id=2\"]",
+    "returnPolicy": "a[href*=\"content_id=3\"]",
+    "shipping": "a[href*=\"content_id=4\"]",
+    "contactUs": "a[href*=\"rt=content/contact\"]"
+  },
+  "pageTitleSelector": "h1.heading1 .maintext",
+  "pageTitles": {
+    "1": "About Us",
+    "2": "Privacy Policy",
+    "3": "Return Policy",
+    "4": "Shipping",
+    "contact": "Contact Us"
+  },
+  "contactForm": {
+    "url": "index.php?rt=content/contact",
+    "firstNameId": "ContactUsFrm_first_name",
+    "emailId": "ContactUsFrm_email",
+    "enquiryId": "ContactUsFrm_enquiry",
+    "submitButtonSelector": "#ContactUsFrm button[type=submit]",
+    "errorSelector": "#ContactUsFrm .element_error",
+    "successTextSelector": ".mb40"
+  },
+  "successText": "Your enquiry has been successfully sent to the store owner!",
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo de las 5 paginas (content_id=1 a 4 + rt=content/contact), sin Cypress.",
+    "contactSinCaptcha": "A diferencia de Escribir resena y Newsletter, el formulario de Contacto (#ContactUsFrm) NO tiene captcha -- confirmado revisando el HTML completo del formulario. El envio exitoso SI es 100% automatizable.",
+    "bugRealDeEnquiryMinimo": "El mensaje \"Enquiry must be between 10 and 3000 characters!\" es enganoso: probado con curl que 1 y 2 caracteres fallan, pero 3, 5, 8 y 9 caracteres se aceptan como envio exitoso -- el minimo real efectivo del servidor es 3 caracteres, no 10 como dice el propio mensaje de error del sitio.",
+    "validacionesCampo": "First name: \"is required field! Name must be between 3 and 32 characters!\"; Email: \"is required field! E-Mail Address does not appear to be valid!\"; Enquiry: \"is required field! Enquiry must be between 10 and 3000 characters!\" -- las 3 aparecen simultaneamente si los 3 campos estan vacios."
+  }
+}
