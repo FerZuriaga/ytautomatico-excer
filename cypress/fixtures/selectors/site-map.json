@@ -1,0 +1,16 @@
+{
+  "url": "index.php?rt=content/sitemap",
+  "pageTitleSelector": "h1.heading1 .maintext",
+  "pageTitleText": "Site Map",
+  "categoriesColumnSelector": ".contentpanel .col-md-6.pull-left:first",
+  "generalColumnSelector": ".contentpanel .col-md-6.pull-left:last",
+  "makeupCategoryLink": "a[href*=\"path=36\"]",
+  "makeupSubcategories": ["Cheeks", "Eyes", "Face", "Lips", "Nails", "Value Sets"],
+  "specialOffersLink": "a[href*=\"rt=product/special\"]",
+  "informationSubsections": ["About Us", "Privacy Policy", "Return Policy", "Shipping", "Contact Us"],
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real obtenido via curl directo de index.php?rt=content/sitemap, sin Cypress.",
+    "estructura": "El Site Map es una pagina de navegacion pura (sin formularios): 2 columnas .list-group anidadas, la primera con categorias de productos y subcategorias, la segunda con accesos generales (Special Offers, My Account con 5 sub-secciones, Shopping Cart, Checkout, Search, Information con las 5 paginas institucionales).",
+    "sinAjax": "Todos los links navegan por GET real a sus rutas ya conocidas (rt=product/category&path=<id>, rt=product/special, rt=content/content&content_id=<n>, etc.), reutilizando paginas ya automatizadas en otras HU (categoria Makeup, Ofertas especiales)."
+  }
+}
