@@ -1,0 +1,31 @@
+{
+  "entryPoints": {
+    "homeBrandCarousel": {
+      "containerSelector": "#brandcarousal",
+      "linkSelector": "#brandcarousal a[href*=\"rt=product/manufacturer\"]",
+      "note": "Carrusel de logos en el home, cada <a> lleva manufacturer_id en la URL y el nombre de marca en el atributo alt de la imagen."
+    },
+    "productDetailManufacturerLink": {
+      "selector": ".productinfo a[href*=\"rt=product/manufacturer\"]",
+      "note": "Link 'Manufacturer:' en la ficha de datos del producto (misma URL de destino que el carrusel del home)."
+    }
+  },
+  "listingPage": {
+    "urlPattern": "index.php?rt=product/manufacturer&manufacturer_id={id}",
+    "heading": "h1.heading1 .maintext",
+    "sortSelectId": "sort",
+    "limitSelectId": "limit",
+    "productNameSelector": ".prdocutname:visible",
+    "note": "Misma plantilla que la pagina de categoria (AutomationTestStoreCategoryPage): duplica la grilla grid/list con la misma clase .prdocutname -- se reusa el filtro :visible ya confirmado en SCRUM-210."
+  },
+  "notFoundState": {
+    "httpStatus": 200,
+    "heading": "Manufacturer not found!",
+    "note": "No devuelve 404: la pagina renderiza normal con el mismo h1.heading1 conteniendo el mensaje de error, tanto para un manufacturer_id fuera de rango (probado id=1) como no numerico (probado id=abc). No hay forma real de llegar a este estado desde la UI (los ids del carrusel y del detalle de producto siempre son validos) -- se accede por URL directa, mismo criterio que otros limites de flujo sin punto de entrada real en la UI."
+  },
+  "hallazgos": {
+    "metodoRelevamiento": "HTML real via curl directo (sin Cypress), pipeline vigente desde 2026-09-18.",
+    "idsValidosConfirmados": "manufacturer_id 11 a 20 (M.A.C, Benefit, Calvin Klein, Bvlgari, Lancome, Sephora, Pantene, Dove, Giorgio Armani, Gucci), todos con productos reales (Sephora es el de menos stock: 1 producto real).",
+    "idsInvalidosConfirmados": "1-10 y 21-23 devuelven 'Manufacturer not found!' con HTTP 200."
+  }
+}

@@ -8,11 +8,19 @@ class AutomationTestStoreCategoryPage {
     // oculta por CSS externo, no por atributo inline. Se filtra por
     // :visible para tomar solo la vista activa, sin asumir cual es.
     get productNames() { return cy.get('.prdocutname:visible') }
+    // Misma plantilla de pantalla que usa la pagina de marca/fabricante
+    // (rt=product/manufacturer): encabezado real y mensaje de "no
+    // encontrado" cuando el id no corresponde a nada.
+    get heading() { return cy.get('h1.heading1 .maintext') }
 
     // ─── Acciones ─────────────────────────────────────────────────────────────
 
     visitCategory(pathId) {
         cy.gotoATSUrl(`/index.php?rt=product/category&path=${pathId}&limit=20`)
+    }
+
+    visitManufacturer(manufacturerId) {
+        cy.gotoATSUrl(`/index.php?rt=product/manufacturer&manufacturer_id=${manufacturerId}`)
     }
 
     sortBy(sortValue) {

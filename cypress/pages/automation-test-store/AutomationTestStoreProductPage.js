@@ -13,6 +13,11 @@ class AutomationTestStoreProductPage {
     get tagsTabLink() { return cy.get('a[href="#producttag"]') }
     get descriptionInfo() { return cy.get('#description .productinfo') }
     get tagsList() { return cy.get('#producttag ul.tags li a') }
+    get manufacturerLink() { return cy.get('.productinfo a[href*="rt=product/manufacturer"]') }
+    // Solo se renderiza un <li> por pestana existente -- en un producto sin
+    // tags asociados, #producttag no existe y esta lista trae 2 elementos
+    // (Description, Reviews) en vez de 3.
+    get availableTabs() { return cy.get('#myTab li a') }
     get reviewForm() { return cy.get('#review .content') }
     get ratingRadio() { return cy.get('input[name="rating"]') }
     get reviewNameInput() { return cy.get('#name') }
@@ -39,6 +44,14 @@ class AutomationTestStoreProductPage {
     openTab(tab) {
         const links = { description: this.descriptionTabLink, reviews: this.reviewsTabLink, tags: this.tagsTabLink }
         links[tab].click()
+    }
+
+    clickTag(tagText) {
+        this.tagsList.contains(tagText).click()
+    }
+
+    clickManufacturerLink() {
+        this.manufacturerLink.click()
     }
 
     fetchNoReviewsText(productId) {
