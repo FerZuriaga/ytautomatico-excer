@@ -1,0 +1,26 @@
+{
+  "quickForm": {
+    "formSelector": "#subscribeFrm",
+    "emailInputId": "appendedInputButton",
+    "submitButtonSelector": "#subscribeFrm button[type=submit]"
+  },
+  "fullForm": {
+    "url": "index.php?rt=account/subscriber",
+    "firstNameId": "SubscriberFrm_firstname",
+    "lastNameId": "SubscriberFrm_lastname",
+    "emailId": "SubscriberFrm_email",
+    "captchaId": "SubscriberFrm_captcha",
+    "captchaImageSelector": ".captcha-addon img",
+    "submitButtonSelector": "button[title=\"Continue\"]",
+    "helpBlockSelector": ".help-block"
+  },
+  "humanVerificationErrorText": "Human verification has failed! Please try agan.",
+  "hallazgos": {
+    "metodoRelevamiento": "Discovery real via curl (form GET del footer + POST directo al endpoint con cookies de sesion), sin Cypress.",
+    "flujoDeDosPasos": "El formulario rapido del footer (#subscribeFrm, GET a rt=account/subscriber&email=<valor>) no suscribe directamente -- navega a un formulario completo (#SubscriberFrm_firstname/lastname/email/captcha) con el email pre-cargado, que recien ahi hace el POST real.",
+    "validacionIndependienteDelCaptcha": "A diferencia del formulario de resena de producto, este SI devuelve los 3 errores de campo (First Name/Last Name/Email) de forma independiente aunque el captcha este vacio o incorrecto -- confirmado con 3 llamadas curl distintas.",
+    "typoRealDelSitio": "El mensaje de verificacion humana de ESTE formulario dice \"Please try agan.\" (typo real, sin la primera 'i'), distinto del formulario de resena de producto que dice \"again.\" correctamente -- confirmado comparando ambas respuestas reales.",
+    "alcanceFueraDeEstaHU": "El envio 100% exitoso de la suscripcion (captcha resuelto) queda fuera de alcance por el mismo motivo que Escribir resena de producto: captcha de imagen aleatorio por sesion, no resoluble por Cypress sin OCR.",
+    "urlEncodedEnGET": "El navegador codifica el hidden input rt=account/subscriber como rt=account%2Fsubscriber en la URL final del GET del formulario rapido -- no asumir el string literal 'rt=account/subscriber' en aserciones de cy.url(), verificar por contenido de la pagina (campo First Name visible) en su lugar."
+  }
+}
