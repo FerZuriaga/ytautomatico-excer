@@ -72,13 +72,93 @@ function collectTestsWithState(results) {
  * Lee y parsea el archivo de resultados generado con
  * `cypress run --reporter json > archivo.json`.
  */
+/**
+ * Divide un texto en los documentos JSON individuales que contiene,
+ * escaneando profundidad de llaves y respetando strings (para no
+ * confundir un "}" literal dentro de un título de test con el cierre de
+ * un documento). Necesario porque `cypress run --spec "a.cy.js,b.cy.js"`
+ * corre cada spec como una instancia de Mocha independiente -- el
+ * reporter "json" nativo hace su propio epilogue por spec, así que
+ * stdout trae varios documentos JSON completos concatenados (sin
+ * separador) en vez de uno solo apenas la corrida abarca más de un
+ * archivo. Con un solo spec devuelve un array de un elemento, sin
+ * cambiar el comportamiento de siempre.
+ */
+function splitConcatenatedJsonObjects(text) {
+  const objects = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escapeNext) escapeNext = false;
+      else if (ch === '\\') escapeNext = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        objects.push(text.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+  return objects;
+}
+
+/**
+ * Combina varios documentos de resultado (uno por spec) en uno solo, con
+ * la misma forma que ya consume collectTestsWithState (stats + tests +
+ * pending + failures + passes), para que el resto del pipeline no tenga
+ * que saber que la corrida abarcó varios specs.
+ */
+function mergeResultsDocs(docs) {
+  return docs.reduce((merged, doc) => ({
+    stats: {
+      suites: (merged.stats.suites || 0) + (doc.stats?.suites || 0),
+      tests: (merged.stats.tests || 0) + (doc.stats?.tests || 0),
+      passes: (merged.stats.passes || 0) + (doc.stats?.passes || 0),
+      pending: (merged.stats.pending || 0) + (doc.stats?.pending || 0),
+      failures: (merged.stats.failures || 0) + (doc.stats?.failures || 0)
+    },
+    tests: [...merged.tests, ...(doc.tests || [])],
+    pending: [...merged.pending, ...(doc.pending || [])],
+    failures: [...merged.failures, ...(doc.failures || [])],
+    passes: [...merged.passes, ...(doc.passes || [])]
+  }), { stats: {}, tests: [], pending: [], failures: [], passes: [] });
+}
+
 function parseResultsFile(resultsPath) {
+  let raw;
   try {
-    return JSON.parse(fs.readFileSync(path.resolve(resultsPath), 'utf8'));
+    raw = fs.readFileSync(path.resolve(resultsPath), 'utf8');
   } catch (e) {
-    console.error(`No se pudo leer o parsear "${resultsPath}": ${e.message}`);
+    console.error(`No se pudo leer "${resultsPath}": ${e.message}`);
     process.exit(1);
   }
+
+  let docs;
+  try {
+    docs = splitConcatenatedJsonObjects(raw).map(s => JSON.parse(s));
+  } catch (e) {
+    console.error(`No se pudo parsear "${resultsPath}": ${e.message}`);
+    process.exit(1);
+  }
+
+  if (!docs.length) {
+    console.error(`"${resultsPath}" no contiene ningún resultado de Cypress válido.`);
+    process.exit(1);
+  }
+
+  return docs.length === 1 ? docs[0] : mergeResultsDocs(docs);
 }
 
 /**
