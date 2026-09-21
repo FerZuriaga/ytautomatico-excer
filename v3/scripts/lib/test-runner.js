@@ -105,12 +105,20 @@ function splitConcatenatedJsonObjects(text) {
       depth++;
     } else if (ch === '}') {
       depth--;
+      if (depth < 0) {
+        throw new Error(`Llave de cierre "}" sin apertura correspondiente (posición ${i}) -- el contenido no es JSON válido.`);
+      }
       if (depth === 0 && start !== -1) {
         objects.push(text.slice(start, i + 1));
         start = -1;
       }
     }
   }
+
+  if (depth !== 0) {
+    throw new Error(`Documento JSON incompleto o truncado (${depth} llave(s) sin cerrar) -- la corrida de Cypress puede no haber terminado de escribir el archivo.`);
+  }
+
   return objects;
 }
 
@@ -136,6 +144,28 @@ function mergeResultsDocs(docs) {
   }), { stats: {}, tests: [], pending: [], failures: [], passes: [] });
 }
 
+/**
+ * Parsea el texto crudo de un archivo de resultados (uno o varios
+ * documentos JSON concatenados) y devuelve un único resultado combinado.
+ * Lógica pura (sin fs ni process.exit) para poder cubrirla con tests
+ * reales sin tocar el filesystem ni terminar el proceso -- parseResultsFile
+ * es la única que conoce la ruta del archivo y el manejo de error de CLI.
+ */
+function parseResultsText(raw, sourceLabel = 'resultados') {
+  let docs;
+  try {
+    docs = splitConcatenatedJsonObjects(raw).map(s => JSON.parse(s));
+  } catch (e) {
+    throw new Error(`No se pudo parsear "${sourceLabel}": ${e.message}`);
+  }
+
+  if (!docs.length) {
+    throw new Error(`"${sourceLabel}" no contiene ningún resultado de Cypress válido.`);
+  }
+
+  return docs.length === 1 ? docs[0] : mergeResultsDocs(docs);
+}
+
 function parseResultsFile(resultsPath) {
   let raw;
   try {
@@ -145,20 +175,12 @@ function parseResultsFile(resultsPath) {
     process.exit(1);
   }
 
-  let docs;
   try {
-    docs = splitConcatenatedJsonObjects(raw).map(s => JSON.parse(s));
+    return parseResultsText(raw, resultsPath);
   } catch (e) {
-    console.error(`No se pudo parsear "${resultsPath}": ${e.message}`);
+    console.error(e.message);
     process.exit(1);
   }
-
-  if (!docs.length) {
-    console.error(`"${resultsPath}" no contiene ningún resultado de Cypress válido.`);
-    process.exit(1);
-  }
-
-  return docs.length === 1 ? docs[0] : mergeResultsDocs(docs);
 }
 
 /**
@@ -177,6 +199,9 @@ module.exports = {
   extractTestCaseKey,
   mapMochaStateToXray,
   collectTestsWithState,
+  splitConcatenatedJsonObjects,
+  mergeResultsDocs,
+  parseResultsText,
   parseResultsFile,
   collectTaggedTests
 };

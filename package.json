@@ -13,7 +13,8 @@
     "test:blazedemo": "cypress run --spec \"cypress/e2e/blazedemo/**/*.cy.js\"",
     "test:saucedemo": "cypress run --spec \"cypress/e2e/saucedemo/**/*.cy.js\"",
     "test:disco": "cypress run --spec \"cypress/e2e/disco/**/*.cy.js\"",
-    "test:rentascordoba": "cypress run --spec \"cypress/e2e/rentascordoba/**/*.cy.js\""
+    "test:rentascordoba": "cypress run --spec \"cypress/e2e/rentascordoba/**/*.cy.js\"",
+    "test:unit": "node --test v3/scripts/lib/*.test.js"
   },
   "keywords": [],
   "author": "",
