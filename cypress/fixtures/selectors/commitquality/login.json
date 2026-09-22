@@ -1,0 +1,10 @@
+{
+  "usernameInput": "[data-testid=\"username-textbox\"]",
+  "passwordInput": "[data-testid=\"password-textbox\"]",
+  "loginButton": "[data-testid=\"login-button\"]",
+  "errorMessage": ".error",
+  "navbarLoginLink": "[data-testid=\"navbar-login\"]",
+  "navbarAccountLink": "[data-testid=\"navbar-account\"]",
+  "navbarLogoutLink": "[data-testid=\"navbar-logout\"]",
+  "validCredentials": { "username": "test", "password": "test" }
+}
