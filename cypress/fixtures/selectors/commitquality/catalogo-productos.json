@@ -1,0 +1,14 @@
+{
+  "filterInput": ".filter-textbox",
+  "filterButton": "[data-testid=\"filter-button\"]",
+  "resetButton": "[data-testid=\"reset-filter-button\"]",
+  "productTable": ".product-list-table",
+  "productRowPattern": "[data-testid=\"product-row-{id}\"]",
+  "noProductsMessage": ".add-product-message",
+  "showMoreButton": "[data-testid=\"show-more-button\"]",
+  "addProductLink": "[data-testid=\"add-a-product-button\"]",
+  "editButton": "[data-testid=\"edit-button\"]",
+  "deleteButton": "[data-testid=\"delete-button\"]",
+  "seedProductCount": 11,
+  "defaultPageSize": 10
+}
