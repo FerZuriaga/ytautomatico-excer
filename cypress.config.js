@@ -9,6 +9,7 @@ module.exports = defineConfig({
     automationExerciseUrl: "https://automationexercise.com",
     automationTestStoreUrl: "https://automationteststore.com",
     blazedemoUrl: "https://blazedemo.com",
+    commitqualityUrl: "https://commitquality.com",
     discoUrl: "https://www.disco.com.ar",
     orangehrmUrl: "https://opensource-demo.orangehrmlive.com",
     rentascordobaUrl: "https://www.rentascordoba.gob.ar",

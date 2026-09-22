@@ -1,0 +1,20 @@
+{
+  "nameInput": "[data-testid=\"product-textbox\"]",
+  "priceInput": "[data-testid=\"price-textbox\"]",
+  "dateInput": "[data-testid=\"date-stocked\"]",
+  "submitButton": "[data-testid=\"submit-form\"]",
+  "cancelButton": "[data-testid=\"cancel-button\"]",
+  "fillInAllFieldsError": "[data-testid=\"fillin-all-fields-validation\"]",
+  "genericValidationError": "[data-testid=\"all-fields-validation\"]",
+  "fieldErrorMessage": ".error-message",
+  "nameMinLength": 2,
+  "priceMaxLength": 10,
+  "errorMessages": {
+    "nameTooShort": "Name must be at least 2 characters.",
+    "priceInvalid": "Price must not be empty and within 10 digits",
+    "dateEmpty": "Date must not be empty.",
+    "dateTooOld": "Date must not be older than 100 years.",
+    "dateFuture": "Date must not be in the future.",
+    "missingFields": "Please fill in all fields"
+  }
+}
