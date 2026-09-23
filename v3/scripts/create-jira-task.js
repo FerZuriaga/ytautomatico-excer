@@ -40,6 +40,11 @@
  * issue) -- para actualizar seguir usando el formato de un único issue
  * de siempre, invocando el script una vez por issueKey.
  *
+ * Antes de publicar, los Test Cases del JSON de --data se validan con
+ * lib/testcase-validator.js (mínimo de pasos, resultado esperado,
+ * acciones encadenadas, login sin precondición). Los errores frenan
+ * siempre; los warnings frenan salvo que se pase --accept-warnings.
+ *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
  * responsabilidad es parsear la línea de comandos y componer, en el orden
@@ -52,11 +57,12 @@ const path = require('path');
 const jira = require('./lib/jira');
 const xray = require('./lib/xray');
 const testRunner = require('./lib/test-runner');
+const testcaseValidator = require('./lib/testcase-validator');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 function parseArgs(argv) {
-  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null };
+  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false };
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--data') {
@@ -82,6 +88,8 @@ function parseArgs(argv) {
     } else if (argv[i] === '--report-results') {
       args.reportResultsPath = argv[i + 1];
       i++;
+    } else if (argv[i] === '--accept-warnings') {
+      args.acceptWarnings = true;
     } else if (argv[i] === '--test-cycle') {
       args.testCycleKeyArg = argv[i + 1];
       i++;
@@ -93,7 +101,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
 if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath) {
@@ -123,6 +131,28 @@ if (dataPath) {
   } catch (e) {
     console.error(`No se pudo leer o parsear "${dataPath}": ${e.message}`);
     process.exit(1);
+  }
+
+  // Validación de pasos de los Test Cases ANTES de tocar Jira/Xray (ver
+  // lib/testcase-validator.js y CLAUDE.md sección 3). Los errores frenan
+  // siempre; los warnings frenan salvo --accept-warnings, que se pasa
+  // recién después de revisarlos (son heurísticas, pueden ser falsos
+  // positivos).
+  const validation = testcaseValidator.validatePayload(ISSUE);
+  if (validation.errors.length) {
+    console.error(`Validacion de Test Cases: ${validation.errors.length} error(es). No se publica nada.`);
+    validation.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
+    process.exit(1);
+  }
+  if (validation.warnings.length) {
+    validation.warnings.forEach(msg => console.warn(`  WARNING: ${msg}`));
+    if (!acceptWarnings) {
+      console.error(`Validacion de Test Cases: ${validation.warnings.length} warning(s). Revisarlos y corregir el payload, o re-ejecutar con --accept-warnings si son falsos positivos. No se publica nada.`);
+      process.exit(1);
+    }
+    console.warn(`Validacion de Test Cases: ${validation.warnings.length} warning(s) aceptados con --accept-warnings.`);
+  } else if (validation.testCaseCount) {
+    console.log(`Validacion de Test Cases: ${validation.testCaseCount} OK.`);
   }
 }
 
