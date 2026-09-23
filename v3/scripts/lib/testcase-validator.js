@@ -74,8 +74,10 @@ const SEQUENCE_WORDS = ['luego', 'despues', 'a continuacion'];
 const LOGIN_PATTERN = /\b(iniciar sesion|loguearse|login con|ingresar con las credenciales)\b/;
 
 // Una acción negada no es una acción: "navegar a la Home sin iniciar
-// sesion" es UN paso, no un login encadenado.
-const NEGATED_ACTION_REGEX = /\b(sin|no)\s+(iniciar sesion|loguearse|presionar|guardar)\b/g;
+// sesion" o "verificar el listado (sin filtrar)" es UN paso. Cubre TODOS
+// los verbos de acción (la primera versión listaba solo 4 y dio un falso
+// positivo real en SCRUM-302 con "sin filtrar").
+const NEGATED_ACTION_REGEX = new RegExp(`\\b(sin|no)\\s+(${ACTION_VERBS.map(escapeRegExp).join('|')})\\b`, 'g');
 
 function normalize(text) {
   return String(text || '')
