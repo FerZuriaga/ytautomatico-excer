@@ -1,0 +1,17 @@
+{
+  "pageTitle": "h1.title",
+  "myDetailsContainer": "[data-testid=\"my-details-container\"]",
+  "savedNameLabel": "[data-testid=\"saved-name-info\"]",
+  "savedYoutubeNameLabel": "[data-testid=\"saved-youtube-name-info\"]",
+  "savedYoutubeChannelLink": "[data-testid=\"saved-youtube-channel-info\"] a",
+  "updateDetailsContainer": "[data-testid=\"update-detials-container\"]",
+  "toggleDetailsButton": ".toggle-details-button",
+  "nameInput": "[data-testid=\"name-textbox\"]",
+  "youtubeInput": "[data-testid=\"yotuube-channel-textbox\"]",
+  "saveButton": "[data-testid=\"submit-data\"]",
+  "defaults": {
+    "name": "Commit Quality",
+    "youtube": "CommitQuality",
+    "youtubeLink": "https://www.youtube.com/@commitquality"
+  }
+}
