@@ -28,6 +28,19 @@ La app usa `data-testid` en la gran mayoría de los elementos interactivos
   (`.error-message`, repetido para nombre/precio/fecha — no distinguible
   por selector, solo por posición dentro de cada `.form-group`).
 - El mensaje de error de login (`.error`, sin testid propio).
+- El toggle "+"/"-" de "Update Details" en Mi cuenta
+  (`.toggle-details-button`).
+
+**Typos reales en `data-testid` (usarlos tal cual, no "corregirlos"):**
+`update-detials-container`, `yotuube-channel-textbox` (Mi cuenta).
+
+## Gotcha real: en "My Details" el `data-testid` está en la ETIQUETA
+
+En `/account`, `saved-name-info` y `saved-youtube-name-info` marcan el
+`<span>` con el texto "Name:" / "Youtube Name:", NO el valor guardado.
+El valor es un nodo de texto hermano dentro del mismo `<li>` — para
+leerlo hay que subir al padre (`.parent()`) y comparar el texto completo
+del `<li>` (ej. `"Name: Commit Quality"`).
 
 ## Gotcha real: `data-testid` de celdas de tabla NO es único por fila
 
@@ -57,6 +70,18 @@ duplicar.
   reload de la app (no hay persistencia real). Paginación incremental de
   a 10 vía "Show More". Filtro por nombre case-insensitive
   (`.toLowerCase().includes(...)`).
+- **Eliminar producto:** sin diálogo de confirmación, borra al instante
+  (también de la vista filtrada si hay un filtro aplicado). El borrado
+  vive solo en memoria: navegar dentro de la SPA lo conserva, un full
+  reload restaura los 11 seed.
+- **Mi cuenta** (`/account`): datos por defecto "Commit Quality" /
+  "CommitQuality". La sección "Update Details" arranca colapsada. Save
+  dispara un `alert()` nativo (`Name: X\nYoutube: Y`) y actualiza "My
+  Details". Sin validación de campos. Estado local del componente: al
+  salir de la pantalla (o recargar) vuelve a los valores por defecto.
+- **Hallazgo:** la ruta `/account` NO valida sesión — solo el link del
+  navbar se oculta sin login; por URL directa la pantalla se renderiza
+  igual. No se automatiza como comportamiento esperado.
 - Validaciones de `ProductForm`: nombre mínimo 2 caracteres, precio
   numérico hasta 2 decimales (máx. 10 dígitos), fecha entre 100 años
   atrás y hoy inclusive.
