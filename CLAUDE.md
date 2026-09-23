@@ -15,6 +15,9 @@
 - **CONFIRMACIÓN DE MERGE:** El agente ejecuta todo automáticamente, EXCEPTO el merge a `main`, que requiere confirmación explícita del usuario.
 - **XRAY ADAPTER:** Usar exclusivamente `v3/scripts/create-jira-task.js` con `testcaseModels` para la generación masiva y orden correlativo de Test Cases.
 - **HU & CA GRANULARITY:** Respetar la matriz de 2 a 4 Criterios de Aceptación (CA) atómicos por Historia de Usuario según la regla de negocio, separando acciones destructivas en HUs independientes.
+  - **Los CA salen de las reglas de negocio relevadas en el PASO 1, no de un número objetivo.** Cada CA corresponde a UNA regla concreta (camino feliz, validaciones, permisos/acceso, efectos de estado/persistencia), observable, verificable y en lenguaje de negocio. 2 es el MÍNIMO, no el molde.
+  - Menos de 2 reglas relevadas = falta discovery (error del validador). Más de 4 = evaluar split de la HU (warning del validador), no amontonar CA.
+  - Cada CA lleva id al inicio (`"CA-01: ..."`) y cada Test Case declara el CA que valida con el campo `criterio: "CA-01"` (entre 2 y 5 TC por CA), auditado por `testcase-validator.js` antes de publicar.
 - **CODE QUALITY STANDARDS:** Prohibido `cy.wait()` estáticos (usar esperas dinámicas), timeouts máximos de 15s y selectores resilientes.
 
 ## 3. ESTÁNDARES DE XRAY/JIRA

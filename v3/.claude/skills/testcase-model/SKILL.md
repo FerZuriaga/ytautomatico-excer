@@ -317,6 +317,7 @@ La salida obligatoria de este skill deberá representarse utilizando exactamente
   "statusName": "Draft",
   "labels": [],
   "folder": "",
+  "criterio": "CA-01",
   "steps": [
     {
       "inline": 1,
@@ -327,11 +328,23 @@ La salida obligatoria de este skill deberá representarse utilizando exactamente
   ],
   "traceability": {
     "scenario": "",
-    "acceptanceCriteria": "",
     "testCase": ""
   }
 }
 ```
+
+## TRAZABILIDAD CON EL CRITERIO DE ACEPTACIÓN (`criterio`)
+
+La propiedad `criterio` es OBLIGATORIA cuando el Test Case se publica
+junto con su Historia: contiene el id exacto del Criterio de Aceptación
+que valida (`"CA-01"`, `"CA-02"`, ...), tal como aparece al inicio de
+cada criterio de la Historia (`"CA-01: El sistema debe..."`). Reemplaza
+al antiguo `traceability.acceptanceCriteria` (texto libre, no auditable):
+es la única fuente de la relación TC -> CA.
+
+`create-jira-task.js` la audita antes de publicar
+(`v3/scripts/lib/testcase-validator.js`): cada TC debe apuntar a un CA
+existente de su Historia, y cada CA debe tener entre 2 y 5 TC.
 
 ## ORGANIZACIÓN FUNCIONAL (FOLDER)
 

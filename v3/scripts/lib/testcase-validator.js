@@ -17,6 +17,18 @@
  *     Pueden dar falsos positivos, por eso se pueden aceptar
  *     explícitamente con --accept-warnings después de revisarlas.
  *
+ * También valida los Criterios de Aceptación de cada Historia y la
+ * relación TC -> CA (campo `criterio: "CA-01"` de cada Test Case). Nace
+ * del relevamiento de 2026-09-23: 19 HU con exactamente 2 CA (13 casi
+ * seguidas en Automation Test Store, el mínimo usado como molde) y una
+ * con 6 (SCRUM-135, que debió partirse):
+ *   - errors: HU con menos de 2 CA (falta discovery), CA sin id "CA-XX"
+ *     o repetido, TC sin `criterio` o apuntando a un CA inexistente, CA
+ *     con menos de 2 TC.
+ *   - warnings: HU con más de 4 CA (evaluar split), lote de 2+ HU todas
+ *     con exactamente 2 CA, CA con más de 5 TC, y todos los CA con
+ *     exactamente 2 TC.
+ *
  * Módulo puro: no habla con Jira/Xray ni lee archivos.
  */
 
@@ -25,6 +37,21 @@ const MIN_STEPS = 2;
 // Lotes chicos con 2 pasos uniformes son normales (casos de una sola
 // acción); la señal de "molde" solo tiene sentido a partir de varios TC.
 const UNIFORM_BATCH_MIN_TESTCASES = 4;
+
+// Criterios de Aceptación por Historia (CLAUDE.md: matriz de 2 a 4).
+const MIN_CRITERIA = 2;
+const MAX_CRITERIA = 4;
+
+// Test Cases por Criterio de Aceptación (piso estricto 2, techo 5).
+const MIN_TC_PER_CRITERION = 2;
+const MAX_TC_PER_CRITERION = 5;
+
+// Una sola HU con 2 CA puede ser legítima; "lote entero con 2" requiere
+// al menos 2 HU. Idem TC por CA: la uniformidad solo es señal con varios CA.
+const UNIFORM_CRITERIA_MIN_STORIES = 2;
+const UNIFORM_TC_PER_CRITERION_MIN_CRITERIA = 4;
+
+const CRITERION_ID_REGEX = /^\s*(CA-\d{2})\b/i;
 
 // Verbos de ACCIÓN del usuario (infinitivo) que producen un resultado
 // verificable propio. "verificar"/"observar" no cuentan: describen la
@@ -119,28 +146,113 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
  * Extrae los Test Cases de un payload de --data con su etiqueta: soporta
  * issue único (testcaseModel / testcaseModels) y modo lote (issues: []).
  */
+function issuesOf(payload) {
+  return (Array.isArray(payload?.issues) ? payload.issues : [payload]).filter(Boolean);
+}
+
+function modelsOf(issue) {
+  return [
+    ...(issue.testcaseModel ? [issue.testcaseModel] : []),
+    ...(Array.isArray(issue.testcaseModels) ? issue.testcaseModels : [])
+  ];
+}
+
+function labelOf(issue, model) {
+  const prefix = issue.summary ? `${issue.summary} > ` : '';
+  return `${prefix}${model?.name || '(sin nombre)'}`;
+}
+
 function collectTestCases(payload) {
-  const issues = Array.isArray(payload?.issues) ? payload.issues : [payload];
-  const collected = [];
+  return issuesOf(payload).flatMap(issue => modelsOf(issue).map(model => ({ model, label: labelOf(issue, model) })));
+}
 
-  for (const issue of issues) {
-    if (!issue) continue;
-    const models = [
-      ...(issue.testcaseModel ? [issue.testcaseModel] : []),
-      ...(Array.isArray(issue.testcaseModels) ? issue.testcaseModels : [])
-    ];
-    for (const model of models) {
-      const prefix = issue.summary ? `${issue.summary} > ` : '';
-      collected.push({ model, label: `${prefix}${model?.name || '(sin nombre)'}` });
-    }
-  }
-
-  return collected;
+function normalizeCriterionId(value) {
+  const match = String(value || '').match(CRITERION_ID_REGEX);
+  return match ? match[1].toUpperCase() : null;
 }
 
 /**
- * Valida todos los Test Cases de un payload de --data. Si el payload no
- * trae Test Cases (ej. solo actualiza una Historia), devuelve listas vacías.
+ * Valida los Criterios de Aceptación de una Historia (historia.criterios,
+ * cada uno con prefijo "CA-XX") y la relación de sus Test Cases con ellos
+ * (campo `criterio` de cada Test Case). Una issue sin `historia` (Bug,
+ * Tarea, o solo agregar TC a una HU existente) no tiene CA contra los que
+ * auditar: solo se valida el formato de `criterio` si viene informado.
+ *
+ * Devuelve además los conteos que validatePayload necesita para las
+ * reglas de uniformidad a nivel lote.
+ */
+function validateStoryCriteria(issue) {
+  const errors = [];
+  const warnings = [];
+  const story = issue.summary || '(HU sin summary)';
+  const models = modelsOf(issue);
+
+  if (!issue.historia) {
+    for (const model of models) {
+      if (model?.criterio !== undefined && !normalizeCriterionId(model.criterio)) {
+        errors.push(`${labelOf(issue, model)}: criterio "${model.criterio}" no tiene formato CA-XX.`);
+      }
+    }
+    return { errors, warnings, criteriaCount: null, tcCountByCriterion: null };
+  }
+
+  const criterios = Array.isArray(issue.historia.criterios) ? issue.historia.criterios : [];
+  const ids = [];
+
+  criterios.forEach((text, i) => {
+    const id = normalizeCriterionId(text);
+    if (!id) {
+      errors.push(`${story}: el criterio ${i + 1} no empieza con un id "CA-XX" ("${String(text).slice(0, 40)}...") -- necesario para mapear los TC.`);
+    } else if (ids.includes(id)) {
+      errors.push(`${story}: el criterio ${id} esta repetido.`);
+    } else {
+      ids.push(id);
+    }
+  });
+
+  if (criterios.length < MIN_CRITERIA) {
+    errors.push(`${story}: tiene ${criterios.length} criterio(s) de aceptacion, el minimo es ${MIN_CRITERIA} -- probablemente falta discovery de reglas de negocio.`);
+  } else if (criterios.length > MAX_CRITERIA) {
+    warnings.push(`${story}: tiene ${criterios.length} criterios de aceptacion (maximo ${MAX_CRITERIA}) -- evaluar si la HU requiere split.`);
+  }
+
+  // Sin Test Cases en el payload (ej. solo se crea/actualiza la HU) no hay
+  // relación TC -> CA que auditar.
+  if (!models.length) {
+    return { errors, warnings, criteriaCount: criterios.length, tcCountByCriterion: null };
+  }
+
+  const tcCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
+
+  for (const model of models) {
+    const label = labelOf(issue, model);
+    const id = normalizeCriterionId(model?.criterio);
+    if (isBlank(model?.criterio)) {
+      errors.push(`${label}: falta el campo "criterio" (ej. "CA-01") para trazar el TC a su criterio de aceptacion.`);
+    } else if (!id) {
+      errors.push(`${label}: criterio "${model.criterio}" no tiene formato CA-XX.`);
+    } else if (!(id in tcCountByCriterion)) {
+      errors.push(`${label}: apunta a ${id}, que no existe en los criterios de la HU (${ids.join(', ') || 'ninguno'}).`);
+    } else {
+      tcCountByCriterion[id]++;
+    }
+  }
+
+  for (const [id, count] of Object.entries(tcCountByCriterion)) {
+    if (count < MIN_TC_PER_CRITERION) {
+      errors.push(`${story}: ${id} tiene ${count} Test Case(s), el minimo es ${MIN_TC_PER_CRITERION}.`);
+    } else if (count > MAX_TC_PER_CRITERION) {
+      warnings.push(`${story}: ${id} tiene ${count} Test Cases (maximo ${MAX_TC_PER_CRITERION}) -- revisar si el criterio no esta agrupando varias reglas.`);
+    }
+  }
+
+  return { errors, warnings, criteriaCount: criterios.length, tcCountByCriterion };
+}
+
+/**
+ * Valida todos los Test Cases y Criterios de Aceptación de un payload de
+ * --data. Si el payload no trae Test Cases ni Historias (ej. un Bug),
+ * devuelve listas vacías.
  */
 function validatePayload(payload) {
   const testCases = collectTestCases(payload);
@@ -158,14 +270,37 @@ function validatePayload(payload) {
     warnings.push(`Los ${testCases.length} Test Cases del payload tienen exactamente ${MIN_STEPS} pasos -- revisar que el minimo no se este usando como molde.`);
   }
 
+  const criteriaCounts = [];
+  const tcPerCriterionCounts = [];
+  for (const issue of issuesOf(payload)) {
+    const result = validateStoryCriteria(issue);
+    errors.push(...result.errors);
+    warnings.push(...result.warnings);
+    if (result.criteriaCount !== null) criteriaCounts.push(result.criteriaCount);
+    if (result.tcCountByCriterion) tcPerCriterionCounts.push(...Object.values(result.tcCountByCriterion));
+  }
+
+  if (criteriaCounts.length >= UNIFORM_CRITERIA_MIN_STORIES && criteriaCounts.every(n => n === MIN_CRITERIA)) {
+    warnings.push(`Las ${criteriaCounts.length} HU del lote tienen exactamente ${MIN_CRITERIA} criterios de aceptacion -- revisar que el minimo no se este usando como molde (los CA salen de las reglas de negocio relevadas).`);
+  }
+
+  if (tcPerCriterionCounts.length >= UNIFORM_TC_PER_CRITERION_MIN_CRITERIA && tcPerCriterionCounts.every(n => n === MIN_TC_PER_CRITERION)) {
+    warnings.push(`Los ${tcPerCriterionCounts.length} criterios de aceptacion del payload tienen exactamente ${MIN_TC_PER_CRITERION} Test Cases -- revisar que el minimo no se este usando como molde.`);
+  }
+
   return { errors, warnings, testCaseCount: testCases.length };
 }
 
 module.exports = {
   MIN_STEPS,
   UNIFORM_BATCH_MIN_TESTCASES,
+  MIN_CRITERIA,
+  MAX_CRITERIA,
+  MIN_TC_PER_CRITERION,
+  MAX_TC_PER_CRITERION,
   findActionVerbs,
   validateTestCaseModel,
   collectTestCases,
+  validateStoryCriteria,
   validatePayload
 };
