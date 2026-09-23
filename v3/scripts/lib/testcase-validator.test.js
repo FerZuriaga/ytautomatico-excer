@@ -5,6 +5,10 @@
  * Paso 1. Los casos de regresión usan el texto REAL de esos pasos
  * (versión original vs. versión reescrita de SCRUM-335).
  *
+ * Los casos de Criterios de Aceptación y relación TC -> CA reproducen el
+ * relevamiento real de 2026-09-23 (racha de HU con 2 CA en Automation
+ * Test Store, SCRUM-135 con 6 CA, lote SCRUM-328/338 con 2 TC por CA).
+ *
  * Correr con: node --test v3/scripts/lib/testcase-validator.test.js
  */
 const test = require('node:test');
@@ -13,6 +17,7 @@ const {
   findActionVerbs,
   validateTestCaseModel,
   collectTestCases,
+  validateStoryCriteria,
   validatePayload
 } = require('./testcase-validator');
 
@@ -165,8 +170,14 @@ test('collectTestCases: modo lote, issue unico con testcaseModel y payload sin T
   assert.equal(collectTestCases({ summary: 'HU', historia: {} }).length, 0);
 });
 
-test('payload sin Test Cases (solo actualiza la Historia) no genera errores ni warnings', () => {
-  const result = validatePayload({ summary: 'HU', historia: { como: 'x' } });
+test('payload sin Test Cases (solo actualiza la Historia) con CA validos no genera errores ni warnings', () => {
+  const result = validatePayload({ summary: 'HU', historia: { como: 'x', criterios: ['CA-01: uno', 'CA-02: dos', 'CA-03: tres'] } });
+
+  assert.deepEqual(result, { errors: [], warnings: [], testCaseCount: 0 });
+});
+
+test('payload sin Historia ni Test Cases (ej. un Bug) no genera errores ni warnings', () => {
+  const result = validatePayload({ summary: 'Bug', issuetype: 'Bug', bug: {} });
 
   assert.deepEqual(result, { errors: [], warnings: [], testCaseCount: 0 });
 });
@@ -193,4 +204,129 @@ test('lote con pasos variados no avisa por uniformidad', () => {
   });
 
   assert.deepEqual(warnings, []);
+});
+
+// ─── Criterios de Aceptación y relación TC -> CA ─────────────────────────────
+
+const ca = (n) => `CA-0${n}: El sistema debe cumplir la regla ${n}.`;
+
+// Test Case valido (3 pasos, sin warnings) asignado a un criterio.
+const tcFor = (criterio, name = `TC ${criterio}`) => ({
+  name,
+  criterio,
+  precondition: 'Sesion iniciada.',
+  steps: [step('Navegar a la Home.'), step('Presionar Delete sobre el ID 11.'), step('Presionar Reset.')]
+});
+
+// HU con N criterios y `tcPerCa` Test Cases por criterio.
+const story = (summary, caCount, tcPerCa = 3) => {
+  const criterios = Array.from({ length: caCount }, (_, i) => ca(i + 1));
+  const testcaseModels = criterios.flatMap((_, i) =>
+    Array.from({ length: tcPerCa }, (_, j) => tcFor(`CA-0${i + 1}`, `TC-0${i + 1}.${j + 1}`)));
+  return { summary, historia: { criterios }, testcaseModels };
+};
+
+test('HU con 3 CA y 3 TC por CA: sin errores ni warnings', () => {
+  assert.deepEqual(validatePayload(story('HU', 3)), { errors: [], warnings: [], testCaseCount: 9 });
+});
+
+test('error: HU con menos de 2 CA (falta discovery)', () => {
+  const { errors } = validateStoryCriteria(story('HU chica', 1));
+
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /HU chica: tiene 1 criterio\(s\) de aceptacion, el minimo es 2 -- probablemente falta discovery/);
+});
+
+test('regresion SCRUM-135: HU con 6 CA es WARNING (evaluar split), no error', () => {
+  const { errors, warnings } = validateStoryCriteria(story('Registro de cuenta nueva', 6));
+
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /tiene 6 criterios de aceptacion \(maximo 4\) -- evaluar si la HU requiere split/);
+});
+
+test('regresion racha Automation Test Store: lote entero con 2 CA por HU avisa como molde', () => {
+  const { errors, warnings } = validatePayload({ issues: [story('HU A', 2), story('HU B', 2)] });
+
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /Las 2 HU del lote tienen exactamente 2 criterios de aceptacion/);
+});
+
+test('una sola HU con 2 CA no avisa por uniformidad (puede ser legitima)', () => {
+  assert.deepEqual(validatePayload(story('HU chica', 2)).warnings, []);
+});
+
+test('lote con CA variados (2 y 3) no avisa por uniformidad', () => {
+  assert.deepEqual(validatePayload({ issues: [story('HU A', 2), story('HU B', 3)] }).warnings, []);
+});
+
+test('error: criterio sin id CA-XX o repetido', () => {
+  const { errors } = validateStoryCriteria({
+    summary: 'HU',
+    historia: { criterios: ['El sistema debe loguear.', 'CA-01: uno', 'ca-01: repetido en minuscula'] }
+  });
+
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /el criterio 1 no empieza con un id "CA-XX"/);
+  assert.match(errors[1], /el criterio CA-01 esta repetido/);
+});
+
+test('error: TC sin campo criterio, con formato invalido o apuntando a un CA inexistente', () => {
+  const hu = story('HU', 2);
+  hu.testcaseModels.push({ ...tcFor(undefined, 'TC sin criterio') });
+  hu.testcaseModels.push({ ...tcFor('criterio 1', 'TC formato malo') });
+  hu.testcaseModels.push({ ...tcFor('CA-09', 'TC huerfano') });
+
+  const { errors } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, [
+    'HU > TC sin criterio: falta el campo "criterio" (ej. "CA-01") para trazar el TC a su criterio de aceptacion.',
+    'HU > TC formato malo: criterio "criterio 1" no tiene formato CA-XX.',
+    'HU > TC huerfano: apunta a CA-09, que no existe en los criterios de la HU (CA-01, CA-02).'
+  ]);
+});
+
+test('el criterio del TC se compara sin importar mayusculas ni espacios', () => {
+  const hu = story('HU', 2, 0);
+  hu.testcaseModels = [tcFor(' ca-01'), tcFor('CA-01'), tcFor('Ca-02'), tcFor('CA-02 ')];
+
+  assert.deepEqual(validateStoryCriteria(hu).errors, []);
+});
+
+test('error: CA con menos de 2 TC (incluido un CA sin cobertura)', () => {
+  const hu = story('HU', 3, 0);
+  hu.testcaseModels = [tcFor('CA-01'), tcFor('CA-01'), tcFor('CA-02')];
+
+  const { errors } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, [
+    'HU: CA-02 tiene 1 Test Case(s), el minimo es 2.',
+    'HU: CA-03 tiene 0 Test Case(s), el minimo es 2.'
+  ]);
+});
+
+test('warning: CA con mas de 5 TC', () => {
+  const hu = story('HU', 2, 2);
+  hu.testcaseModels.push(...Array.from({ length: 4 }, () => tcFor('CA-01')));
+
+  const { errors, warnings } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, ['HU: CA-01 tiene 6 Test Cases (maximo 5) -- revisar si el criterio no esta agrupando varias reglas.']);
+});
+
+test('regresion lote SCRUM-328/338: todos los CA con exactamente 2 TC avisa como molde', () => {
+  const { errors, warnings } = validatePayload({ issues: [story('Eliminar', 4, 2), story('Mi cuenta', 4, 2)] });
+
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /Los 8 criterios de aceptacion del payload tienen exactamente 2 Test Cases/);
+});
+
+test('issue sin historia (agregar TC a una HU existente): no exige criterio, pero valida su formato', () => {
+  assert.deepEqual(validatePayload({ summary: 'HU existente', testcaseModels: [tcFor(undefined), tcFor('CA-01')] }).errors, []);
+
+  const { errors } = validatePayload({ summary: 'HU existente', testcaseModel: tcFor('uno') });
+  assert.deepEqual(errors, ['HU existente > TC uno: criterio "uno" no tiene formato CA-XX.']);
 });
