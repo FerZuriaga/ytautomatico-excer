@@ -21,4 +21,6 @@
 
 - **ESTRUCTURA DE PASOS EN XRAY (OBLIGATORIO):** Queda prohibido resumir el Test Case en 1 sola fila genérica. Cada Test Case en Xray debe contar con al menos 2 pasos estructurados en su tabla:
   - **Paso 1 (Navegación / Precondición activa):** Declarar explícitamente la entrada a la pantalla/URL objetivo y verificar el estado inicial.
-  - **Paso 2 (Acción e Interacción):** Describir la acción concreta del usuario sobre la UI (ingresar datos, clic en botón específico) y validar los resultados esperados detallados.
+  - **Paso 2 en adelante (Acción e Interacción):** Describir la acción concreta del usuario sobre la UI (ingresar datos, clic en botón específico) y validar los resultados esperados detallados.
+- **UN PASO POR ACCIÓN VERIFICABLE:** 2 es el MÍNIMO, no la cantidad por defecto. Cada acción del usuario que produce un resultado verificable va en su propio paso con su propio resultado esperado (ej. filtrar → 5 filas / eliminar → 4 filas / Reset → 10 filas = 3 pasos, no 1). PROHIBIDO encadenar varias acciones en un mismo paso ("filtrar, eliminar y volver"). Los casos de una sola acción siguen quedando en 2 pasos (no inflar con relleno).
+- **PRECONDICIÓN SEPARADA DE LOS PASOS:** El estado previo que no es objeto de la prueba (sesión iniciada, datos semilla, etc.) va en el campo `precondition` del Test Case, NO repetido como acción dentro del Paso 1.

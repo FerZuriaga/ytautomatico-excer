@@ -10,5 +10,7 @@
   "editButton": "[data-testid=\"edit-button\"]",
   "deleteButton": "[data-testid=\"delete-button\"]",
   "seedProductCount": 11,
-  "defaultPageSize": 10
+  "defaultPageSize": 10,
+  "navbarProductsLink": "[data-testid=\"navbar-products\"]",
+  "navbarAddProductLink": "[data-testid=\"navbar-addproduct\"]"
 }

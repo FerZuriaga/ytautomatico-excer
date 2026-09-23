@@ -38,11 +38,57 @@ class CommitQualityProductListPage {
         })
     }
 
+    // Delete no pide confirmacion: borra al instante (solo en memoria).
+    clickDeleteForProduct(productId) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productRowPattern.replace('{id}', productId))
+                .find(sel.deleteButton)
+                .click()
+        })
+    }
+
     clickAddProductLink() {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.addProductLink).click())
     }
 
+    // ─── Navegación por el menú (sin full reload de la SPA) ─────────────────────
+
+    goToAddProductFromNavbar() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.navbarAddProductLink).click())
+    }
+
+    goToProductsFromNavbar() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.navbarProductsLink).click())
+    }
+
     // ─── Verificaciones ───────────────────────────────────────────────────────
+
+    verifyRowExists(productId) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productRowPattern.replace('{id}', productId)).should('be.visible')
+        })
+    }
+
+    verifyRowNotExists(productId) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productRowPattern.replace('{id}', productId)).should('not.exist')
+        })
+    }
+
+    verifyDeleteActionOnEveryRow(expectedCount) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productTable).find('tbody tr').should('have.length', expectedCount)
+            cy.get(sel.productTable).find(sel.deleteButton).should('have.length', expectedCount)
+        })
+    }
+
+    verifyNoDeleteActions() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productTable).find('tbody tr').should('have.length.greaterThan', 0)
+            cy.get(sel.productTable).find('thead th').should('not.contain.text', 'Actions')
+            cy.get(sel.deleteButton).should('not.exist')
+        })
+    }
 
     verifyRowCount(expectedCount) {
         cy.fixture(FIXTURE).then(sel => {
