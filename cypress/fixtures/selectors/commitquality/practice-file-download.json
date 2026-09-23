@@ -1,0 +1,6 @@
+{
+  "downloadButtonText": "Download File",
+  "backLink": "[data-testid=\"back-link\"]",
+  "fileName": "dummy_file.txt",
+  "fileContent": "This is a dummy text file."
+}

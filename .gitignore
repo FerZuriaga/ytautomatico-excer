@@ -3,3 +3,4 @@ node_modules/
 .claude/settings.local.json
 cypress/screenshots/
 cypress/videos/
+cypress/downloads/
