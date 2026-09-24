@@ -149,6 +149,11 @@ it('[CA-02][TC-02.1][SCRUM-353] Debe filtrar productos por nombre dentro del ifr
 - El ÚLTIMO tag es el Test Case Key de Xray: es el que usa el reporte de
   resultados. Nunca un id de Test Execution.
 - Nunca inventar un key: usar solo los entregados por ProductAgent.
+- Verificación automática: `run-and-report.js` corre
+  `check-traceability.js` antes de Cypress cuando va a reportar; también
+  se puede correr solo (`--spec <carpeta>`) apenas se escriben los specs.
+  Errores (key inexistente o de otra HU, TC bajo otro CA, key repetida,
+  label de criterio distinto) frenan todo.
 
 ## VALIDACIÓN DE TRAZABILIDAD (rama / commits)
 

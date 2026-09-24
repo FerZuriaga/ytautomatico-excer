@@ -19,6 +19,9 @@
  *   - si hay fallas, pendientes o 0 tests: NO reporta y sale con código 1;
  *   - los tests que pasaron recién en el reintento (retries.runMode) se
  *     reportan PASSED pero se listan aparte, para no esconder inestabilidad;
+ *   - si se va a reportar (--test-cycle), primero verifica la trazabilidad
+ *     specs <-> Jira/Xray (check-traceability.js): con errores (key mal
+ *     copiada, TC bajo otro CA, Test no vinculado a la HU) no corre nada;
  *   - el reporte a Xray lo hace la implementación oficial
  *     (create-jira-task.js --report-results), no una copia de su lógica.
  *
@@ -33,6 +36,7 @@ const { spawnSync } = require('child_process');
 
 const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
+const { runCheck } = require('./check-traceability');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
@@ -92,6 +96,15 @@ async function main() {
   if (!specs.length) {
     console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>]');
     process.exit(1);
+  }
+
+  if (cycles.length) {
+    const trace = await runCheck(specs);
+    if (trace.errors.length) {
+      console.error(`
+Trazabilidad rota (${trace.errors.length} error(es)): no se corre Cypress ni se reporta a Xray.`);
+      process.exit(1);
+    }
   }
 
   const resultsPath = path.resolve(resultsOut || path.join(os.tmpdir(), `cypress-results-${Date.now()}.json`));

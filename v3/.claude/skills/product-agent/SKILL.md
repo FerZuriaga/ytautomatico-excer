@@ -169,7 +169,11 @@ Test Cycle nuevo por cada Test Case de la misma Historia.
 ## MATRIZ DE TRAZABILIDAD EN XRAY
 
 Todo Test Case queda vinculado a su Historia de origen, y declara el CA
-que valida con `criterio`. El mecanismo concreto del link es detalle del
+que valida con `criterio`. Al publicar, `criterio` y `tipo` se guardan
+como labels del Test Case en Xray (`CA-01`, `negativo`), así la relación
+TC -> CA no vive solo en el payload. `v3/scripts/check-traceability.js`
+cruza esos labels y los links contra los tags de los specs;
+`--sync-labels` completa labels faltantes (aditivo, solo sin errores). El mecanismo concreto del link es detalle del
 adapter `v3/scripts/lib/xray.js` (ver `docs/architecture/domain-model.md`).
 Nunca crear un Test Case sin vínculo a su Historia.
 

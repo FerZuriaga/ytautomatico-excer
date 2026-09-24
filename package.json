@@ -16,7 +16,8 @@
     "test:disco": "cypress run --spec \"cypress/e2e/disco/**/*.cy.js\"",
     "test:rentascordoba": "cypress run --spec \"cypress/e2e/rentascordoba/**/*.cy.js\"",
     "test:unit": "node --test v3/scripts/lib/*.test.js",
-    "qa:run-and-report": "node v3/scripts/run-and-report.js"
+    "qa:run-and-report": "node v3/scripts/run-and-report.js",
+    "qa:check-traceability": "node v3/scripts/check-traceability.js"
   },
   "keywords": [],
   "author": "",
