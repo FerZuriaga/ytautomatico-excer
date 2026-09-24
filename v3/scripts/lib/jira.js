@@ -59,6 +59,59 @@ async function getIssue(key) {
 }
 
 /**
+ * Lee varias issues por key en pocas llamadas (search/jql, de a 50 keys
+ * por consulta, paginando con nextPageToken). Devuelve un Map key ->
+ * { issuetype, labels, linkedTests } donde linkedTests son las keys de
+ * las issues de tipo "Test" vinculadas (en cualquier dirección). Una key
+ * inexistente simplemente no aparece en el Map.
+ */
+async function getIssuesByKeys(keys) {
+  const result = new Map();
+  const unique = [...new Set(keys)];
+  for (let i = 0; i < unique.length; i += 50) {
+    const chunk = unique.slice(i, i + 50);
+    let nextPageToken;
+    do {
+      const res = await jiraRequest('POST', '/rest/api/3/search/jql', {
+        jql: `key in (${chunk.join(',')})`,
+        fields: ['issuetype', 'labels', 'issuelinks'],
+        maxResults: 100,
+        nextPageToken
+      });
+      // Una key inexistente hace fallar el JQL completo ("An issue with key
+      // ... does not exist"): se reintenta de a una para aislarla.
+      if (res.status === 400 && chunk.length > 1) {
+        for (const key of chunk) {
+          (await getIssuesByKeys([key])).forEach((v, k) => result.set(k, v));
+        }
+        break;
+      }
+      if (res.status === 400) break;
+      if (res.status !== 200) throw new Error(`Error leyendo issues (${res.status}): ${JSON.stringify(res.body)}`);
+      for (const issue of res.body.issues || []) {
+        const linkedTests = (issue.fields.issuelinks || [])
+          .map(l => l.outwardIssue || l.inwardIssue)
+          .filter(o => o && o.fields?.issuetype?.name === 'Test')
+          .map(o => o.key);
+        result.set(issue.key, { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests });
+      }
+      nextPageToken = res.body.nextPageToken;
+    } while (nextPageToken);
+  }
+  return result;
+}
+
+/**
+ * Agrega labels a una issue sin pisar los existentes (operación "add" de
+ * Jira: agregar un label que ya está no hace nada, es idempotente).
+ */
+async function addLabels(key, labels) {
+  return jiraRequest('PUT', `/rest/api/3/issue/${key}`, {
+    update: { labels: labels.map(label => ({ add: label })) }
+  });
+}
+
+/**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
  * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud;
  * esta instancia no tiene instalado "Tests"/"is tested by" — verificado
@@ -217,6 +270,8 @@ module.exports = {
   createIssue,
   updateIssue,
   getIssue,
+  getIssuesByKeys,
+  addLabels,
   linkIssue,
   transitionIssue,
   addComment,

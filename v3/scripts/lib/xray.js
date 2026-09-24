@@ -40,6 +40,7 @@ require('dotenv').config();
 
 const https = require('https');
 const jira = require('./jira');
+const traceability = require('./traceability');
 
 const HOST = 'xray.cloud.getxray.app';
 
@@ -184,7 +185,9 @@ async function createTestCase(testcase) {
         summary: testcase.name,
         project: { key: testcase.projectKey },
         description,
-        labels: testcase.labels || []
+        // Labels de trazabilidad: criterio (CA-XX) y tipo (positivo/negativo)
+        // del Modelo Canónico, para que no se pierdan al publicar.
+        labels: traceability.buildTraceabilityLabels(testcase)
     };
     if (testcase.priorityName) {
         jiraFields.priority = { name: toJiraPriority(testcase.priorityName) };
