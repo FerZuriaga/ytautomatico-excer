@@ -1,0 +1,10 @@
+{
+  "fileInput": "[data-testid=\"file-input\"]",
+  "fileInputLabel": "[data-testid=\"file-input-label\"]",
+  "submitButton": ".file-upload button[type=\"submit\"]",
+  "errorMessage": ".file-upload .error-message",
+  "messages": {
+    "success": "File successfully uploaded!",
+    "missingFile": "Please select a file to upload."
+  }
+}

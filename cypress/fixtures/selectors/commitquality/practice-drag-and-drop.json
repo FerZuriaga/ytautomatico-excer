@@ -1,0 +1,11 @@
+{
+  "smallBox": "[data-testid=\"small-box\"]",
+  "largeBox": "[data-testid=\"large-box\"]",
+  "draggingClass": "dragging",
+  "insideClass": "inside",
+  "texts": {
+    "smallBox": "Drag me!",
+    "instruction": "Drag the small box here.",
+    "success": "Success!"
+  }
+}

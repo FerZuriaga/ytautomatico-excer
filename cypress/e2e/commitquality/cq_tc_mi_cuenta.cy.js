@@ -7,7 +7,8 @@
 // actualiza "My Details". Sin backend: los datos guardados son estado
 // local del componente, se pierden al salir de /account o recargar.
 // Hallazgo (NO automatizado como esperado): /account no valida sesion,
-// solo se oculta el link del menu -- ver docs/discovery/commitquality.md.
+// solo se oculta el link del menu -- reportado como Bug SCRUM-348, ver
+// docs/discovery/commitquality.md.
 
 import CommitQualityLoginPage from '../../pages/commitquality/CommitQualityLoginPage'
 import CommitQualityProductListPage from '../../pages/commitquality/CommitQualityProductListPage'

@@ -81,7 +81,8 @@ duplicar.
   salir de la pantalla (o recargar) vuelve a los valores por defecto.
 - **Hallazgo:** la ruta `/account` NO valida sesión — solo el link del
   navbar se oculta sin login; por URL directa la pantalla se renderiza
-  igual. No se automatiza como comportamiento esperado.
+  igual. No se automatiza como comportamiento esperado. Reportado como
+  Bug **SCRUM-348** (control de acceso roto), vinculado a SCRUM-338.
 - Validaciones de `ProductForm`: nombre mínimo 2 caracteres, precio
   numérico hasta 2 decimales (máx. 10 dígitos), fecha entre 100 años
   atrás y hoy inclusive.
@@ -93,5 +94,38 @@ duplicar.
 aislados: buttons, radio-buttons, checkbox, dropdown, api, iframe, link,
 dyanmic-text [sic, typo real del sitio], file-upload, drag-and-drop,
 contact-form, accordions, general-components, mock-data-layer,
-random-popup, file-download, clock) — no automatizadas en el primer
-lote, quedan como backlog.
+random-popup, file-download, clock). Automatizados solo los 4 retos
+que suman técnicas nuevas al repo (iframe, drag-and-drop, file-upload,
+file-download); el resto queda fuera de alcance a propósito.
+
+## Módulo Practice — retos automatizados
+
+Todos sin login, cada uno con link "back to practice"
+(`[data-testid="back-link"]`) que navega a `/practice`.
+
+- **IFrame** (`/practice-iframe`): `<iframe src="/">` del MISMO origen →
+  su `contentDocument` es accesible desde Cypress (no hace falta plugin).
+  Adentro corre una instancia propia de la app (catálogo con sus propios
+  11 seed) que comparte `localStorage` con la página padre: con sesión
+  iniciada el catálogo embebido muestra la columna Actions. La app del
+  iframe tarda en montar: esperar a la tabla dentro del body del iframe,
+  no solo a que el body exista.
+- **Drag and Drop** (`/practice-drag-and-drop`): HTML5 DnD nativo
+  (`dataTransfer.setData("text/plain", id)`). `cy.trigger` necesita un
+  `DataTransfer` creado en la ventana de la app y compartido entre
+  `dragstart` y `drop`. La caja chica tiene clase `dragging` mientras se
+  arrastra; la grande pasa a clase `inside` + texto "Success!".
+  **Hallazgo:** `dragenter` sobre la caja grande ya pone "Success!" sin
+  soltar nada (y cualquier elemento arrastrado dispara el mismo efecto);
+  `dragleave` lo revierte. No se automatiza como comportamiento esperado.
+- **Subida de archivos** (`/practice-file-upload`): sin archivo → error
+  "Please select a file to upload." (clase `.error-message`, sin testid)
+  y sin aviso; con archivo → `alert("File successfully uploaded!")` y el
+  input se vacía. Acepta cualquier tipo de archivo. El error recién
+  desaparece en el siguiente submit exitoso (no al seleccionar archivo).
+  Botón Submit sin testid.
+- **Descarga de archivos** (`/practice-file-download`): el botón
+  "Download File" (sin testid) genera en el navegador un Blob
+  `text/plain` y descarga `dummy_file.txt` con el texto exacto "This is a
+  dummy text file.", sin navegar. Cypress lo deja en `downloadsFolder`
+  (ignorado en git).
