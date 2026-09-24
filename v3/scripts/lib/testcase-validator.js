@@ -30,6 +30,14 @@
  *     exactamente 2 TC, y CA sin ningún caso `tipo: "negativo"` (warning y
  *     no error: no todo criterio justifica un caso negativo).
  *
+ * validateStoryText audita la REDACCIÓN de la Historia (todo warnings,
+ * son heurísticas de texto). Nace de la revisión de SCRUM-305/338/349/
+ * 366/374 (2026-09-24): Objetivo escrito como objetivo de prueba
+ * ("Verificar..."), rutas y términos técnicos en la HU, usuario genérico,
+ * "Para" que repite el "Quiero" y, el caso grave, un CA de SCRUM-338 que
+ * exigía que los datos guardados se perdieran al recargar (un defecto
+ * relevado en el discovery y documentado como requisito).
+ *
  * validateStepUpdates cubre la reescritura de pasos de Test Cases ya
  * publicados (`--update-steps`), con las mismas reglas de pasos.
  *
@@ -270,6 +278,91 @@ function validateStoryCriteria(issue) {
   return { errors, warnings, criteriaCount: criterios.length, tcCountByCriterion };
 }
 
+// Objetivo de la HU = resultado de negocio. Estos verbos al inicio lo
+// delatan como objetivo de prueba (eso va en el Test Case).
+const TEST_OBJECTIVE_REGEX = /^\s*(verificar|validar|comprobar|probar|testear|chequear|asegurar que)\b/;
+
+// Rutas de la app ("/account", "/practice-file-upload") y URLs completas.
+const ROUTE_REGEX = /(^|[\s('"])(\/[a-z0-9][a-z0-9_-]*(\/[a-z0-9_-]+)*)(?=$|[\s)'".,;:])|https?:\/\//;
+
+// Detalle técnico/de implementación (CONTENIDO PROHIBIDO de la plantilla
+// de Historia): va en el PR, en docs/discovery o en la precondición del TC.
+const TECHNICAL_TERMS = [
+  'iframe', 'localstorage', 'sessionstorage', 'almacenamiento local', 'cookie',
+  'backend', 'endpoint', 'api rest', 'selector', 'data-testid', 'html', 'css',
+  'dom', 'alert nativo', 'mismo origen'
+];
+const TECHNICAL_TERMS_REGEX = new RegExp(`\\b(${TECHNICAL_TERMS.map(escapeRegExp).join('|')})\\b`, 'g');
+
+// Persona sin rol: "usuario", "usuario de CommitQuality", "usuario del catalogo".
+const GENERIC_PERSONA_REGEX = /^\s*(un |el )?usuario( (de|del) [^,]+)?\s*$/;
+
+// Un CA que exige perder datos casi nunca es una regla de negocio: suele ser
+// un defecto relevado en el discovery (caso real: SCRUM-338 CA-04).
+const DATA_LOSS_REGEX = /\b(revert\w*|se pierden?|no persist\w*|no se (guardan?|conservan?|mantienen?))\b/;
+
+const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre', 'entre', 'como', 'cuando', 'donde', 'este', 'esta', 'esos', 'esas', 'todos', 'todas', 'mismo', 'misma']);
+
+function contentWords(text) {
+  return new Set(normalize(text).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !STOPWORDS.has(w)));
+}
+
+/**
+ * Audita la redacción de una Historia (historia.como/quiero/para/contexto/
+ * objetivo/criterios). Solo warnings: son heurísticas de texto, pueden dar
+ * falsos positivos y se aceptan con --accept-warnings tras revisarlas.
+ * Lo que no se puede detectar por texto (ej. un "Para" que repite el
+ * "Quiero" con sinónimos) lo cubre la regla de scenario-builder.
+ */
+function validateStoryText(issue) {
+  const warnings = [];
+  const historia = issue?.historia;
+  if (!historia) return { errors: [], warnings };
+  const story = issue.summary || '(HU sin summary)';
+
+  if (!isBlank(historia.como) && GENERIC_PERSONA_REGEX.test(normalize(historia.como))) {
+    warnings.push(`${story}: "Como ${historia.como}" es un usuario generico -- indicar el rol concreto que obtiene el beneficio (ej. "administrador del catalogo").`);
+  }
+
+  if (!isBlank(historia.quiero) && !isBlank(historia.para)) {
+    const quiero = contentWords(historia.quiero);
+    const para = [...contentWords(historia.para)];
+    if (para.length && para.filter(w => quiero.has(w)).length / para.length >= 0.5) {
+      warnings.push(`${story}: el "Para" repite el "Quiero" -- el "Para" es el beneficio de negocio, no la misma accion.`);
+    }
+  }
+
+  if (TEST_OBJECTIVE_REGEX.test(normalize(historia.objetivo))) {
+    warnings.push(`${story}: el Objetivo esta escrito como objetivo de prueba ("${String(historia.objetivo).trim().split(/\s+/)[0]}...") -- describir el resultado de negocio; lo que se verifica va en los Test Cases.`);
+  }
+
+  const criterios = Array.isArray(historia.criterios) ? historia.criterios : [];
+  const sections = [
+    ['Quiero', historia.quiero], ['Para', historia.para],
+    ['Contexto', historia.contexto], ['Objetivo', historia.objetivo],
+    ...criterios.map((text, i) => [normalizeCriterionId(text) || `criterio ${i + 1}`, text])
+  ];
+  for (const [name, text] of sections) {
+    if (isBlank(text)) continue;
+    const route = normalize(text).match(ROUTE_REGEX);
+    if (route) {
+      warnings.push(`${story}: ${name} menciona una ruta/URL ("${(route[2] || route[0]).trim()}") -- la HU no lleva rutas; van en la precondicion del Test Case o en docs/discovery.`);
+    }
+    const terms = [...new Set(normalize(text).match(TECHNICAL_TERMS_REGEX) || [])];
+    if (terms.length) {
+      warnings.push(`${story}: ${name} tiene detalle tecnico (${terms.join(', ')}) -- describir el comportamiento en lenguaje de negocio.`);
+    }
+  }
+
+  for (const text of criterios) {
+    if (DATA_LOSS_REGEX.test(normalize(text))) {
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);
+    }
+  }
+
+  return { errors: [], warnings };
+}
+
 /**
  * Valida todos los Test Cases y Criterios de Aceptación de un payload de
  * --data. Si el payload no trae Test Cases ni Historias (ej. un Bug),
@@ -297,6 +390,7 @@ function validatePayload(payload) {
     const result = validateStoryCriteria(issue);
     errors.push(...result.errors);
     warnings.push(...result.warnings);
+    warnings.push(...validateStoryText(issue).warnings);
     if (result.criteriaCount !== null) criteriaCounts.push(result.criteriaCount);
     if (result.tcCountByCriterion) tcPerCriterionCounts.push(...Object.values(result.tcCountByCriterion));
   }
@@ -364,6 +458,7 @@ module.exports = {
   validateTestCaseModel,
   collectTestCases,
   validateStoryCriteria,
+  validateStoryText,
   validatePayload,
   validateStepUpdates
 };

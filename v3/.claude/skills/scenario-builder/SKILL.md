@@ -252,6 +252,57 @@ Los criterios deben ser:
 
 No generar criterios redundantes.
 
+Un criterio contiene **una sola regla**: si su texto junta dos
+comportamientos que pueden fallar por separado (ej. "muestra el error sin
+archivo" + "el error desaparece con la siguiente subida"), son dos
+criterios o dos casos de prueba del mismo criterio, nunca una frase con
+"y".
+
+## NECESIDAD DEL USUARIO (antes de los criterios)
+
+La Historia expresa una necesidad, no la descripción de una pantalla. Antes
+de escribir los criterios, definir:
+
+- **Usuario:** el rol concreto que obtiene el beneficio (ej. "administrador
+  del catálogo", "cliente con una compra en curso"). Nunca "usuario" o
+  "usuario de <app>" a secas.
+- **Beneficio:** qué logra ese usuario gracias a la funcionalidad, en
+  términos de negocio. No puede repetir la acción con otras palabras
+  ("subir un archivo… para enviarlo a la aplicación" no dice nada).
+- **Objetivo de la Historia:** el resultado de negocio cuando la
+  funcionalidad está implementada. Nunca empieza con "Verificar/Validar…":
+  eso es el objetivo de un caso de prueba.
+
+Si la funcionalidad es un mecanismo técnico sin usuario real (ej. un reto
+de práctica "IFrame"), plantear la capacidad que ese mecanismo le da a un
+usuario, o informarlo en RIESGOS O AMBIGÜEDADES.
+
+## COMPORTAMIENTO RELEVADO ≠ REQUISITO
+
+El discovery muestra lo que la aplicación **hace hoy**, no lo que **debe
+hacer**. Antes de convertir un comportamiento relevado en criterio de
+aceptación, contrastarlo con el beneficio de la Historia:
+
+- si lo sostiene (ej. "rechaza el precio con 3 decimales") → es un
+  criterio;
+- si lo contradice (ej. la Historia promete "mantener mis datos al día"
+  y la app pierde lo guardado al recargar) → **no es un criterio**: es un
+  posible defecto (`bug-reporting`) o una limitación conocida, y va en
+  LIMITACIONES O POSIBLES DEFECTOS, nunca como "CA: los datos deben
+  revertirse". Un criterio así hace que el test pase justamente cuando la
+  funcionalidad falla.
+
+Caso real que originó la regla: SCRUM-338 (CommitQuality, Mi cuenta),
+CA-04 "los datos guardados deben revertirse al recargar".
+
+## LENGUAJE DE NEGOCIO
+
+La Historia y sus criterios no llevan rutas (`/account`), URLs ni términos
+de implementación (iframe, almacenamiento local, backend, alert nativo,
+selectores). Ese detalle va en las Precondiciones/Pasos de los casos de
+prueba o en `docs/discovery/<app>.md`. Sí se permiten los textos visibles
+que el usuario ve (nombre de un botón, mensaje de error exacto).
+
 ## IDENTIFICACIÓN DE REQUISITOS FUNCIONALES
 
 Antes de generar los criterios de aceptación, analizar cada comportamiento identificado y clasificarlo como:
@@ -595,7 +646,11 @@ FUNCIONALIDAD:
 
 ESCENARIO:
 
-OBJETIVO:
+USUARIO: (rol concreto, ver NECESIDAD DEL USUARIO)
+
+BENEFICIO: (qué logra, sin repetir la acción)
+
+OBJETIVO: (resultado de negocio, sin "Verificar…")
 
 DADO:
 
@@ -674,6 +729,10 @@ MATRIZ_DE_TRAZABILIDAD:
 | CA-02 | TC-02.1, TC-02.2, TC-02.3, TC-02.4, TC-02.5 |
 
 RIESGOS O AMBIGÜEDADES:
+
+LIMITACIONES O POSIBLES DEFECTOS: (comportamientos relevados que
+contradicen el beneficio; nunca se convierten en CA — ver COMPORTAMIENTO
+RELEVADO ≠ REQUISITO)
 
 ## INFORMACIÓN FALTANTE
 
