@@ -141,6 +141,12 @@ test('regresion SCRUM-331: una accion negada ("sin iniciar sesion") no cuenta co
   assert.deepEqual(warnings, []);
 });
 
+test('regresion SCRUM-302: la negacion aplica a cualquier verbo de accion ("sin filtrar")', () => {
+  assert.deepEqual(findActionVerbs('Navegar a la Home y verificar el listado inicial completo (sin filtrar).'), ['navegar']);
+  assert.deepEqual(findActionVerbs('Volver al listado sin guardar ni eliminar nada.'), ['volver', 'eliminar']);
+  assert.deepEqual(findActionVerbs('No recargar la pagina y presionar Reset.'), ['presionar']);
+});
+
 test('acentos y mayusculas no evitan la deteccion', () => {
   assert.deepEqual(findActionVerbs('INICIAR SESIÓN y Navegar a la Home.'), ['iniciar sesion', 'navegar']);
 });
