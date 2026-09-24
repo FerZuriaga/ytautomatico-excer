@@ -113,8 +113,17 @@ para tickets y Test Cases. Hoy soporta:
 - **validación previa obligatoria** de pasos, Criterios de Aceptación y
   relación TC → CA (`v3/scripts/lib/testcase-validator.js`): los errores
   frenan siempre; los warnings frenan salvo `--accept-warnings`;
+- `--dry-run`: valida el payload sin publicar ni modificar nada (usarlo
+  siempre antes de publicar un lote);
+- `--update-steps --data <archivo>`: reescribe precondición y pasos de
+  Test Cases YA publicados (`{ "testcases": [ { key, precondition,
+  steps } ] }`), con la misma validación que una publicación nueva,
+  conservando objetivo y vínculo con la Historia, y verificando cada uno
+  por lectura;
 - reporte de resultados reales de una corrida (`--report-results` +
-  `--test-cycle`, acepta varios ciclos separados por coma).
+  `--test-cycle`, acepta varios ciclos separados por coma). En el flujo
+  normal lo dispara `v3/scripts/run-and-report.js` solo si la corrida fue
+  100% exitosa.
 
 Toda nueva capacidad relacionada con tickets se implementa extendiendo
 este script, de forma incremental y sin eliminar funcionalidades
@@ -204,10 +213,6 @@ durante la conversación.
 
 **Límites conocidos hoy (pendientes de extender):**
 
-- **Reescribir los pasos de un Test Case ya publicado** no está en el
-  CLI (existe `xray.replaceTestSteps` en el adapter, pero no un comando
-  con validación previa). Hasta que exista `--update-steps`, pedir
-  aprobación explícita al usuario antes de usar el adapter directamente.
 - **Asignación a Sprint:** la implementación oficial no consulta Sprints;
   los tickets se crean en Backlog y se informa en `SPRINT_ASIGNADO`.
 
@@ -251,7 +256,10 @@ destructivas van en una HU aparte.
 ## TRAZABILIDAD FUNCIONAL
 
 Cada CA tiene entre **2 y 5** casos de prueba, **incluyendo al menos un
-caso negativo** (regla de `scenario-builder`). Un criterio funcionalmente
+caso negativo** (regla de `scenario-builder`). Cada Test Case declara
+`tipo: "positivo"` o `"negativo"`; un CA sin negativo es WARNING del
+validador (no error): se acepta con `--accept-warnings` solo si se
+confirma que ese criterio no lo justifica. Un criterio funcionalmente
 simple (binario) puede quedar en el mínimo de 2 (uno positivo y uno
 negativo). Este conteo ya debe venir resuelto: ProductAgent no genera
 casos, solo valida y conserva.

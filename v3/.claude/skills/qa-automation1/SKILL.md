@@ -79,8 +79,11 @@ Sin saltar pasos:
 4. `branch-management` — antes de crear o reutilizar ramas.
 5. Implementación (código).
 6. `test-execution` + `execution-validation` — UNA sola corrida de
-   Cypress filtrada por los specs del lote
-   (`npx cypress run --quiet --reporter json --spec <rutas>`).
+   Cypress sobre los specs del lote con
+   `node v3/scripts/run-and-report.js --spec <rutas> --test-cycle <ciclos>`
+   (reporta a Xray solo si pasa 100% y lista los reintentos). El reporte a
+   Xray es del rol ProductAgent: cargar `product-agent` antes de pasar
+   `--test-cycle`, o correr sin ese flag y reportar desde ese rol.
 7. `automation-review`.
 8. `git-workflow` — solo tras una ejecución 100% exitosa: commit, push y
    Pull Request.

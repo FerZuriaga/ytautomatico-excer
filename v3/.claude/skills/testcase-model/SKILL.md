@@ -318,6 +318,7 @@ La salida obligatoria de este skill deberá representarse utilizando exactamente
   "labels": [],
   "folder": "",
   "criterio": "CA-01",
+  "tipo": "positivo",
   "steps": [
     {
       "inline": 1,
@@ -345,6 +346,14 @@ es la única fuente de la relación TC -> CA.
 `create-jira-task.js` la audita antes de publicar
 (`v3/scripts/lib/testcase-validator.js`): cada TC debe apuntar a un CA
 existente de su Historia, y cada CA debe tener entre 2 y 5 TC.
+
+## TIPO DE CASO (`tipo`)
+
+`tipo` vale `"positivo"` (el sistema hace lo esperado) o `"negativo"`
+(validación, restricción, error o intento inválido). Permite auditar la
+regla de `scenario-builder` de al menos un caso negativo por criterio: un
+CA sin ningún caso negativo es WARNING del validador (no error, porque
+no todo criterio lo justifica).
 
 ## ORGANIZACIÓN FUNCIONAL (FOLDER)
 

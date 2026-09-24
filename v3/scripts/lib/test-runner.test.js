@@ -15,7 +15,10 @@ const assert = require('node:assert/strict');
 const {
   splitConcatenatedJsonObjects,
   mergeResultsDocs,
-  parseResultsText
+  parseResultsText,
+  summarizeResults,
+  isReportable,
+  compareReportedStatuses
 } = require('./test-runner');
 
 function mochaJsonDoc({ testsCount = 1, passesTitles = [], failuresTitles = [] } = {}) {
@@ -121,4 +124,52 @@ test('mergeResultsDocs sobre un array vacio devuelve una forma valida sin tests'
 
   assert.deepEqual(result.tests, []);
   assert.deepEqual(result.passes, []);
+});
+
+// ─── summarizeResults / isReportable / compareReportedStatuses ──────────────
+// Nacen de la sesion del 2026-09-23: el conteo de reintentos y el control
+// de "100% antes de reportar" se hacian a mano con scripts sueltos.
+
+test('resumen: cuenta passes, fallas con mensaje, pendientes y tests sin tag', () => {
+  const doc = mochaJsonDoc({ testsCount: 3, passesTitles: ['[CA-01][TC-01.1][SCRUM-351] pasa', 'sin tag'], failuresTitles: ['[CA-01][TC-01.2][SCRUM-352] falla'] });
+  doc.failures[0].err = { message: 'expected 10 to equal 11' };
+
+  const summary = summarizeResults(doc);
+
+  assert.equal(summary.total, 3);
+  assert.equal(summary.passed, 2);
+  assert.deepEqual(summary.failed, [{ fullTitle: '[CA-01][TC-01.2][SCRUM-352] falla', message: 'expected 10 to equal 11' }]);
+  assert.deepEqual(summary.untagged, ['sin tag']);
+  assert.equal(isReportable(summary), false);
+});
+
+test('resumen: un test que paso recien en el reintento queda visible en retriedPasses', () => {
+  const doc = mochaJsonDoc({ testsCount: 2, passesTitles: ['[SCRUM-360] estable', '[SCRUM-361] inestable'] });
+  doc.passes[1].currentRetry = 1;
+
+  const summary = summarizeResults(doc);
+
+  assert.deepEqual(summary.retriedPasses, ['[SCRUM-361] inestable']);
+  assert.equal(isReportable(summary), true);
+});
+
+test('isReportable: corrida vacia o con pendientes no se reporta', () => {
+  assert.equal(isReportable(summarizeResults(mochaJsonDoc({ testsCount: 0 }))), false);
+
+  const doc = mochaJsonDoc({ testsCount: 1, passesTitles: ['[SCRUM-1] ok'] });
+  doc.pending = [{ fullTitle: '[SCRUM-2] skip' }];
+  assert.equal(isReportable(summarizeResults(doc)), false);
+});
+
+test('compareReportedStatuses: detecta keys sin ejecucion y ejecuciones que no quedaron en PASSED', () => {
+  const executions = [
+    { status: { name: 'PASSED' }, test: { jira: { key: 'SCRUM-351' } } },
+    { status: { name: 'TO DO' }, test: { jira: { key: 'SCRUM-352' } } }
+  ];
+
+  assert.deepEqual(compareReportedStatuses(executions, ['SCRUM-351', 'SCRUM-352', 'SCRUM-999']), {
+    missing: ['SCRUM-999'],
+    notPassed: [{ key: 'SCRUM-352', status: 'TO DO' }]
+  });
+  assert.deepEqual(compareReportedStatuses(executions, ['SCRUM-351']), { missing: [], notPassed: [] });
 });
