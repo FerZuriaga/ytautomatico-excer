@@ -2,20 +2,24 @@ import AutomationTestStoreContentPage from '../../pages/automation-test-store/Au
 
 const contentPage = new AutomationTestStoreContentPage()
 
-describe('Automation Test Store - Ver páginas de contenido estático', () => {
+describe('Automation Test Store - Ver páginas de contenido estático [SCRUM-261]', () => {
     it('[CA-01][TC-01.1][SCRUM-263] navegar a About Us y Privacy Policy desde el footer muestra el título correcto de cada página', () => {
-        contentPage.visitContent(1)
+        cy.gotoATSUrl('/')
+        contentPage.clickFooterLink('aboutUs')
         contentPage.pageTitle.should('contain.text', 'About Us')
 
-        contentPage.visitContent(2)
+        cy.gotoATSUrl('/')
+        contentPage.clickFooterLink('privacyPolicy')
         contentPage.pageTitle.should('contain.text', 'Privacy Policy')
     })
 
     it('[CA-01][TC-01.2][SCRUM-264] navegar a Return Policy y Shipping desde el footer muestra el título correcto de cada página', () => {
-        contentPage.visitContent(3)
+        cy.gotoATSUrl('/')
+        contentPage.clickFooterLink('returnPolicy')
         contentPage.pageTitle.should('contain.text', 'Return Policy')
 
-        contentPage.visitContent(4)
+        cy.gotoATSUrl('/')
+        contentPage.clickFooterLink('shipping')
         contentPage.pageTitle.should('contain.text', 'Shipping')
     })
 

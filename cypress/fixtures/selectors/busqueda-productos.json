@@ -23,7 +23,7 @@
   },
   "hallazgos": {
     "keywordVacio": "category_id=0 + keyword vacio devuelve 0 productos (mismo mensaje 'no matches' que un keyword inexistente, no lista todo el catalogo).",
-    "filtroCategoria": "category_id SI filtra resultados reales: 'bronzer' sin filtro = 6 productos, con category_id=36 (Makeup, categoria real del producto) = 4, con category_id=65 (Books, no relacionada) = 0.",
+    "filtroCategoria": "category_id SI filtra resultados reales: 'bronzer' sin filtro = 3 productos, con category_id=36 (Makeup, categoria real del producto) = 2 (relevado de nuevo con curl el 2026-09-24; el 2026-09-18 eran 6 y 4: la demo cambia su catalogo), con category_id=65 (Books, no relacionada) = 0.",
     "formatoCategoriaDistintoPorEntrada": "El quick search de home usa category_id simple (36); el refine form de la pagina de resultados usa category_id como path (0,36 -> URL-encoded 0%2C36). Mismo filtro, 2 formatos reales distintos segun el punto de entrada -- no asumir que son intercambiables."
   }
 }

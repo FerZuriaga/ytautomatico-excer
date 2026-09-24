@@ -6,7 +6,7 @@ const siteMapPage = new AutomationTestStoreSiteMapPage()
 const categoryPage = new AutomationTestStoreCategoryPage()
 const specialsPage = new AutomationTestStoreSpecialsPage()
 
-describe('Automation Test Store - Navegar el Site Map', () => {
+describe('Automation Test Store - Navegar el Site Map [SCRUM-269]', () => {
     beforeEach(() => {
         siteMapPage.visit()
     })

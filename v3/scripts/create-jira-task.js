@@ -49,8 +49,9 @@
  *
  * --update-steps --data <archivo.json>: reescribe precondición y pasos de
  * Test Cases YA publicados ({ "testcases": [ { key, precondition, steps } ] }),
- * validados con las mismas reglas (todo o nada), conservando el objetivo
- * y el vínculo con la Historia, y verificando cada uno por lectura.
+ * validados con las mismas reglas (todo o nada), conservando el vínculo
+ * con la Historia y verificando cada uno por lectura. Nombre y objetivo se
+ * conservan salvo que el elemento traiga `name` / `objective` opcionales.
  *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
@@ -318,7 +319,7 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
 
 /**
  * --update-steps: reescribe precondición y pasos de Test Cases YA
- * publicados, conservando su objetivo y su vínculo con la Historia. El
+ * publicados, conservando su vínculo con la Historia (y nombre/objetivo, salvo `name`/`objective`). El
  * payload ya pasó por testcaseValidator.validateStepUpdates (todo o nada)
  * antes de llegar acá. Cada Test Case se verifica por lectura después de
  * actualizarlo; si uno falla, se frena e informa cuáles ya se aplicaron.
@@ -339,11 +340,14 @@ async function updateTestCaseSteps(testcases) {
     const issue = await jira.getIssue(tc.key);
     if (issue.status !== 200) abort(`No se pudo leer ${tc.key}: ${JSON.stringify(issue.body)}`);
 
-    const objective = testcaseDescription.extractObjective(issue.body.fields.description);
+    // `name` y `objective` son opcionales: sin ellos se conservan los
+    // publicados. Hacen falta cuando cambia lo que el TC valida (caso real:
+    // SCRUM-346/347 pasaron de "se revierten" a "se conservan", Bug SCRUM-380).
+    const objective = tc.objective || testcaseDescription.extractObjective(issue.body.fields.description);
     if (!objective) abort(`${tc.key}: no se encontro el objetivo en la descripcion actual; no se actualiza para no perderlo.`);
 
     const res = await jira.updateIssue(tc.key, {
-      summary: issue.body.fields.summary,
+      summary: tc.name || issue.body.fields.summary,
       description: testcaseDescription.buildTestCaseDescription(objective, tc.precondition)
     });
     if (res.status !== 204) abort(`Error al actualizar la descripcion de ${tc.key}: ${JSON.stringify(res.body)}`);

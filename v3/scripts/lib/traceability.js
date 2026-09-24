@@ -50,7 +50,9 @@ function parseSpecTags(source, file = 'spec') {
   const describeKeys = describe ? keysIn(describe[2]).filter(k => !/^(CA|TC)-/.test(k)) : [];
 
   const tests = [];
-  for (const match of source.matchAll(titleRegex('it'))) {
+  // it.skip también cuenta: un test salteado por bug conocido sigue
+  // automatizando su Test Case (caso real: SCRUM-346/347, Bug SCRUM-380).
+  for (const match of source.matchAll(titleRegex('it(?:\\.skip)?'))) {
     const title = match[2];
     const tags = keysIn(title);
     tests.push({

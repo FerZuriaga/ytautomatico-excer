@@ -5,7 +5,10 @@
 // Datos por defecto "Commit Quality" / "CommitQuality". "Update Details"
 // arranca colapsada (toggle "+"/"-"). Save dispara un alert() nativo y
 // actualiza "My Details". Sin backend: los datos guardados son estado
-// local del componente, se pierden al salir de /account o recargar.
+// local del componente, se pierden al salir de /account o recargar --
+// es un defecto (Bug SCRUM-380), no un requisito: CA-04 exige que se
+// conserven y sus 2 tests quedan en it.skip hasta que se arregle. Al
+// cerrar SCRUM-380, quitar el .skip y el "(bug conocido: ...)".
 // Hallazgo (NO automatizado como esperado): /account no valida sesion,
 // solo se oculta el link del menu -- reportado como Bug SCRUM-348, ver
 // docs/discovery/commitquality.md.
@@ -100,7 +103,7 @@ describe('Mi cuenta [SCRUM-338]', () => {
         accountPage.verifySavedDetails(DEFAULTS)
     })
 
-    it('[CA-04][TC-04.1][SCRUM-346] Debe volver a los datos por defecto al salir y volver a la pantalla', () => {
+    it.skip('[CA-04][TC-04.1][SCRUM-346] Debe conservar los datos guardados al salir y volver a la pantalla (bug conocido: SCRUM-380)', () => {
         loginAndOpenAccount()
         saveNewDetails()
 
@@ -109,16 +112,16 @@ describe('Mi cuenta [SCRUM-338]', () => {
         accountPage.openFromNavbar()
 
         accountPage.verifyOnAccountPage()
-        accountPage.verifySavedDetails(DEFAULTS)
+        accountPage.verifySavedDetails(NEW_DETAILS)
     })
 
-    it('[CA-04][TC-04.2][SCRUM-347] Debe volver a los datos por defecto al recargar la pagina', () => {
+    it.skip('[CA-04][TC-04.2][SCRUM-347] Debe conservar los datos guardados al recargar la pagina (bug conocido: SCRUM-380)', () => {
         loginAndOpenAccount()
         saveNewDetails()
 
         cy.reload()
 
         accountPage.verifyOnAccountPage()
-        accountPage.verifySavedDetails(DEFAULTS)
+        accountPage.verifySavedDetails(NEW_DETAILS)
     })
 })

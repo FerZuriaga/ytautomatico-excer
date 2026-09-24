@@ -74,6 +74,19 @@ test('lectura: comillas dobles/backticks, it() sin tags y describe sin HU', () =
   assert.deepEqual(parsed.tests.map(t => [t.key, t.line]), [['SCRUM-10', 2], [null, 3]]);
 });
 
+test('parseSpecTags: it.skip (bug conocido) tambien se parsea con su key', () => {
+  const source = [
+    "describe('Mi cuenta [SCRUM-338]', () => {",
+    "  it.skip('[CA-04][TC-04.1][SCRUM-346] Debe conservar los datos (bug conocido: SCRUM-380)', () => {})",
+    '})'
+  ].join('\n');
+
+  const parsed = parseSpecTags(source, 'z.cy.js');
+
+  assert.equal(parsed.story, 'SCRUM-338');
+  assert.deepEqual(parsed.tests.map(t => [t.ca, t.tc, t.key]), [['CA-04', 'TC-04.1', 'SCRUM-346']]);
+});
+
 // ─── Cruce contra Jira/Xray ──────────────────────────────────────────────────
 
 test('trazabilidad completa y con labels: sin errores ni warnings', () => {

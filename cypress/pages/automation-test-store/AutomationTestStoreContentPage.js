@@ -4,8 +4,13 @@ class AutomationTestStoreContentPage {
 
     get pageTitle() { return cy.get('h1.heading1 .maintext') }
 
-    visitContent(contentId) {
-        cy.gotoATSUrl(`/index.php?rt=content/content&content_id=${contentId}`)
+    // CA-01 de SCRUM-261 exige navegar DESDE EL FOOTER: el link se busca
+    // dentro de <footer> (unico en la home, verificado con curl) con los
+    // selectores relevados en cypress/fixtures/selectors/contenido-estatico.json.
+    clickFooterLink(linkName) {
+        cy.fixture('selectors/contenido-estatico.json').then(sel => {
+            cy.get('footer').find(sel.footerLinks[linkName]).click()
+        })
     }
 
     // ─── Formulario de Contacto ─────────────────────────────────────────────────
