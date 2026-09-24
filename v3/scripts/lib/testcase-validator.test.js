@@ -18,6 +18,7 @@ const {
   validateTestCaseModel,
   collectTestCases,
   validateStoryCriteria,
+  validateStoryText,
   validatePayload,
   validateStepUpdates
 } = require('./testcase-validator');
@@ -421,4 +422,74 @@ test('update-steps: errores de estructura (sin testcases, key invalido, key repe
     'SCRUM-10: tiene 1 paso(s), el minimo es 2.',
     '--update-steps: SCRUM-10 esta repetido en el payload.'
   ]);
+});
+
+// --- Redacción de la Historia (validateStoryText) ---------------------
+// Textos REALES de las HU revisadas el 2026-09-24 (SCRUM-374/366/338).
+
+test('HU SCRUM-374 real: usuario generico, Objetivo de prueba, ruta y detalle tecnico', () => {
+  const { warnings } = validateStoryText({
+    summary: 'CommitQuality - Practice: descarga de archivos',
+    historia: {
+      como: 'usuario de CommitQuality',
+      quiero: 'descargar el archivo de ejemplo',
+      para: 'obtener una copia local de su contenido',
+      contexto: "El reto File Download (/practice-file-download) tiene un boton 'Download File' que genera en el navegador y descarga el archivo de texto dummy_file.txt, sin navegar a otra pagina.",
+      objetivo: 'Verificar el nombre y el contenido del archivo descargado y que la descarga no saque al usuario de la pantalla.',
+      criterios: ["CA-01: Al presionar 'Download File' se debe descargar el archivo 'dummy_file.txt'.", 'CA-02: La descarga debe ocurrir sin abandonar la pantalla.']
+    }
+  });
+  assert.equal(warnings.length, 3);
+  assert.match(warnings[0], /"Como usuario de CommitQuality" es un usuario generico/);
+  assert.match(warnings[1], /Objetivo esta escrito como objetivo de prueba \("Verificar\.\.\."\)/);
+  assert.match(warnings[2], /Contexto menciona una ruta\/URL \("\/practice-file-download"\)/);
+});
+
+test('HU SCRUM-338 real: CA que exige perder datos (defecto documentado como requisito) y detalle tecnico', () => {
+  const { warnings } = validateStoryText({
+    summary: 'CommitQuality - Mi cuenta',
+    historia: {
+      como: 'usuario logueado de CommitQuality',
+      quiero: 'ver y actualizar mis datos de cuenta',
+      para: 'mantener mi nombre y canal de Youtube al dia',
+      contexto: 'La seccion Update Details dispara un alert nativo y actualiza My Details. Sin backend: los datos guardados son estado local de la pantalla.',
+      objetivo: 'Que el usuario pueda consultar y mantener actualizados sus datos de cuenta.',
+      criterios: [
+        'CA-01: Con sesion iniciada, el link My Account debe llevar a /account mostrando los datos por defecto.',
+        'CA-02: La seccion Update Details debe poder mostrarse/ocultarse con el control +/-.',
+        'CA-04: Los datos guardados deben revertirse a los valores por defecto al salir de la pantalla o recargarla (estado local, sin backend).'
+      ]
+    }
+  });
+  assert.deepEqual(warnings.map(w => w.replace(/ -- .*/, '')), [
+    'CommitQuality - Mi cuenta: Contexto tiene detalle tecnico (alert nativo, backend)',
+    'CommitQuality - Mi cuenta: CA-01 menciona una ruta/URL ("/account")',
+    'CommitQuality - Mi cuenta: CA-04 tiene detalle tecnico (backend)',
+    'CommitQuality - Mi cuenta: CA-04 exige perder o revertir datos'
+  ]);
+});
+
+test('"Para" que repite el "Quiero" (literal) da warning; "+/-" y "descartar" no dan falsos positivos', () => {
+  const repetido = validateStoryText({ summary: 'HU', historia: { quiero: 'subir archivos al sistema', para: 'poder subir archivos' } });
+  assert.match(repetido.warnings[0], /el "Para" repite el "Quiero"/);
+
+  const limpio = validateStoryText({
+    summary: 'HU',
+    historia: {
+      como: 'administrador del catalogo',
+      quiero: 'dar de alta productos nuevos',
+      para: 'que los clientes los encuentren disponibles para la venta',
+      contexto: 'El alta pide nombre, precio y fecha de stock, con validaciones de formato.',
+      objetivo: 'Que el catalogo solo incorpore productos con datos validos.',
+      criterios: ['CA-01: La seccion de edicion se expande y colapsa con el control +/-.', 'CA-02: Cancelar debe descartar los datos ingresados sin crear el producto.']
+    }
+  });
+  assert.deepEqual(limpio.warnings, []);
+});
+
+test('validatePayload incluye los warnings de redaccion; issue sin historia no se audita', () => {
+  const hu = story('HU', 3);
+  hu.historia.objetivo = 'Validar el alta de productos.';
+  assert.deepEqual(validatePayload(hu).warnings, ['HU: el Objetivo esta escrito como objetivo de prueba ("Validar...") -- describir el resultado de negocio; lo que se verifica va en los Test Cases.']);
+  assert.deepEqual(validateStoryText({ summary: 'Bug' }).warnings, []);
 });

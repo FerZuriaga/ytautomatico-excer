@@ -277,9 +277,14 @@ independiente de los demás y mantiene su trazabilidad (`criterio`).
 
 ## VALIDACIÓN ANTES DE CREAR LA HISTORIA
 
-- Como / Quiero / Para representan la necesidad funcional.
-- Contexto describe el escenario funcional; Objetivo, el comportamiento
-  esperado.
+- Como / Quiero / Para representan la necesidad funcional: "Como" es un
+  rol concreto (nunca "usuario de <app>"), "Para" es el beneficio de
+  negocio (nunca la misma acción del "Quiero" con otras palabras).
+- Contexto describe el escenario funcional; Objetivo, el resultado de
+  negocio (nunca "Verificar…/Validar…": eso es de los Test Cases).
+- Ningún criterio exige un comportamiento que contradice el "Para" (ej.
+  perder datos guardados): si llega así desde `scenario-builder`,
+  detener e informar al Manager (es un posible defecto, no un CA).
 - Los criterios son solo comportamiento funcional (ver CONTENIDO
   PROHIBIDO).
 - La especificación incluye criterios, casos derivados y matriz de
@@ -293,6 +298,18 @@ Si la trazabilidad es incompleta: detener, informar al Manager, no crear.
 Nombres de archivos, Page Objects, métodos, comandos de Git o del
 framework de pruebas, rutas del proyecto, scripts, carpetas, detalles
 técnicos de implementación. Eso pertenece al Pull Request.
+
+Tampoco rutas o URLs de la aplicación (`/account`) ni términos de
+implementación de la app (iframe, almacenamiento local, backend, alert
+nativo): van en la precondición de los Test Cases o en
+`docs/discovery/<app>.md`. Los textos visibles para el usuario (botones,
+mensajes) sí se permiten.
+
+El validador (`validateStoryText`) avisa con WARNING: usuario genérico,
+"Para" que repite el "Quiero", Objetivo que empieza con "Verificar…",
+rutas/URLs, términos técnicos y criterios que exigen perder o revertir
+datos. Se corrigen en el payload; `--accept-warnings` solo si el warning
+es un falso positivo confirmado.
 
 ## PLANTILLA OFICIAL DE HISTORIA
 
