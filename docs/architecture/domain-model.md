@@ -71,7 +71,7 @@ evolucionar de forma autónoma, o cuando es una acción destructiva
 **Relación:** 1 HU → 2..N Acceptance Criteria (piso estricto 2, sin
 techo — ver método de 3 dimensiones más abajo). 1 HU → 0..1 Branch/PR.
 1 HU → 0..N Bug.
-**Quién la genera:** skill `scenario-builder` → Agent `productAgent` (crea en Jira).
+**Quién la genera:** skill `scenario-builder` → rol `product-agent` (skill, crea en Jira).
 
 ---
 
