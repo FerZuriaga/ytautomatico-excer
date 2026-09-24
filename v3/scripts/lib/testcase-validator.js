@@ -26,8 +26,12 @@
  *     o repetido, TC sin `criterio` o apuntando a un CA inexistente, CA
  *     con menos de 2 TC.
  *   - warnings: HU con más de 4 CA (evaluar split), lote de 2+ HU todas
- *     con exactamente 2 CA, CA con más de 5 TC, y todos los CA con
- *     exactamente 2 TC.
+ *     con exactamente 2 CA, CA con más de 5 TC, todos los CA con
+ *     exactamente 2 TC, y CA sin ningún caso `tipo: "negativo"` (warning y
+ *     no error: no todo criterio justifica un caso negativo).
+ *
+ * validateStepUpdates cubre la reescritura de pasos de Test Cases ya
+ * publicados (`--update-steps`), con las mismas reglas de pasos.
  *
  * Módulo puro: no habla con Jira/Xray ni lee archivos.
  */
@@ -52,6 +56,10 @@ const UNIFORM_CRITERIA_MIN_STORIES = 2;
 const UNIFORM_TC_PER_CRITERION_MIN_CRITERIA = 4;
 
 const CRITERION_ID_REGEX = /^\s*(CA-\d{2})\b/i;
+
+// Campo `tipo` del Test Case: permite auditar "al menos un caso negativo
+// por criterio" (regla de scenario-builder) como WARNING.
+const TEST_CASE_TYPES = ['positivo', 'negativo'];
 
 // Verbos de ACCIÓN del usuario (infinitivo) que producen un resultado
 // verificable propio. "verificar"/"observar" no cuentan: describen la
@@ -118,6 +126,10 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
 
   if (steps.length < MIN_STEPS) {
     errors.push(`${label}: tiene ${steps.length} paso(s), el minimo es ${MIN_STEPS}.`);
+  }
+
+  if (model?.tipo !== undefined && !TEST_CASE_TYPES.includes(normalize(model.tipo))) {
+    errors.push(`${label}: tipo "${model.tipo}" invalido (valores posibles: ${TEST_CASE_TYPES.join(', ')}).`);
   }
 
   steps.forEach((step, i) => {
@@ -225,6 +237,7 @@ function validateStoryCriteria(issue) {
   }
 
   const tcCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
+  const negativeCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
 
   for (const model of models) {
     const label = labelOf(issue, model);
@@ -237,6 +250,7 @@ function validateStoryCriteria(issue) {
       errors.push(`${label}: apunta a ${id}, que no existe en los criterios de la HU (${ids.join(', ') || 'ninguno'}).`);
     } else {
       tcCountByCriterion[id]++;
+      if (normalize(model?.tipo) === 'negativo') negativeCountByCriterion[id]++;
     }
   }
 
@@ -245,6 +259,11 @@ function validateStoryCriteria(issue) {
       errors.push(`${story}: ${id} tiene ${count} Test Case(s), el minimo es ${MIN_TC_PER_CRITERION}.`);
     } else if (count > MAX_TC_PER_CRITERION) {
       warnings.push(`${story}: ${id} tiene ${count} Test Cases (maximo ${MAX_TC_PER_CRITERION}) -- revisar si el criterio no esta agrupando varias reglas.`);
+    }
+    // WARNING y no error, a propósito: no todo criterio justifica un caso
+    // negativo (ej. "el archivo descargado tiene el contenido exacto").
+    if (count > 0 && negativeCountByCriterion[id] === 0) {
+      warnings.push(`${story}: ${id} no tiene ningun caso negativo (tipo: "negativo") -- confirmar que el criterio no lo justifica.`);
     }
   }
 
@@ -293,8 +312,49 @@ function validatePayload(payload) {
   return { errors, warnings, testCaseCount: testCases.length };
 }
 
+const ISSUE_KEY_REGEX = /^[A-Z][A-Z0-9]+-\d+$/;
+
+/**
+ * Valida el payload de `create-jira-task.js --update-steps`: reescritura
+ * de pasos (y precondición) de Test Cases YA publicados.
+ *   { "testcases": [ { "key": "SCRUM-335", "precondition": "...", "steps": [...] } ] }
+ * Cada Test Case pasa por las mismas reglas de pasos que una publicación
+ * nueva (validateTestCaseModel). Todo o nada: el CLI no aplica ninguna
+ * actualización si hay errores (o warnings sin --accept-warnings).
+ */
+function validateStepUpdates(payload) {
+  const errors = [];
+  const warnings = [];
+  const testcases = payload?.testcases;
+
+  if (!Array.isArray(testcases) || !testcases.length) {
+    errors.push('--update-steps: el payload debe traer "testcases": [ { key, precondition, steps } ] con al menos un elemento.');
+    return { errors, warnings, testCaseCount: 0 };
+  }
+
+  const seen = new Set();
+  testcases.forEach((tc, i) => {
+    const key = String(tc?.key || '').trim();
+    if (!ISSUE_KEY_REGEX.test(key)) {
+      errors.push(`--update-steps: el elemento ${i + 1} no tiene un "key" valido (ej. "SCRUM-335").`);
+      return;
+    }
+    if (seen.has(key)) {
+      errors.push(`--update-steps: ${key} esta repetido en el payload.`);
+      return;
+    }
+    seen.add(key);
+    const result = validateTestCaseModel(tc, key);
+    errors.push(...result.errors);
+    warnings.push(...result.warnings);
+  });
+
+  return { errors, warnings, testCaseCount: testcases.length };
+}
+
 module.exports = {
   MIN_STEPS,
+  TEST_CASE_TYPES,
   UNIFORM_BATCH_MIN_TESTCASES,
   MIN_CRITERIA,
   MAX_CRITERIA,
@@ -304,5 +364,6 @@ module.exports = {
   validateTestCaseModel,
   collectTestCases,
   validateStoryCriteria,
-  validatePayload
+  validatePayload,
+  validateStepUpdates
 };

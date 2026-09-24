@@ -45,6 +45,13 @@
  * acciones encadenadas, login sin precondición). Los errores frenan
  * siempre; los warnings frenan salvo que se pase --accept-warnings.
  *
+ * --dry-run: con --data, valida y termina sin publicar ni modificar nada.
+ *
+ * --update-steps --data <archivo.json>: reescribe precondición y pasos de
+ * Test Cases YA publicados ({ "testcases": [ { key, precondition, steps } ] }),
+ * validados con las mismas reglas (todo o nada), conservando el objetivo
+ * y el vínculo con la Historia, y verificando cada uno por lectura.
+ *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
  * responsabilidad es parsear la línea de comandos y componer, en el orden
@@ -58,11 +65,12 @@ const jira = require('./lib/jira');
 const xray = require('./lib/xray');
 const testRunner = require('./lib/test-runner');
 const testcaseValidator = require('./lib/testcase-validator');
+const testcaseDescription = require('./lib/testcase-description');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 function parseArgs(argv) {
-  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false };
+  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false, dryRun: false, updateSteps: false };
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--data') {
@@ -90,6 +98,10 @@ function parseArgs(argv) {
       i++;
     } else if (argv[i] === '--accept-warnings') {
       args.acceptWarnings = true;
+    } else if (argv[i] === '--dry-run') {
+      args.dryRun = true;
+    } else if (argv[i] === '--update-steps') {
+      args.updateSteps = true;
     } else if (argv[i] === '--test-cycle') {
       args.testCycleKeyArg = argv[i + 1];
       i++;
@@ -101,7 +113,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
 if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath) {
@@ -110,6 +122,13 @@ if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase &
   console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
   console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
   console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>[,<TestCycleKey2>,...]');
+  console.error('     node scripts/create-jira-task.js --data <archivo.json> --dry-run   (solo valida, no publica)');
+  console.error('     node scripts/create-jira-task.js --update-steps --data <archivo.json> [--dry-run] [--accept-warnings]');
+  process.exit(1);
+}
+
+if ((updateSteps || dryRun) && !dataPath) {
+  console.error('--update-steps y --dry-run requieren --data <archivo.json>.');
   process.exit(1);
 }
 
@@ -138,7 +157,9 @@ if (dataPath) {
   // siempre; los warnings frenan salvo --accept-warnings, que se pasa
   // recién después de revisarlos (son heurísticas, pueden ser falsos
   // positivos).
-  const validation = testcaseValidator.validatePayload(ISSUE);
+  const validation = updateSteps
+    ? testcaseValidator.validateStepUpdates(ISSUE)
+    : testcaseValidator.validatePayload(ISSUE);
   if (validation.errors.length) {
     console.error(`Validacion de Test Cases: ${validation.errors.length} error(es). No se publica nada.`);
     validation.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
@@ -153,6 +174,11 @@ if (dataPath) {
     console.warn(`Validacion de Test Cases: ${validation.warnings.length} warning(s) aceptados con --accept-warnings.`);
   } else if (validation.testCaseCount) {
     console.log(`Validacion de Test Cases: ${validation.testCaseCount} OK.`);
+  }
+
+  if (dryRun) {
+    console.log('Dry run: validacion completa, no se publico ni modifico nada.');
+    process.exit(0);
   }
 }
 
@@ -290,7 +316,61 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
   return key;
 }
 
+/**
+ * --update-steps: reescribe precondición y pasos de Test Cases YA
+ * publicados, conservando su objetivo y su vínculo con la Historia. El
+ * payload ya pasó por testcaseValidator.validateStepUpdates (todo o nada)
+ * antes de llegar acá. Cada Test Case se verifica por lectura después de
+ * actualizarlo; si uno falla, se frena e informa cuáles ya se aplicaron.
+ *
+ * Nace de la sesión del 2026-09-23: 27 Test Cases se reescribieron con
+ * scripts sueltos que llamaban al adapter directo (prohibido para
+ * ProductAgent), sin validación previa ni verificación uniforme.
+ */
+async function updateTestCaseSteps(testcases) {
+  const applied = [];
+  const abort = (message) => {
+    console.error(message);
+    if (applied.length) console.error(`Ya actualizados antes del error: ${applied.join(', ')}.`);
+    process.exit(1);
+  };
+
+  for (const tc of testcases) {
+    const issue = await jira.getIssue(tc.key);
+    if (issue.status !== 200) abort(`No se pudo leer ${tc.key}: ${JSON.stringify(issue.body)}`);
+
+    const objective = testcaseDescription.extractObjective(issue.body.fields.description);
+    if (!objective) abort(`${tc.key}: no se encontro el objetivo en la descripcion actual; no se actualiza para no perderlo.`);
+
+    const res = await jira.updateIssue(tc.key, {
+      summary: issue.body.fields.summary,
+      description: testcaseDescription.buildTestCaseDescription(objective, tc.precondition)
+    });
+    if (res.status !== 204) abort(`Error al actualizar la descripcion de ${tc.key}: ${JSON.stringify(res.body)}`);
+
+    await xray.replaceTestSteps(tc.key, tc.steps);
+
+    const after = await xray.getTestCase(tc.key);
+    if ((after.steps || []).length !== tc.steps.length) {
+      abort(`${tc.key}: la verificacion por lectura encontro ${(after.steps || []).length} pasos, se esperaban ${tc.steps.length}.`);
+    }
+    if (tc.precondition && (after.precondition || '').trim() !== tc.precondition.trim()) {
+      abort(`${tc.key}: la verificacion por lectura no encontro la precondicion esperada.`);
+    }
+
+    applied.push(tc.key);
+    console.log(`${tc.key}: precondicion + ${tc.steps.length} pasos (verificado por lectura).`);
+  }
+
+  console.log(`Update-steps completo: ${applied.length} Test Case(s) actualizados.`);
+}
+
 async function main() {
+  if (updateSteps) {
+    await updateTestCaseSteps(ISSUE.testcases);
+    return;
+  }
+
   // targetKey es el issue sobre el que finalmente se aplican --transition/--comment:
   // el ISSUE_KEY recibido, o el key recién creado si --data no traía issueKey.
   let targetKey = ISSUE_KEY;

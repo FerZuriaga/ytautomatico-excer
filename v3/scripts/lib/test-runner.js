@@ -195,7 +195,55 @@ function collectTaggedTests(results) {
     .filter(t => t.testCaseKey);
 }
 
+/**
+ * Resumen de una corrida ya parseada, para decidir si se puede reportar a
+ * Xray (run-and-report.js). `retriedPasses` son los tests que pasaron
+ * recién en un reintento (config `retries.runMode`): figuran como passes
+ * en el JSON de Mocha, pero hay que hacerlos visibles porque pueden ser
+ * inestables. `untagged` son los tests sin Test Case Key en el título: no
+ * se reportan a Xray.
+ */
+function summarizeResults(results) {
+  const all = collectTestsWithState(results);
+  const passes = results.passes || [];
+  return {
+    total: all.length,
+    passed: passes.length,
+    failed: (results.failures || []).map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '' })),
+    pending: (results.pending || []).map(t => t.fullTitle),
+    retriedPasses: passes.filter(t => (t.currentRetry || 0) > 0).map(t => t.fullTitle),
+    untagged: all.filter(t => !extractTestCaseKey(t.fullTitle)).map(t => t.fullTitle)
+  };
+}
+
+/**
+ * Una corrida se puede reportar solo si tuvo tests y pasaron TODOS (sin
+ * fallas ni pendientes). CLAUDE.md: reportar y commitear solo con 100%.
+ */
+function isReportable(summary) {
+  return summary.total > 0 && summary.failed.length === 0 && summary.pending.length === 0;
+}
+
+/**
+ * Verificación por lectura después de reportar: compara las Test
+ * Executions leídas de Xray (de uno o varios ciclos) contra los Test Case
+ * Keys que la corrida reportó como PASSED. Devuelve los keys sin ejecución
+ * y los que no quedaron en PASSED.
+ */
+function compareReportedStatuses(executions, expectedKeys) {
+  const statusByKey = new Map(executions.map(e => [e.test?.jira?.key, e.status?.name]));
+  return {
+    missing: expectedKeys.filter(k => !statusByKey.has(k)),
+    notPassed: expectedKeys
+      .filter(k => statusByKey.has(k) && statusByKey.get(k) !== 'PASSED')
+      .map(k => ({ key: k, status: statusByKey.get(k) }))
+  };
+}
+
 module.exports = {
+  summarizeResults,
+  isReportable,
+  compareReportedStatuses,
   extractTestCaseKey,
   mapMochaStateToXray,
   collectTestsWithState,

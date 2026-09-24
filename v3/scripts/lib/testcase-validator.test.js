@@ -18,7 +18,8 @@ const {
   validateTestCaseModel,
   collectTestCases,
   validateStoryCriteria,
-  validatePayload
+  validatePayload,
+  validateStepUpdates
 } = require('./testcase-validator');
 
 const step = (description, expectedResult = 'Resultado esperado.') => ({ description, testData: '-', expectedResult });
@@ -217,18 +218,21 @@ test('lote con pasos variados no avisa por uniformidad', () => {
 const ca = (n) => `CA-0${n}: El sistema debe cumplir la regla ${n}.`;
 
 // Test Case valido (3 pasos, sin warnings) asignado a un criterio.
-const tcFor = (criterio, name = `TC ${criterio}`) => ({
+const tcFor = (criterio, name = `TC ${criterio}`, tipo = 'positivo') => ({
   name,
   criterio,
+  tipo,
   precondition: 'Sesion iniciada.',
   steps: [step('Navegar a la Home.'), step('Presionar Delete sobre el ID 11.'), step('Presionar Reset.')]
 });
 
-// HU con N criterios y `tcPerCa` Test Cases por criterio.
+// HU con N criterios y `tcPerCa` Test Cases por criterio; el segundo caso
+// de cada criterio es negativo (como un payload correcto).
 const story = (summary, caCount, tcPerCa = 3) => {
   const criterios = Array.from({ length: caCount }, (_, i) => ca(i + 1));
   const testcaseModels = criterios.flatMap((_, i) =>
-    Array.from({ length: tcPerCa }, (_, j) => tcFor(`CA-0${i + 1}`, `TC-0${i + 1}.${j + 1}`)));
+    Array.from({ length: tcPerCa }, (_, j) =>
+      tcFor(`CA-0${i + 1}`, `TC-0${i + 1}.${j + 1}`, j === 1 ? 'negativo' : 'positivo')));
   return { summary, historia: { criterios }, testcaseModels };
 };
 
@@ -335,4 +339,86 @@ test('issue sin historia (agregar TC a una HU existente): no exige criterio, per
 
   const { errors } = validatePayload({ summary: 'HU existente', testcaseModel: tcFor('uno') });
   assert.deepEqual(errors, ['HU existente > TC uno: criterio "uno" no tiene formato CA-XX.']);
+});
+
+// ─── Caso negativo por criterio (tipo) ──────────────────────────────────────
+
+test('warning (no error): CA sin ningun caso negativo, como el CA-01 de Descarga (SCRUM-374)', () => {
+  const hu = story('Descarga', 2, 0);
+  hu.testcaseModels = [
+    tcFor('CA-01', 'Nombre del archivo'), tcFor('CA-01', 'Contenido del archivo'),
+    tcFor('CA-02', 'No cambia de pantalla'), tcFor('CA-02', 'Sin archivo seleccionado', 'negativo')
+  ];
+
+  const { errors, warnings } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, ['Descarga: CA-01 no tiene ningun caso negativo (tipo: "negativo") -- confirmar que el criterio no lo justifica.']);
+});
+
+test('payload sin campo tipo: avisa en cada CA (fuerza a declararlo)', () => {
+  const hu = story('HU', 2, 0);
+  hu.testcaseModels = ['CA-01', 'CA-01', 'CA-02', 'CA-02'].map(c => ({ ...tcFor(c), tipo: undefined }));
+
+  const { warnings } = validateStoryCriteria(hu);
+
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /CA-01 no tiene ningun caso negativo/);
+  assert.match(warnings[1], /CA-02 no tiene ningun caso negativo/);
+});
+
+test('un CA sin TC da solo el error de minimo, no ademas el warning de negativo', () => {
+  const hu = story('HU', 2, 0);
+  hu.testcaseModels = [tcFor('CA-01'), tcFor('CA-01', 'neg', 'negativo')];
+
+  const { errors, warnings } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, ['HU: CA-02 tiene 0 Test Case(s), el minimo es 2.']);
+  assert.deepEqual(warnings, []);
+});
+
+test('error: tipo con valor invalido; mayusculas y acentos se normalizan', () => {
+  assert.deepEqual(validateTestCaseModel({ ...tcFor('CA-01'), tipo: 'Negativo' }).errors, []);
+  assert.deepEqual(validateTestCaseModel({ ...tcFor('CA-01', 'TC'), tipo: 'borde' }).errors,
+    ['TC: tipo "borde" invalido (valores posibles: positivo, negativo).']);
+});
+
+// ─── --update-steps ──────────────────────────────────────────────────────────
+
+test('update-steps: payload valido (SCRUM-335 reescrito) sin errores ni warnings', () => {
+  const result = validateStepUpdates({ testcases: [{ key: 'SCRUM-335', ...SCRUM_335_REWRITTEN }] });
+
+  assert.deepEqual(result, { errors: [], warnings: [], testCaseCount: 1 });
+});
+
+test('update-steps: regresion SCRUM-346 -- detecta el paso que encadenaba expandir + guardar', () => {
+  const { errors, warnings } = validateStepUpdates({
+    testcases: [{
+      key: 'SCRUM-346',
+      precondition: 'Sesion iniciada.',
+      steps: [step('Presionar My Account en el menu.'), step('Presionar +, reemplazar Name y Youtube y presionar Save.')]
+    }]
+  });
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, ['SCRUM-346: el paso 2 parece encadenar 2 acciones (presionar, presionar) -- separar un paso por accion verificable.']);
+});
+
+test('update-steps: errores de estructura (sin testcases, key invalido, key repetido, pasos insuficientes)', () => {
+  assert.match(validateStepUpdates({}).errors[0], /debe traer "testcases"/);
+  assert.match(validateStepUpdates({ testcases: [] }).errors[0], /al menos un elemento/);
+
+  const { errors } = validateStepUpdates({
+    testcases: [
+      { key: 'scrum 1', steps: [] },
+      { key: 'SCRUM-10', precondition: 'x', steps: [step('Navegar a la Home.')] },
+      { key: 'SCRUM-10', precondition: 'x', steps: [step('Navegar a la Home.'), step('Presionar Reset.')] }
+    ]
+  });
+
+  assert.deepEqual(errors, [
+    '--update-steps: el elemento 1 no tiene un "key" valido (ej. "SCRUM-335").',
+    'SCRUM-10: tiene 1 paso(s), el minimo es 2.',
+    '--update-steps: SCRUM-10 esta repetido en el payload.'
+  ]);
 });

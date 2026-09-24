@@ -98,7 +98,8 @@ Cypress, commit por Historia, push y Pull Request. Recibir su Reporte de
 Automatización.
 
 Después, volver a `product-agent` para: reportar resultados a los Test
-Cycles y pasar las Historias a "In Review".
+Cycles (`run-and-report.js` con `--test-cycle`, que solo reporta si la
+corrida fue 100%) y pasar las Historias a "In Review".
 
 ### FASE 7 — Cierre
 
