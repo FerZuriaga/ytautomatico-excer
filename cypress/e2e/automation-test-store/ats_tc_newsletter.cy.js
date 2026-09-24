@@ -9,7 +9,7 @@ const HUMAN_VERIFICATION_ERROR = 'Human verification has failed! Please try agan
 // campos. A diferencia del formulario de resena, este SI valida
 // First Name/Last Name/Email de forma independiente al captcha, por eso
 // esos casos SI se cubren -- ver cypress/fixtures/selectors/newsletter.json.
-describe('Automation Test Store - Suscribirse al Newsletter', () => {
+describe('Automation Test Store - Suscribirse al Newsletter [SCRUM-253]', () => {
     it('[CA-01][TC-01.1][SCRUM-255] completar el email en el formulario rápido del footer navega al formulario completo con el email pre-cargado', () => {
         cy.gotoATSUrl('/')
         newsletterPage.subscribeFromFooter('qatester_lote@example.com')

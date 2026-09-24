@@ -6,7 +6,7 @@ const productPage = new AutomationTestStoreProductPage()
 const PRODUCT_WITH_OFFER = { id: 65, priceOld: '$105.00', priceNew: '$89.00' }
 const PRODUCT_WITHOUT_OFFER = { id: 50 }
 
-describe('Automation Test Store - Ver Ofertas especiales del catalogo', () => {
+describe('Automation Test Store - Ver Ofertas especiales del catalogo [SCRUM-241]', () => {
     it('[CA-01][TC-01.1][SCRUM-243] el listado de Ofertas especiales muestra precio original y precio con descuento', () => {
         specialsPage.visit()
 

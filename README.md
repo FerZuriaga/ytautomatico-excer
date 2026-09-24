@@ -1,7 +1,23 @@
 # ytautomatico-excer
 
-Suite de pruebas E2E con Cypress para varios sitios (OrangeHRM, SauceDemo,
-AutomationExercise, BlazeDemo, Rentas Córdoba, Disco Online).
+Suite de pruebas E2E con Cypress para varios sitios. Jira/Xray es la única
+fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
+
+## Estado de las apps
+
+| Carpeta (`cypress/e2e/`) | Estado | Trazabilidad |
+|---|---|---|
+| `automation-test-store` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| `commitquality` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| `saucedemo`, `orangehrm`, `argentinagobar`, `rentascordoba`, `disco` | Legado | Tags `[SCRUM-Txx]` de Zephyr (discontinuado) |
+| `automation-exercise`, `blazedemo` | Legado | Sin tags o con keys de la etapa experimental (SCRUM-1 a 42, archivados) |
+
+**Legado** (decisión del 2026-09-24): se conservan como regresión que corre
+con `npm run test:<app>`, pero no se modifican, no se migran a Xray, no
+reportan resultados y no se les corre `check-traceability` (sus keys no
+existen en Xray). Sus Historias y Test Cases son anteriores a las reglas
+de calidad actuales. Una app nueva siempre sigue el pipeline de
+`CLAUDE.md` con trazabilidad a Xray.
 
 ## Configuración de entorno (URLs por sitio)
 

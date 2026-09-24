@@ -189,8 +189,27 @@ function parseResultsFile(resultsPath) {
  * ya normalizado (sin el vocabulario de Mocha/Zephyr todavía traducido —
  * eso lo hace mapMochaStateToZephyr).
  */
+/**
+ * Un test salteado (`it.skip`) a propósito por un defecto abierto lleva
+ * en el título "(bug conocido: SCRUM-380)". Va entre paréntesis y no entre
+ * corchetes para no competir con la Test Case Key, que es el último tag
+ * [KEY] del título. Caso real: SCRUM-346/347 (CommitQuality, Mi cuenta)
+ * validan el comportamiento esperado, que hoy falla por el Bug SCRUM-380.
+ */
+const KNOWN_BUG_REGEX = /\(bug conocido:\s*([A-Z][A-Z0-9]*-\d+)\)/i;
+
+function extractKnownBug(title) {
+  const match = String(title || '').match(KNOWN_BUG_REGEX);
+  return match ? match[1].toUpperCase() : null;
+}
+
+function isKnownBugSkip(test) {
+  return test.state === 'pending' && Boolean(extractKnownBug(test.fullTitle));
+}
+
 function collectTaggedTests(results) {
   return collectTestsWithState(results)
+    .filter(t => !isKnownBugSkip(t))
     .map(t => ({ fullTitle: t.fullTitle, state: t.state, testCaseKey: extractTestCaseKey(t.fullTitle) }))
     .filter(t => t.testCaseKey);
 }
@@ -201,7 +220,9 @@ function collectTaggedTests(results) {
  * recién en un reintento (config `retries.runMode`): figuran como passes
  * en el JSON de Mocha, pero hay que hacerlos visibles porque pueden ser
  * inestables. `untagged` son los tests sin Test Case Key en el título: no
- * se reportan a Xray.
+ * se reportan a Xray. `knownBugSkips` son los pendientes con "(bug
+ * conocido: KEY)": no cuentan como pendientes ni se reportan (su Test
+ * Execution queda en TO DO hasta que se arregle el bug).
  */
 function summarizeResults(results) {
   const all = collectTestsWithState(results);
@@ -210,7 +231,8 @@ function summarizeResults(results) {
     total: all.length,
     passed: passes.length,
     failed: (results.failures || []).map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '' })),
-    pending: (results.pending || []).map(t => t.fullTitle),
+    pending: (results.pending || []).filter(t => !extractKnownBug(t.fullTitle)).map(t => t.fullTitle),
+    knownBugSkips: (results.pending || []).filter(t => extractKnownBug(t.fullTitle)).map(t => ({ fullTitle: t.fullTitle, bug: extractKnownBug(t.fullTitle) })),
     retriedPasses: passes.filter(t => (t.currentRetry || 0) > 0).map(t => t.fullTitle),
     untagged: all.filter(t => !extractTestCaseKey(t.fullTitle)).map(t => t.fullTitle)
   };
@@ -221,7 +243,9 @@ function summarizeResults(results) {
  * fallas ni pendientes). CLAUDE.md: reportar y commitear solo con 100%.
  */
 function isReportable(summary) {
-  return summary.total > 0 && summary.failed.length === 0 && summary.pending.length === 0;
+  // Los salteados por bug conocido ya no están en `pending` (ver
+  // summarizeResults), pero una corrida sin ningún pass no se reporta.
+  return summary.total > 0 && summary.passed > 0 && summary.failed.length === 0 && summary.pending.length === 0;
 }
 
 /**
@@ -251,5 +275,6 @@ module.exports = {
   mergeResultsDocs,
   parseResultsText,
   parseResultsFile,
-  collectTaggedTests
+  collectTaggedTests,
+  extractKnownBug
 };

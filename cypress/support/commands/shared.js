@@ -77,7 +77,8 @@ Cypress.Commands.add("reconPage", (label, url) => {
 // cy.get() despues del click, sin necesidad de cy.wait(ms) fijo.
 //
 // Convencion obligatoria para evitar 2 fuentes reales de perdida de tiempo
-// ya repetidas en este proyecto (ver ats_recon_recuperar_login_name.cy.js):
+// ya repetidas en este proyecto (en el spec de recon de Recuperar login
+// name de ATS, borrado el 2026-09-24 junto con el resto de los recon):
 // 1. UN it() POR ESCENARIO, nunca varias llamadas a reconSubmit anidadas
 //    en el mismo it() -- si una falla, un solo it() con 4 llamadas no deja
 //    saber cual sin releer stacks confusos. Aislar = diagnostico inmediato.

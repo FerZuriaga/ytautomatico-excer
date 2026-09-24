@@ -18,7 +18,9 @@ const {
   parseResultsText,
   summarizeResults,
   isReportable,
-  compareReportedStatuses
+  compareReportedStatuses,
+  collectTaggedTests,
+  extractTestCaseKey
 } = require('./test-runner');
 
 function mochaJsonDoc({ testsCount = 1, passesTitles = [], failuresTitles = [] } = {}) {
@@ -172,4 +174,34 @@ test('compareReportedStatuses: detecta keys sin ejecucion y ejecuciones que no q
     notPassed: [{ key: 'SCRUM-352', status: 'TO DO' }]
   });
   assert.deepEqual(compareReportedStatuses(executions, ['SCRUM-351']), { missing: [], notPassed: [] });
+});
+
+// ─── Tests salteados por bug conocido ───────────────────────────────────────
+// Nace de SCRUM-346/347 (2026-09-24): validan el comportamiento esperado de
+// Mi cuenta, que hoy falla por el Bug SCRUM-380, y se saltean con it.skip.
+// Sin esta regla, isReportable los tomaba como pendientes y ninguna corrida
+// de CommitQuality volvia a reportar a Xray.
+
+test('pendiente con "(bug conocido: KEY)" no bloquea el reporte ni se reporta a Xray', () => {
+  const doc = mochaJsonDoc({ testsCount: 2, passesTitles: ['[CA-03][TC-03.1][SCRUM-344] guarda'] });
+  doc.pending = [{ fullTitle: '[CA-04][TC-04.1][SCRUM-346] conserva los datos (bug conocido: SCRUM-380)' }];
+
+  const summary = summarizeResults(doc);
+
+  assert.deepEqual(summary.pending, []);
+  assert.deepEqual(summary.knownBugSkips, [{ fullTitle: '[CA-04][TC-04.1][SCRUM-346] conserva los datos (bug conocido: SCRUM-380)', bug: 'SCRUM-380' }]);
+  assert.equal(isReportable(summary), true);
+  assert.deepEqual(collectTaggedTests(doc).map(t => t.testCaseKey), ['SCRUM-344']);
+  assert.equal(extractTestCaseKey(doc.pending[0].fullTitle), 'SCRUM-346');
+});
+
+test('pendiente sin bug conocido sigue frenando; corrida con solo salteados no se reporta', () => {
+  const sinMotivo = mochaJsonDoc({ testsCount: 2, passesTitles: ['[SCRUM-1] ok'] });
+  sinMotivo.pending = [{ fullTitle: '[SCRUM-2] skip sin motivo' }, { fullTitle: '[SCRUM-3] skip (bug conocido: SCRUM-9)' }];
+  assert.deepEqual(summarizeResults(sinMotivo).pending, ['[SCRUM-2] skip sin motivo']);
+  assert.equal(isReportable(summarizeResults(sinMotivo)), false);
+
+  const soloSalteados = mochaJsonDoc({ testsCount: 1 });
+  soloSalteados.pending = [{ fullTitle: '[SCRUM-3] skip (bug conocido: SCRUM-9)' }];
+  assert.equal(isReportable(summarizeResults(soloSalteados)), false);
 });

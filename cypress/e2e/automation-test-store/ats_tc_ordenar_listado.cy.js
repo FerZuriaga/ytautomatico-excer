@@ -3,7 +3,7 @@ import AutomationTestStoreCategoryPage from '../../pages/automation-test-store/A
 const categoryPage = new AutomationTestStoreCategoryPage()
 const MAKEUP_PATH_ID = 36
 
-describe('Automation Test Store - Ordenar el listado de productos de una categoria', () => {
+describe('Automation Test Store - Ordenar el listado de productos de una categoria [SCRUM-210]', () => {
     beforeEach(() => {
         categoryPage.visitCategory(MAKEUP_PATH_ID)
     })

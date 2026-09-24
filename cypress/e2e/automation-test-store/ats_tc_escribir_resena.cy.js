@@ -12,7 +12,7 @@ const HUMAN_VERIFICATION_ERROR = 'Human verification has failed! Please try agai
 // captcha invalido/vacio, no el envio exitoso ni los mensajes de validacion
 // de campo (inalcanzables sin resolver el captcha real en tiempo de
 // ejecucion) -- ver cypress/fixtures/selectors/escribir-resena.json.
-describe('Automation Test Store - Escribir una reseña de producto', () => {
+describe('Automation Test Store - Escribir una reseña de producto [SCRUM-235]', () => {
     beforeEach(() => {
         productPage.visit(PRODUCT_ID)
         productPage.openTab('reviews')

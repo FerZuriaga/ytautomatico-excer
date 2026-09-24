@@ -3,7 +3,7 @@ import AutomationTestStoreProductPage from '../../pages/automation-test-store/Au
 const productPage = new AutomationTestStoreProductPage()
 const PRODUCT_ID = 50 // Skinsheen Bronzer Stick, sin oferta activa
 
-describe('Automation Test Store - Ver el detalle de un producto', () => {
+describe('Automation Test Store - Ver el detalle de un producto [SCRUM-228]', () => {
     beforeEach(() => {
         productPage.visit(PRODUCT_ID)
     })

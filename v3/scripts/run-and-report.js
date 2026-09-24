@@ -73,6 +73,7 @@ function printSummary(summary) {
   console.log(`\nResultado: ${summary.passed}/${summary.total} passing, ${summary.failed.length} failing, ${summary.pending.length} pendientes.`);
   summary.failed.forEach(f => console.log(`  ✘ ${f.fullTitle}\n      ${f.message.split('\n')[0]}`));
   summary.pending.forEach(t => console.log(`  - PENDIENTE: ${t}`));
+  summary.knownBugSkips.forEach(k => console.log(`  ⊘ SALTEADO por bug conocido ${k.bug} (no se reporta, queda en TO DO): ${k.fullTitle}`));
   if (summary.retriedPasses.length) {
     console.warn(`  ↻ ${summary.retriedPasses.length} test(s) pasaron SOLO en el reintento (posible inestabilidad):`);
     summary.retriedPasses.forEach(t => console.warn(`      ↻ ${t}`));

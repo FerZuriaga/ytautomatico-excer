@@ -7,7 +7,7 @@ const productPage = new AutomationTestStoreProductPage()
 const specialsPage = new AutomationTestStoreSpecialsPage()
 const PRODUCT_ID = 50 // Skinsheen Bronzer Stick
 
-describe('Automation Test Store - Cambiar de moneda en el header', () => {
+describe('Automation Test Store - Cambiar de moneda en el header [SCRUM-247]', () => {
     beforeEach(() => {
         productPage.visit(PRODUCT_ID)
         headerPage.selectCurrency('USD') // estado inicial conocido, la cookie de moneda persiste entre corridas

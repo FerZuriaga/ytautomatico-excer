@@ -8,7 +8,7 @@ const PRODUCT_WITH_TAGS_ID = 50
 const PRODUCT_WITHOUT_TAGS_ID_1 = 52
 const PRODUCT_WITHOUT_TAGS_ID_2 = 65
 
-describe('Automation Test Store - Buscar productos mediante un tag del producto', () => {
+describe('Automation Test Store - Buscar productos mediante un tag del producto [SCRUM-281]', () => {
 
     it('[CA-01][TC-01.1][SCRUM-283] hacer clic en el tag "cheeks" navega a los resultados reales de busqueda', () => {
         productPage.visit(PRODUCT_WITH_TAGS_ID)

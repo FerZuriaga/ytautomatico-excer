@@ -8,7 +8,7 @@ const manufacturerPage = new AutomationTestStoreCategoryPage()
 
 const MAC_PRODUCT_ID = 50
 
-describe('Automation Test Store - Ver productos de una marca/fabricante', () => {
+describe('Automation Test Store - Ver productos de una marca/fabricante [SCRUM-275]', () => {
 
     it('[CA-01][TC-01.1][SCRUM-277] ver los productos de una marca desde el carrusel del home', () => {
         homePage.visit()

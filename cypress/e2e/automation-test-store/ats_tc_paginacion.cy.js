@@ -3,7 +3,7 @@ import AutomationTestStoreSearchPage from '../../pages/automation-test-store/Aut
 const searchPage = new AutomationTestStoreSearchPage()
 const KEYWORD = 'a' // keyword de una sola letra: devuelve >50 productos reales del catalogo
 
-describe('Automation Test Store - Paginacion y cantidad de productos por pagina', () => {
+describe('Automation Test Store - Paginacion y cantidad de productos por pagina [SCRUM-216]', () => {
     it('[CA-01][TC-01.1][SCRUM-218] navega a la pagina siguiente del listado de resultados', () => {
         searchPage.visitSearchResults(KEYWORD)
         searchPage.verifyResultCount(20)
