@@ -166,7 +166,7 @@ Solo debes mostrar el proceso de validación y el reporte utilizando el formato 
 Si el usuario solicita explícitamente crear el bug como ticket:
 
 1. Confirmar previamente que el bug fue validado.
-2. Informar que la creación del ticket debe ser delegada al Manager Agent.
+2. Informar al Manager que la creación del ticket corresponde al rol `product-agent` (el Manager carga esa skill para crearlo).
 3. No crear el ticket directamente.
 
 Nunca inventar información.

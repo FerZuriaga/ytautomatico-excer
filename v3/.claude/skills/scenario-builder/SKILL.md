@@ -563,7 +563,7 @@ Cuando el usuario seleccione varios escenarios, conservar cada escenario como un
 
 No fusionar escenarios diferentes durante esta etapa.
 
-La decisión de consolidarlos o convertirlos en múltiples Historias corresponde al siguiente agente del flujo.
+La decisión de consolidarlos o convertirlos en múltiples Historias corresponde al siguiente rol del flujo (`product-agent`).
 
 ## REGLA DE FINALIZACIÓN
 
