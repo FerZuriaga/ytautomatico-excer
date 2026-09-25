@@ -1,0 +1,7 @@
+{
+  "pageTitle": "[data-test=\"page-title\"]",
+  "rentalItem": ".card [data-test^=\"product-\"]",
+  "rentalName": ".card-title",
+  "texts": { "title": "Rentals" },
+  "data": { "rentals": ["Excavator", "Bulldozer", "Crane"] }
+}
