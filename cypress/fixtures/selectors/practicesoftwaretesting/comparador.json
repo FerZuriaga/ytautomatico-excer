@@ -1,0 +1,24 @@
+{
+  "compareButton": "[data-test=\"compare-btn\"]",
+  "comparisonBar": "[data-test=\"comparison-bar\"]",
+  "compareNow": "[data-test=\"compare-link\"]",
+  "comparisonTitle": "[data-test=\"comparison-title\"]",
+  "comparisonTable": "[data-test=\"comparison-table\"]",
+  "productName": "[data-test=\"product-name\"]",
+  "removeProduct": "[data-test=\"remove-product\"]",
+  "headerCell": "th",
+  "specRow": "tr",
+  "specRowHeader": "th",
+  "comparePrice": "[data-test=\"compare-price\"]",
+  "compareBrand": "[data-test=\"compare-brand\"]",
+  "showDifferences": "[data-test=\"show-differences\"]",
+  "clearAll": "[data-test=\"clear-comparison\"]",
+  "emptyMessage": "[data-test=\"comparison-empty\"]",
+  "texts": {
+    "barCount": "{count} product(s) selected",
+    "title": "Product Comparison",
+    "empty": "No products selected for comparison. Add products from the overview page.",
+    "browse": "Browse Products"
+  },
+  "data": { "maxItems": 4 }
+}
