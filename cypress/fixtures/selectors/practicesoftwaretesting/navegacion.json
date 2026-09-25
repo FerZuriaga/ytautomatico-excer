@@ -1,0 +1,21 @@
+{
+  "menuCategories": "[data-test=\"nav-categories\"]",
+  "menuItems": {
+    "Hand Tools": "[data-test=\"nav-hand-tools\"]",
+    "Power Tools": "[data-test=\"nav-power-tools\"]",
+    "Special Tools": "[data-test=\"nav-special-tools\"]",
+    "Rentals": "[data-test=\"nav-rentals\"]"
+  },
+  "pageTitle": "[data-test=\"page-title\"]",
+  "paginationPageLink": "ul.pagination a.page-link[aria-label=\"Page-{n}\"]",
+  "paginationPrev": "[data-test=\"pagination-prev\"]",
+  "paginationNext": "[data-test=\"pagination-next\"]",
+  "paginationItem": "li.page-item",
+  "activeClass": "active",
+  "disabledClass": "disabled",
+  "texts": {
+    "categoryTitle": "Category: {name}",
+    "noResults": "There are no products found."
+  },
+  "categoryEmpty": "[data-test=\"category-empty\"]"
+}

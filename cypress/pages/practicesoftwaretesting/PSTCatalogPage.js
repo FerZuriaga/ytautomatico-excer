@@ -263,6 +263,16 @@ class PSTCatalogPage {
     verifyNoPagination() {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.paginationNumbers).should('not.exist'))
     }
+
+    // ─── Apertura de un producto ──────────────────────────────────────────────
+
+    // Por nombre exacto: los ids cambian en cada re-siembra de la demo, así
+    // que nunca se entra a la ficha por URL.
+    openProduct(name) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(`${sel.productCard} ${sel.productName}`, new RegExp(`^\\s*${escapeRegex(name)}\\s*$`), T).click()
+        })
+    }
 }
 
 export default PSTCatalogPage

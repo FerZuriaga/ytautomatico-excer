@@ -120,3 +120,37 @@ selecciona como `a.card[data-test^="product-"]`. El slider de precio
   (`/products?q=`) y aparece Sledgehammer (7). Reportado como Bug.
 - Rango de precio por defecto 1–100 oculta 5 productos del catálogo
   inicial (limitación, sin ticket).
+
+## Lote 2 — navegación, detalle, comparador y alquileres (2026-09-25)
+
+- **Menú Categories:** `nav-categories` aparece 2 veces (el toggle y la
+  lista): usar `.first()` para abrirlo. Items: `nav-hand-tools`,
+  `nav-power-tools`, `nav-special-tools`, `nav-rentals`.
+- **Página de categoría:** título `Category: <Nombre>` (`page-title`), no
+  aplica el rango de precio (Hand Tools 25, Power Tools 8, Other 17). Sin
+  productos muestra `There are no products found.` en `category-empty`
+  (no en `no-results`). Special Tools no existe en la API → Bug SCRUM-458.
+- **Paginado:** links `a.page-link[aria-label="Page-N"]`, `li.active` en
+  la actual; `pagination-prev/next` con `li.disabled` en los extremos
+  (pointer-events none: el clic se fuerza para probar el intento).
+- **Ficha de producto:** `unit-price`, badges `[aria-label=category]` y
+  `[aria-label=brand]`, especificaciones en `tr[data-test-spec=<slug>]` con
+  el valor en `spec-value-text` (`spec-value` incluye la unidad). Cantidad
+  1–99: la app corrige en cada evento `input` (borrar deja 1), por eso se
+  carga el valor completo y se dispara un solo `input`. Aviso por encima de
+  99: `You can order at most 99 of this product.`
+- **Regla de negocio: un solo Thor Hammer por carrito.** La API rechaza
+  cantidad 2 con 400 `You can only have one Thor Hammer in the cart.`
+  (no usar Thor Hammer para probar cantidades > 1 en el carrito).
+- **Contador del carrito** (`cart-quantity`): suma de cantidades
+  (sessionStorage `cart_quantity`), no cantidad de líneas.
+- **Avisos:** ngx-toastr, `#toast-container .toast-message`.
+- **Comparador:** máximo 4 (sessionStorage `compare_ids`); el quinto se
+  ignora sin ningún aviso (confirmado en la corrida). Productos por POST
+  `/graphql`. Las filas de especificación ocultas por "Show differences
+  only" se quitan del DOM; la tabla tiene scroll propio, así que se
+  verifica presencia y no visibilidad.
+- **Alquileres:** 3 equipos (Excavator, Bulldozer, Crane), sin stock de
+  venta pero alquilables. La ficha muestra `per hour` y
+  `Duration (N hour(s))` con un ngx-slider de 1 a 10 (teclado), sin campo
+  Quantity. La búsqueda del Home sí devuelve alquileres (ej. "excavator").
