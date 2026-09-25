@@ -1,0 +1,70 @@
+{
+  "searchInput": "[data-test=\"search-query\"]",
+  "searchSubmit": "[data-test=\"search-submit\"]",
+  "searchReset": "[data-test=\"search-reset\"]",
+  "searchCaption": "[data-test=\"search-caption\"]",
+  "searchTerm": "[data-test=\"search-term\"]",
+  "searchResultCount": "[data-test=\"search-result-count\"]",
+  "noResults": "[data-test=\"no-results\"]",
+  "sortSelect": "[data-test=\"sort\"]",
+  "sortOptions": {
+    "nameAsc": "name,asc",
+    "nameDesc": "name,desc",
+    "priceDesc": "price,desc",
+    "priceAsc": "price,asc",
+    "co2Asc": "co2_rating,asc",
+    "co2Desc": "co2_rating,desc"
+  },
+  "filtersPanel": "[data-test=\"filters\"]",
+  "ecoFriendlyCheckbox": "[data-test=\"eco-friendly-filter\"]",
+  "priceSliderMinHandle": ".ngx-slider-pointer-min",
+  "priceSliderMaxHandle": ".ngx-slider-pointer-max",
+  "priceSliderMinLabel": ".ngx-slider-model-value",
+  "priceSliderMaxLabel": ".ngx-slider-model-high",
+  "productCard": "a.card[data-test^=\"product-\"]",
+  "productName": "[data-test=\"product-name\"]",
+  "productPrice": "[data-test=\"product-price\"]",
+  "texts": {
+    "searchCaptionPrefix": "Searched for:",
+    "resultCountOne": "1 product found for '{query}'",
+    "resultCountOther": "{count} products found for '{query}'",
+    "noResults": "There are no products found."
+  },
+  "data": {
+    "categories": {
+      "pliers": "Pliers",
+      "powerTools": "Power Tools",
+      "wrench": "Wrench",
+      "grinder": "Grinder",
+      "sander": "Sander",
+      "saw": "Saw",
+      "drill": "Drill",
+      "hammer": "Hammer"
+    },
+    "brands": {
+      "forgeFlex": "ForgeFlex Tools",
+      "mightyCraft": "MightyCraft Hardware"
+    },
+    "defaultPriceRange": {
+      "min": 1,
+      "max": 100
+    },
+    "sliderBounds": {
+      "floor": 0,
+      "ceil": 200
+    },
+    "pageSize": 9,
+    "searchMinLength": 3,
+    "searchMaxLength": 40
+  },
+  "ecoBadge": "[data-test=\"eco-badge\"]",
+  "paginationNumbers": "ul.pagination a.page-link:not([data-test])",
+  "paginationNext": "[data-test=\"pagination-next\"]",
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "method": "GET",
+    "listPath": "/products",
+    "searchPath": "/products/search"
+  },
+  "filterOptionLabel": "label"
+}

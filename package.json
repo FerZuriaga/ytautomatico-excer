@@ -11,6 +11,7 @@
     "test:automation-test-store": "cypress run --spec \"cypress/e2e/automation-test-store/**/*.cy.js\"",
     "test:commitquality": "cypress run --spec \"cypress/e2e/commitquality/**/*.cy.js\"",
     "test:orangehrm": "cypress run --spec \"cypress/e2e/orangehrm/**/*.cy.js\"",
+    "test:practicesoftwaretesting": "cypress run --spec \"cypress/e2e/practicesoftwaretesting/**/*.cy.js\"",
     "test:blazedemo": "cypress run --spec \"cypress/e2e/blazedemo/**/*.cy.js\"",
     "test:saucedemo": "cypress run --spec \"cypress/e2e/saucedemo/**/*.cy.js\"",
     "test:disco": "cypress run --spec \"cypress/e2e/disco/**/*.cy.js\"",

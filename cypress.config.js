@@ -13,6 +13,7 @@ module.exports = defineConfig({
     commitqualityUrl: "https://commitquality.com",
     discoUrl: "https://www.disco.com.ar",
     orangehrmUrl: "https://opensource-demo.orangehrmlive.com",
+    practicesoftwaretestingUrl: "https://practicesoftwaretesting.com",
     rentascordobaUrl: "https://www.rentascordoba.gob.ar",
     saucedemoUrl: "https://www.saucedemo.com",
   },
