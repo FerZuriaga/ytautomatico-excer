@@ -57,11 +57,11 @@ class PSTLoginPage {
 
     // Sesión iniciada: el token se guarda solo en la próxima carga de
     // página (once), para que un Sign out posterior no lo reponga.
-    startSession(customer, route = '/') {
+    startSession(customer) {
         this.apiLogin(customer.email, customer.password, 200).then(({ access_token }) => {
             cy.fixture(FIXTURE).then(sel => {
                 cy.once('window:before:load', win => win.localStorage.setItem(sel.tokenKey, access_token))
-                cy.gotoPSTUrl(route)
+                cy.gotoPSTUrl('/')
             })
         })
     }
@@ -147,7 +147,8 @@ class PSTLoginPage {
     openUserMenu(customer) {
         cy.fixture(FIXTURE).then(sel => {
             cy.get(sel.navMenu, T).should('contain.text', customer.fullName).click()
-            cy.get(sel.navSignOut, T).should('be.visible')
+            cy.get(sel.navMyAccount, T).should('be.visible')
+            cy.get(sel.navSignOut).should('be.visible')
         })
     }
 
@@ -191,13 +192,8 @@ class PSTLoginPage {
         })
     }
 
-    clickHome() {
-        cy.fixture(FIXTURE).then(sel => {
-            cy.get(sel.navHome, T).click()
-            cy.location('pathname', T).should('eq', '/')
-            cy.get(sel.productCard, T).should('have.length.greaterThan', 0)
-            cy.get(sel.navSignIn).should('be.visible')
-        })
+    clickMyAccount() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.navMyAccount, T).click())
     }
 }
 

@@ -18,8 +18,7 @@
   "navSignOut": "[data-test=\"nav-sign-out\"]",
   "pageTitle": "[data-test=\"page-title\"]",
   "tokenKey": "auth-token",
-  "navHome": "[data-test=\"nav-home\"]",
-  "productCard": "a.card[data-test^=\"product-\"]",
+  "navMyAccount": "[data-test=\"nav-my-account\"]",
   "texts": {
     "loginTitle": "Login",
     "accountTitle": "My account",

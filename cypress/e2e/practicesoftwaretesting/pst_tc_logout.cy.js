@@ -36,30 +36,34 @@ describe('Sesion: cierre de sesion del cliente [SCRUM-495]', () => {
     it('[CA-05][TC-05.1][SCRUM-499] No debe mostrar My account despues de cerrar sesion', () => {
         login.createCustomer().then(customer => {
             login.startSession(customer)
+
             login.openUserMenu(customer)
             login.signOut(customer)
-
             login.openAccount()
-            login.verifyRedirectedToLogin()
 
-            login.openAccount()
             login.verifyRedirectedToLogin()
         })
     })
 
-    it('[CA-05][TC-05.2][SCRUM-500] No debe mostrar My account sin haber iniciado sesion', () => {
-        login.openAccount()
-        login.verifyRedirectedToLogin()
+    it('[CA-05][TC-05.2][SCRUM-500] Debe pedir inicio de sesion para acceder a My account', () => {
+        login.createCustomer().then(customer => {
+            login.openAccount()
+            login.verifyRedirectedToLogin()
 
-        login.clickHome()
+            login.loginWith(customer.email, customer.password)
+
+            login.verifyLoggedIn(customer)
+        })
     })
 
-    it('[CA-05][TC-05.3][SCRUM-501] Debe mostrar My account con la sesion iniciada', () => {
+    it('[CA-05][TC-05.3][SCRUM-501] Debe acceder a My account desde el menu con la sesion iniciada', () => {
         login.createCustomer().then(customer => {
-            login.startSession(customer, '/account')
+            login.startSession(customer)
+
+            login.openUserMenu(customer)
+            login.clickMyAccount()
 
             login.verifyAccountVisible(customer)
-            login.openUserMenu(customer)
         })
     })
 })
