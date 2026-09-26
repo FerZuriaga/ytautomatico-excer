@@ -66,7 +66,7 @@ const UNIFORM_TC_PER_CRITERION_MIN_CRITERIA = 4;
 const CRITERION_ID_REGEX = /^\s*(CA-\d{2})\b/i;
 
 // Campo `tipo` del Test Case: permite auditar "al menos un caso negativo
-// por criterio" (regla de scenario-builder) como WARNING.
+// por criterio" (regla de la skill especificacion) como WARNING.
 const TEST_CASE_TYPES = ['positivo', 'negativo'];
 
 // Verbos de ACCIÓN del usuario (infinitivo) que producen un resultado
@@ -123,6 +123,13 @@ function isBlank(value) {
   return !String(value || '').trim();
 }
 
+// Acciones que cargan un dato de entrada (el valor debería ir en Datos).
+const INPUT_ACTION_REGEX = /^\s*(ingresar|escribir|tipear|completar|buscar|cargar)\b/;
+
+function isBlankData(value) {
+  return isBlank(value) || String(value).trim() === '-';
+}
+
 /**
  * Valida un único Modelo Canónico de Test Case. `label` identifica al TC
  * en los mensajes (ej. "CommitQuality - Eliminar producto > Paginacion...").
@@ -147,6 +154,13 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
     }
     if (isBlank(step?.expectedResult)) {
       errors.push(`${label}: el paso ${n} no tiene resultado esperado (expectedResult).`);
+    }
+
+    // Dato de entrada escrito dentro de la acción: va en la columna Datos
+    // (testData), así un cambio del seed se corrige solo en el dato.
+    const description = String(step?.description || '');
+    if (INPUT_ACTION_REGEX.test(normalize(description)) && /"[^"]+"/.test(description) && isBlankData(step?.testData)) {
+      warnings.push(`${label}: el paso ${n} escribe un dato entre comillas en la accion y la columna Datos esta vacia -- mover el dato a testData.`);
     }
 
     const verbs = findActionVerbs(step?.description);
@@ -246,6 +260,7 @@ function validateStoryCriteria(issue) {
 
   const tcCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
   const negativeCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
+  const sinNegativo = issue.historia.sinNegativo && typeof issue.historia.sinNegativo === 'object' ? issue.historia.sinNegativo : {};
 
   for (const model of models) {
     const label = labelOf(issue, model);
@@ -270,8 +285,22 @@ function validateStoryCriteria(issue) {
     }
     // WARNING y no error, a propósito: no todo criterio justifica un caso
     // negativo (ej. "el archivo descargado tiene el contenido exacto").
-    if (count > 0 && negativeCountByCriterion[id] === 0) {
-      warnings.push(`${story}: ${id} no tiene ningun caso negativo (tipo: "negativo") -- confirmar que el criterio no lo justifica.`);
+    // Si el payload lo justifica en historia.sinNegativo["CA-XX"], no
+    // avisa: la excepción queda escrita en la HU (auditable) en lugar de
+    // aceptarse con un --accept-warnings global.
+    if (count > 0 && negativeCountByCriterion[id] === 0 && isBlank(sinNegativo[id])) {
+      warnings.push(`${story}: ${id} no tiene ningun caso negativo (tipo: "negativo") -- agregarlo o justificarlo en historia.sinNegativo["${id}"].`);
+    }
+  }
+
+  for (const [key, motivo] of Object.entries(sinNegativo)) {
+    const id = normalizeCriterionId(key);
+    if (!id || !(id in tcCountByCriterion)) {
+      errors.push(`${story}: historia.sinNegativo apunta a "${key}", que no es un criterio de la HU (${ids.join(', ') || 'ninguno'}).`);
+    } else if (isBlank(motivo)) {
+      errors.push(`${story}: historia.sinNegativo["${id}"] no tiene motivo -- la justificacion es obligatoria.`);
+    } else if (negativeCountByCriterion[id] > 0) {
+      warnings.push(`${story}: ${id} ya tiene casos negativos -- sobra la justificacion en historia.sinNegativo.`);
     }
   }
 
@@ -312,7 +341,7 @@ function contentWords(text) {
  * objetivo/criterios). Solo warnings: son heurísticas de texto, pueden dar
  * falsos positivos y se aceptan con --accept-warnings tras revisarlas.
  * Lo que no se puede detectar por texto (ej. un "Para" que repite el
- * "Quiero" con sinónimos) lo cubre la regla de scenario-builder.
+ * "Quiero" con sinónimos) lo cubre la regla de la skill especificacion.
  */
 function validateStoryText(issue) {
   const warnings = [];

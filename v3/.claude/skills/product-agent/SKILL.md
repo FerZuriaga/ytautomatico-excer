@@ -45,8 +45,7 @@ Mencionadas una única vez acá; el resto del archivo no las repite.
 Este rol nunca:
 
 - construye escenarios funcionales, genera Test Cases desde cero ni
-  automatiza pruebas — eso es de `scenario-builder` / `testcase-model` /
-  `qa-automation1`;
+  automatiza pruebas — eso es de `especificacion` / `qa-automation1`;
 - implementa código, ejecuta pruebas ni ejecuta comandos de control de
   versiones;
 - modifica archivos del proyecto;
@@ -65,8 +64,8 @@ Este rol nunca:
 
 # ENTRADA ESPERADA
 
-- Escenario funcional generado por `scenario-builder`
-- Modelos Canónicos de Test Case generados por `testcase-model`
+- Historia(s) y Modelos Canónicos de Test Case generados por
+  `especificacion`
 - Historia funcional pendiente
 - Ticket existente
 - Reporte de Automatización (generado por `qa-automation1`)
@@ -133,7 +132,7 @@ un test nuevo si corrigen un bug real (CLAUDE.md).
 ## INTEGRACIÓN CON TESTCASE-MODEL
 
 ProductAgent no genera Test Cases. Recibe un Modelo Canónico de
-`testcase-model` **por cada caso de prueba (TC-XX.Y)** de la Historia —
+`especificacion` **por cada caso de prueba (TC-XX.Y)** de la Historia —
 nunca un modelo "representativo" por criterio.
 
 Ese modelo es la única fuente oficial para publicar en Xray: nunca
@@ -188,7 +187,7 @@ carpeta entre lotes de la misma aplicación.
 ## REPORTE DE RESULTADOS DE EJECUCIÓN (Test Execution)
 
 Paso explícito: solo cuando el Manager lo pide, después de
-`test-execution` / `execution-validation`, con el archivo de resultados y
+`ejecucion`, con el archivo de resultados y
 el/los Test Cycle correspondientes.
 
 Cada test que automatiza un Test Case publicado lleva su key en el título
@@ -247,7 +246,7 @@ número objetivo. El validador lo controla antes de publicar:
 - lote de 2+ HU todas con exactamente 2 CA → WARNING (molde).
 
 Si la especificación recibida no llega al piso o no evidencia haber
-evaluado las 3 dimensiones del método de `scenario-builder` (puntos de
+partido de reglas de negocio relevadas en `discovery` (puntos de
 entrada de UI, estados resultantes, variaciones de flujo/límites):
 
 - nunca inventar un criterio ni un caso para completar el mínimo;
@@ -260,16 +259,19 @@ destructivas van en una HU aparte.
 ## TRAZABILIDAD FUNCIONAL
 
 Cada CA tiene entre **2 y 5** casos de prueba, **incluyendo al menos un
-caso negativo** (regla de `scenario-builder`). Cada Test Case declara
+caso negativo** (regla de `especificacion`). Cada Test Case declara
 `tipo: "positivo"` o `"negativo"`; un CA sin negativo es WARNING del
-validador (no error): se acepta con `--accept-warnings` solo si se
-confirma que ese criterio no lo justifica. Un criterio funcionalmente
+validador (no error). Si el criterio no lo admite, se justifica en el
+payload con `historia.sinNegativo: { "CA-XX": "motivo" }`: el validador
+deja de avisar y el motivo queda publicado en la HU ("Criterios sin caso
+negativo (justificados)"). Nunca resolverlo con `--accept-warnings`. Un criterio funcionalmente
 simple (binario) puede quedar en el mínimo de 2 (uno positivo y uno
 negativo). Este conteo ya debe venir resuelto: ProductAgent no genera
 casos, solo valida y conserva.
 
-Si un criterio no cumple el mínimo o no tiene ningún caso negativo, no
-inventar los faltantes: detener el flujo e informar al Manager.
+Si un criterio no cumple el mínimo, o no tiene ningún caso negativo ni
+justificación en `sinNegativo`, no inventar los faltantes: detener el
+flujo e informar al Manager.
 
 Numeración: CA-01 → TC-01.1, TC-01.2…; CA-02 → TC-02.1… Cada caso valida
 un único criterio, describe un comportamiento funcional, es
@@ -283,7 +285,7 @@ independiente de los demás y mantiene su trazabilidad (`criterio`).
 - Contexto describe el escenario funcional; Objetivo, el resultado de
   negocio (nunca "Verificar…/Validar…": eso es de los Test Cases).
 - Ningún criterio exige un comportamiento que contradice el "Para" (ej.
-  perder datos guardados): si llega así desde `scenario-builder`,
+  perder datos guardados): si llega así desde `especificacion`,
   detener e informar al Manager (es un posible defecto, no un CA).
 - Los criterios son solo comportamiento funcional (ver CONTENIDO
   PROHIBIDO).
@@ -316,7 +318,17 @@ es un falso positivo confirmado.
 Como <tipo de usuario> / Quiero <objetivo funcional> / Para <beneficio>
 
 CONTEXTO — OBJETIVO — Criterios de aceptación (cada CA-XX con su texto,
-tal como los entregó `scenario-builder`, misma numeración).
+tal como los entregó `especificacion`, misma numeración).
+
+Campos opcionales de `historia` en el payload (se publican como secciones
+de la HU solo si vienen con contenido):
+
+- `sinNegativo`: `{ "CA-XX": "motivo" }` → "Criterios sin caso negativo
+  (justificados)". El validador controla que el CA exista y que haya motivo.
+- `reglasNegocio`: reglas relevadas que la HU respeta (ej. "Un solo Thor
+  Hammer por carrito").
+- `fueraDeAlcance`: lo que se dejó afuera a propósito y por qué.
+- `defectosConocidos`: Bugs relacionados (`"SCRUM-459: ..."`).
 
 La Historia es una reinterpretación funcional orientada al negocio de la
 especificación: nunca copiarla literalmente, nunca copiar un Test Case

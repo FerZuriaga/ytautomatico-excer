@@ -53,10 +53,14 @@ No se altera el orden. Relación con el pipeline de 3 pasos de CLAUDE.md:
 FASES 1-4 = PASO 1 (Discovery) + especificación; FASE 5 = PASO 2
 (Jira/Xray); FASE 6 = PASO 3 (Execution & Git).
 
-### FASE 1 — Application Discovery
+Skills de fase (v3): `discovery`, `especificacion`,
+`plan-automatizacion`, `git`, `ejecucion`, `automation-review`,
+`bug-reporting`. Las anteriores están en `v3/.claude/skills-archive/`.
+
+### FASE 1 — Discovery de la aplicación
 
 Si el usuario indica solo una aplicación, proyecto o URL: ejecutar la
-skill `application-discovery` antes de responder (nunca reemplazarla por
+skill `discovery` (Parte A) antes de responder (nunca reemplazarla por
 razonamiento propio). Consultar primero `docs/discovery/<app>.md` si
 existe.
 
@@ -66,23 +70,22 @@ Si hay más de una funcionalidad: mostrar solo la lista numerada y
 terminar el turno. Cuando el usuario elija, seguir en FASE 3 sin volver
 a ejecutar Discovery.
 
-### FASE 3 — Scenario Builder + relevamiento técnico
+### FASE 3 — Relevamiento técnico + escenarios
 
-Ejecutar `scenario-builder` con la aplicación y la funcionalidad elegida.
-Si hay más de un escenario, mostrar la lista numerada y terminar el turno.
-
-En esta fase también se hace el relevamiento técnico del PASO 1 de
-CLAUDE.md: HTML real o sourcemap (nunca Cypress), selectores guardados en
+Ejecutar `discovery` (Parte B) sobre la funcionalidad elegida: código/API
+directo y exploración con navegador real mediante
+`v3/scripts/explore-page.js` (nunca los specs); selectores en
 `cypress/fixtures/selectors/<app>/<modulo>.json` y hallazgos en
-`docs/discovery/<app>.md`. Los CA salen de las reglas de negocio
-relevadas acá.
+`docs/discovery/<app>.md`. Después, `especificacion` (Fase 1): lista de
+escenarios con prioridad; terminar el turno para que el usuario elija.
 
-### FASE 4 — Modelo Canónico de Test Case
+### FASE 4 — Historias, criterios y Test Cases
 
-Ejecutar `testcase-model` una vez por cada TC-XX.Y de la especificación.
-Cada modelo lleva `criterio: "CA-XX"`, precondición separada y un paso
-por acción verificable. La validez del modelo la determina
-`testcase-model` (el Manager solo verifica el veredicto).
+`especificacion` (Fase 2) con los escenarios elegidos: HU en lenguaje de
+negocio, CA que salen de las reglas relevadas y un Modelo Canónico por
+cada TC-XX.Y (`criterio`, `tipo`, precondición separada, un paso por
+acción verificable, datos en la columna Datos). La validez final la
+controla el validador de `create-jira-task.js --dry-run`.
 
 ### FASE 5 — Gestión funcional → cargar `product-agent`
 
@@ -93,9 +96,9 @@ Keys y Test Cycle Keys.
 
 ### FASE 6 — Automatización → cargar `qa-automation1`
 
-Con la skill `qa-automation1` cargada: rama, código, UNA corrida de
-Cypress, commit por Historia, push y Pull Request. Recibir su Reporte de
-Automatización.
+Con la skill `qa-automation1` cargada: plan, rama, código, corridas por
+iteración (`ejecucion`), commit por Historia, push y Pull Request.
+Recibir su Reporte de Automatización.
 
 Después, volver a `product-agent` para: reportar resultados a los Test
 Cycles (`run-and-report.js` con `--test-cycle`, que solo reporta si la

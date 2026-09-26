@@ -54,8 +54,12 @@ Este rol nunca:
   instalado);
 - crea archivos temporales o de prueba dentro del repositorio; toda
   validación puntual va en el scratchpad de la sesión;
-- usa `cy.reconPage` / `cy.reconSubmit` ni corre Cypress para explorar
-  (CLAUDE.md: Cypress se corre una sola vez, al final);
+- usa `cy.reconPage` / `cy.reconSubmit`, ni usa los specs para explorar:
+  la exploración con navegador es solo `v3/scripts/explore-page.js`
+  (PASO 1);
+- vuelve a correr los specs sin diagnosticar antes la falla con evidencia
+  (captura, log o `explore-page.js`); con 3 iteraciones fallidas frena y
+  consulta al usuario;
 - usa `cy.wait()` estáticos ni timeouts mayores a 15s.
 
 # ENTRADA ESPERADA
@@ -72,29 +76,26 @@ Nunca descubrir funcionalidades ni construir escenarios funcionales.
 
 Sin saltar pasos:
 
-1. `ticket-analysis` — nunca escribir código antes de que finalice.
-2. `framework-analysis` — nunca crear o modificar código antes.
-3. `implementation-plan` — inmediatamente después, antes de cualquier
-   código.
-4. `branch-management` — antes de crear o reutilizar ramas.
-5. Implementación (código).
-6. `test-execution` + `execution-validation` — UNA sola corrida de
-   Cypress sobre los specs del lote con
-   `node v3/scripts/run-and-report.js --spec <rutas> --test-cycle <ciclos>`
-   (reporta a Xray solo si pasa 100% y lista los reintentos). El reporte a
-   Xray es del rol ProductAgent: cargar `product-agent` antes de pasar
-   `--test-cycle`, o correr sin ese flag y reportar desde ese rol.
-7. `automation-review`.
-8. `git-workflow` — solo tras una ejecución 100% exitosa: commit, push y
-   Pull Request.
-9. Reporte de Automatización (ver FORMATO OFICIAL).
+1. `plan-automatizacion` — trabajo existente, trazabilidad, framework y
+   estrategia; nunca escribir código antes de que finalice.
+2. `git` (Parte A) — rama antes de modificar archivos.
+3. Implementación (código).
+4. `ejecucion` — `node v3/scripts/run-and-report.js --spec <rutas>
+   --test-cycle <ciclos>`, una corrida por iteración con diagnóstico entre
+   iteraciones (máximo 3). El reporte a Xray es del rol ProductAgent:
+   cargar `product-agent` antes de pasar `--test-cycle`, o correr sin ese
+   flag y reportar desde ese rol.
+5. `automation-review`.
+6. `git` (Parte B) — solo tras una ejecución 100% exitosa: commit por
+   Historia, push y Pull Request.
+7. Reporte de Automatización (ver FORMATO OFICIAL).
 
 `bug-reporting` se invoca en cualquier momento en que se detecte un
-posible defecto. `executive-summary` es independiente de esta secuencia.
+posible defecto.
 
-En un lote con varias Historias, los pasos 1-3 se hacen una vez para el
-lote completo, el código se escribe en una sola pasada y la corrida del
-paso 6 incluye todos los specs del lote.
+En un lote con varias Historias, el paso 1 se hace una vez para el lote
+completo, el código se escribe en una sola pasada y la corrida del paso 4
+incluye todos los specs del lote.
 
 ## CONTINUACIÓN DE TRABAJO
 
@@ -104,7 +105,7 @@ ese punto reutilizando el contexto; no empezar desde cero.
 
 ## FRAMEWORK-AGNÓSTICO
 
-`framework-analysis` identifica la aplicación y el framework de cada
+`plan-automatizacion` identifica la aplicación y el framework de cada
 caso — nunca asumirlos de antemano.
 
 ## DECISIONES DE ARQUITECTURA
@@ -123,8 +124,7 @@ Nunca modificar arquitectura compartida sin explicar la decisión antes.
 
 ## PRINCIPIO DE ENFOQUE
 
-Una vez que `ticket-analysis` y `framework-analysis` entregan su
-resultado, implementar; no seguir explorando el proyecto salvo que algo
+Una vez que `plan-automatizacion` entrega su resultado, implementar; no seguir explorando el proyecto salvo que algo
 bloquee la automatización o el usuario lo pida.
 
 ## PRINCIPIO DE VALIDACIÓN

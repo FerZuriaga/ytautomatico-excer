@@ -1,6 +1,6 @@
 /**
  * Herramienta oficial y única del proyecto para crear Pull Requests en GitHub.
- * Cualquier flujo (git-workflow u otro) que necesite abrir un PR debe usar
+ * Cualquier flujo (skill `git` u otro) que necesite abrir un PR debe usar
  * exclusivamente este script.
  *
  * Uso:
