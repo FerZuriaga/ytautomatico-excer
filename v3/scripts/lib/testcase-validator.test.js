@@ -354,7 +354,7 @@ test('warning (no error): CA sin ningun caso negativo, como el CA-01 de Descarga
   const { errors, warnings } = validateStoryCriteria(hu);
 
   assert.deepEqual(errors, []);
-  assert.deepEqual(warnings, ['Descarga: CA-01 no tiene ningun caso negativo (tipo: "negativo") -- confirmar que el criterio no lo justifica.']);
+  assert.deepEqual(warnings, ['Descarga: CA-01 no tiene ningun caso negativo (tipo: "negativo") -- agregarlo o justificarlo en historia.sinNegativo["CA-01"].']);
 });
 
 test('payload sin campo tipo: avisa en cada CA (fuerza a declararlo)', () => {
@@ -492,4 +492,78 @@ test('validatePayload incluye los warnings de redaccion; issue sin historia no s
   hu.historia.objetivo = 'Validar el alta de productos.';
   assert.deepEqual(validatePayload(hu).warnings, ['HU: el Objetivo esta escrito como objetivo de prueba ("Validar...") -- describir el resultado de negocio; lo que se verifica va en los Test Cases.']);
   assert.deepEqual(validateStoryText({ summary: 'Bug' }).warnings, []);
+});
+
+// ─── Justificación por criterio (historia.sinNegativo) ──────────────────────
+// Nace del lote 2 de Practice Software Testing (2026-09-25): 5 CA sin caso
+// negativo aceptados con un --accept-warnings global, sin dejar el motivo
+// registrado en ningún lado.
+
+const huSinNegativoEnCa01 = () => {
+  const hu = story('Comparador', 2, 0);
+  hu.testcaseModels = [
+    tcFor('CA-01', 'Solo diferencias'), tcFor('CA-01', 'Desmarcar diferencias'),
+    tcFor('CA-02', 'Quitar producto'), tcFor('CA-02', 'Comparacion vacia', 'negativo')
+  ];
+  return hu;
+};
+
+test('sinNegativo con motivo: el CA sin caso negativo no avisa', () => {
+  const hu = huSinNegativoEnCa01();
+  hu.historia.sinNegativo = { 'CA-01': 'Opcion que se activa y desactiva: no hay entrada invalida.' };
+
+  assert.deepEqual(validateStoryCriteria(hu), { errors: [], warnings: [], criteriaCount: 2, tcCountByCriterion: { 'CA-01': 2, 'CA-02': 2 } });
+});
+
+test('error: sinNegativo sin motivo', () => {
+  const hu = huSinNegativoEnCa01();
+  hu.historia.sinNegativo = { 'CA-01': '  ' };
+
+  const { errors, warnings } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, ['Comparador: historia.sinNegativo["CA-01"] no tiene motivo -- la justificacion es obligatoria.']);
+  assert.match(warnings[0], /CA-01 no tiene ningun caso negativo/);
+});
+
+test('error: sinNegativo apunta a un criterio que no existe', () => {
+  const hu = huSinNegativoEnCa01();
+  hu.historia.sinNegativo = { 'CA-01': 'Motivo.', 'CA-07': 'Motivo.' };
+
+  const { errors } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, ['Comparador: historia.sinNegativo apunta a "CA-07", que no es un criterio de la HU (CA-01, CA-02).']);
+});
+
+test('warning: sinNegativo sobre un CA que ya tiene casos negativos', () => {
+  const hu = huSinNegativoEnCa01();
+  hu.historia.sinNegativo = { 'CA-01': 'Motivo.', 'CA-02': 'Motivo innecesario.' };
+
+  const { errors, warnings } = validateStoryCriteria(hu);
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, ['Comparador: CA-02 ya tiene casos negativos -- sobra la justificacion en historia.sinNegativo.']);
+});
+
+// ─── Datos de prueba en la columna Datos ────────────────────────────────────
+
+test('warning: dato de entrada entre comillas en la accion con Datos vacio', () => {
+  const { warnings } = validateTestCaseModel({
+    name: 'Busqueda', precondition: 'Sin sesion.',
+    steps: [step('Navegar a la Home.'), { description: 'Ingresar "pliers" en el campo Search.', testData: '-', expectedResult: 'Se muestran 4 productos.' }]
+  });
+
+  assert.deepEqual(warnings, ['Busqueda: el paso 2 escribe un dato entre comillas en la accion y la columna Datos esta vacia -- mover el dato a testData.']);
+});
+
+test('dato en la columna Datos o comillas de un texto visible no avisan', () => {
+  const { warnings } = validateTestCaseModel({
+    name: 'Busqueda', precondition: 'Sin sesion.',
+    steps: [
+      step('Navegar a la Home.'),
+      { description: 'Ingresar el termino en el campo Search.', testData: 'pliers', expectedResult: 'Se muestran 4 productos.' },
+      { description: 'Marcar la opcion "Show only eco-friendly products".', testData: '-', expectedResult: 'Solo productos ECO.' }
+    ]
+  });
+
+  assert.deepEqual(warnings, []);
 });

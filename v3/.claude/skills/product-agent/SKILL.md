@@ -261,14 +261,17 @@ destructivas van en una HU aparte.
 Cada CA tiene entre **2 y 5** casos de prueba, **incluyendo al menos un
 caso negativo** (regla de `especificacion`). Cada Test Case declara
 `tipo: "positivo"` o `"negativo"`; un CA sin negativo es WARNING del
-validador (no error): se acepta con `--accept-warnings` solo si se
-confirma que ese criterio no lo justifica. Un criterio funcionalmente
+validador (no error). Si el criterio no lo admite, se justifica en el
+payload con `historia.sinNegativo: { "CA-XX": "motivo" }`: el validador
+deja de avisar y el motivo queda publicado en la HU ("Criterios sin caso
+negativo (justificados)"). Nunca resolverlo con `--accept-warnings`. Un criterio funcionalmente
 simple (binario) puede quedar en el mínimo de 2 (uno positivo y uno
 negativo). Este conteo ya debe venir resuelto: ProductAgent no genera
 casos, solo valida y conserva.
 
-Si un criterio no cumple el mínimo o no tiene ningún caso negativo, no
-inventar los faltantes: detener el flujo e informar al Manager.
+Si un criterio no cumple el mínimo, o no tiene ningún caso negativo ni
+justificación en `sinNegativo`, no inventar los faltantes: detener el
+flujo e informar al Manager.
 
 Numeración: CA-01 → TC-01.1, TC-01.2…; CA-02 → TC-02.1… Cada caso valida
 un único criterio, describe un comportamiento funcional, es
@@ -316,6 +319,16 @@ Como <tipo de usuario> / Quiero <objetivo funcional> / Para <beneficio>
 
 CONTEXTO — OBJETIVO — Criterios de aceptación (cada CA-XX con su texto,
 tal como los entregó `especificacion`, misma numeración).
+
+Campos opcionales de `historia` en el payload (se publican como secciones
+de la HU solo si vienen con contenido):
+
+- `sinNegativo`: `{ "CA-XX": "motivo" }` → "Criterios sin caso negativo
+  (justificados)". El validador controla que el CA exista y que haya motivo.
+- `reglasNegocio`: reglas relevadas que la HU respeta (ej. "Un solo Thor
+  Hammer por carrito").
+- `fueraDeAlcance`: lo que se dejó afuera a propósito y por qué.
+- `defectosConocidos`: Bugs relacionados (`"SCRUM-459: ..."`).
 
 La Historia es una reinterpretación funcional orientada al negocio de la
 especificación: nunca copiarla literalmente, nunca copiar un Test Case

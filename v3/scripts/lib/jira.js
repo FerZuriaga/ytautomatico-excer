@@ -228,24 +228,50 @@ function buildBugDescription(bug) {
   return { type: 'doc', version: 1, content };
 }
 
+function blist(items) {
+  return { type: 'bulletList', content: items.map(t => ({ type: 'listItem', content: [p(t)] })) };
+}
+
+function nonEmptyList(value) {
+  return Array.isArray(value) ? value.map(v => String(v || '').trim()).filter(Boolean) : [];
+}
+
 /**
  * Descripción ADF para una Historia: Como/Quiero/Para, Contexto, Objetivo,
- * Criterios de aceptación. El contenido (qué dice cada sección) lo decide
- * ProductAgent — esta función solo lo traduce al formato ADF de Jira.
+ * Criterios de aceptación y, si vienen, las secciones opcionales:
+ * - sinNegativo: { "CA-03": "motivo" } -> "Criterios sin caso negativo
+ *   (justificados)", para que la excepción quede auditada en la HU;
+ * - reglasNegocio, fueraDeAlcance, defectosConocidos: listas de texto.
+ * El contenido (qué dice cada sección) lo decide ProductAgent — esta
+ * función solo lo traduce al formato ADF de Jira.
  */
 function buildHistoriaDescription(historia) {
-  return {
-    type: 'doc', version: 1,
-    content: [
-      p(`Como ${historia.como}`),
-      p(`Quiero ${historia.quiero}`),
-      p(`Para ${historia.para}`),
-      h(2, 'Contexto'), p(historia.contexto),
-      h(2, 'Objetivo'), p(historia.objetivo),
-      h(2, 'Criterios de aceptación'),
-      { type: 'bulletList', content: historia.criterios.map(t => ({ type: 'listItem', content: [p(t)] })) }
-    ]
-  };
+  const content = [
+    p(`Como ${historia.como}`),
+    p(`Quiero ${historia.quiero}`),
+    p(`Para ${historia.para}`),
+    h(2, 'Contexto'), p(historia.contexto),
+    h(2, 'Objetivo'), p(historia.objetivo),
+    h(2, 'Criterios de aceptación'),
+    blist(historia.criterios)
+  ];
+
+  const justified = Object.entries(historia.sinNegativo || {})
+    .filter(([, motivo]) => String(motivo || '').trim())
+    .map(([id, motivo]) => `${id}: ${String(motivo).trim()}`);
+  if (justified.length) content.push(h(2, 'Criterios sin caso negativo (justificados)'), blist(justified));
+
+  const optional = [
+    ['reglasNegocio', 'Reglas de negocio relevadas'],
+    ['fueraDeAlcance', 'Fuera de alcance'],
+    ['defectosConocidos', 'Defectos conocidos relacionados']
+  ];
+  for (const [field, title] of optional) {
+    const items = nonEmptyList(historia[field]);
+    if (items.length) content.push(h(2, title), blist(items));
+  }
+
+  return { type: 'doc', version: 1, content };
 }
 
 /**
