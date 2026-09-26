@@ -53,6 +53,10 @@ Requests se crean solo con `v3/scripts/create-pull-request.js`.
    que depende si es un PR apilado (avisarlo en el body). El body cierra
    con la línea de atribución vigente.
 5. **Merge a `main`: solo con confirmación explícita del usuario.**
+6. **PR apilado:** cuando se mergea su base, re-apuntarlo a `main` con
+   `--action update --pr <n> --base main`. Si el PR cambia después de
+   creado, actualizar su descripción (`--action view` para leerla,
+   `--action update --body-file`) para que no quede desactualizada.
 
 Operaciones puntuales (fetch, estado, merge confirmado) pueden hacerse
 con `git` directo. Nunca otro script para crear PRs.

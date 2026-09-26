@@ -18,6 +18,10 @@ Acciones soportadas actualmente:
 
 - create
 - merge
+- view --pr <n>: muestra estado, ramas, título y descripción de un PR.
+- update --pr <n> [--title "..."] [--body "..." | --body-file <archivo.md>]
+  [--base <rama>]: actualiza título, descripción o rama destino de un PR
+  abierto (ej. re-apuntar a main un PR apilado cuando se mergea su base).
 - wip-check  [--max <n>]  (default 2): lista los PRs abiertos y termina con
   código 1 si hay más de <n>. Se corre antes de arrancar un lote nuevo:
   con PRs acumulados sin mergear, los lotes nuevos salen apilados y
@@ -90,6 +94,8 @@ function parseArgs(argv) {
       i++;
     } else if (argv[i] === '--base') {
       args.base = argv[i + 1];
+      // update solo cambia la rama destino si se pasa explícitamente.
+      args.baseGiven = true;
       i++;
     } else if (argv[i] === '--title') {
       args.title = argv[i + 1];
@@ -251,7 +257,27 @@ async function main() {
     process.exit(1);
   }
 
-  const { action, head, base, title, body, bodyFile, repo, pullRequestNumber, max } = parseArgs(process.argv.slice(2));
+  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max } = parseArgs(process.argv.slice(2));
+
+  if (action === 'view' && !pullRequestNumber) {
+    console.error('Debe indicar --pr <numero>.');
+    process.exit(1);
+  }
+
+  if (action === 'update') {
+    if (!pullRequestNumber) {
+      console.error('Debe indicar --pr <numero>.');
+      process.exit(1);
+    }
+    if (!title && !body && !bodyFile && !baseGiven) {
+      console.error('update: indicar al menos --title, --body/--body-file o --base.');
+      process.exit(1);
+    }
+    if (body && bodyFile) {
+      console.error('--body y --body-file son mutuamente excluyentes. Usá solo uno.');
+      process.exit(1);
+    }
+  }
 
   if (action === 'wip-check' && max !== undefined && (!Number.isInteger(max) || max < 0)) {
     console.error('--max debe ser un entero >= 0.');
@@ -340,6 +366,38 @@ async function main() {
       console.log(`Merge realizado correctamente.`);
       console.log(`SHA: ${result.sha}`);
 
+      break;
+    }
+
+    case 'view': {
+      const res = await githubRequest('GET', `/repos/${owner}/${name}/pulls/${pullRequestNumber}`);
+      if (res.status !== 200) {
+        console.error('Error al leer el Pull Request:', JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+      const pr = res.body;
+      console.log(`#${pr.number} [${pr.state}${pr.merged ? ', mergeado' : ''}] ${pr.head.ref} -> ${pr.base.ref}`);
+      console.log(`Titulo: ${pr.title}`);
+      console.log(`URL: ${pr.html_url}`);
+      console.log('--- Descripcion ---');
+      console.log(pr.body || '(vacia)');
+      break;
+    }
+
+    case 'update': {
+      const changes = {};
+      if (title) changes.title = title;
+      if (resolvedBody) changes.body = resolvedBody;
+      if (baseGiven) changes.base = base;
+
+      console.log(`Actualizando Pull Request #${pullRequestNumber} (${Object.keys(changes).join(', ')})...`);
+      const res = await githubRequest('PATCH', `/repos/${owner}/${name}/pulls/${pullRequestNumber}`, changes);
+      if (res.status !== 200) {
+        console.error('Error al actualizar el Pull Request:', JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+      console.log(`Actualizado: #${res.body.number} ${res.body.head.ref} -> ${res.body.base.ref}`);
+      console.log(`URL: ${res.body.html_url}`);
       break;
     }
 
