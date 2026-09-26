@@ -32,9 +32,10 @@ rol.
   ese caso el script reporta a Xray y verifica los ciclos por lectura.
 - **↻ Pasaron solo en reintento:** se reportan PASSED pero se informan
   siempre (posible inestabilidad).
-- **Reporte a Xray cortado** (502, ECONNABORTED): es idempotente;
-  reintentar con `create-jira-task.js --report-results <json>
-  --test-cycle <ciclos>` y verificar los ciclos por lectura.
+- **Reporte a Xray cortado** (502, ECONNABORTED, socket hang up): es
+  idempotente; reintentar SIN volver a correr los specs con
+  `run-and-report.js --from-results <json> --test-cycle <ciclos>`, que
+  reporta y verifica los ciclos por lectura con el JSON de la corrida.
 
 ## Si falla: una iteración a la vez
 
