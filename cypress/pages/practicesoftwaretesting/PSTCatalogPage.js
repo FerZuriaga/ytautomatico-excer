@@ -23,11 +23,11 @@ class PSTCatalogPage {
     // como GET (ver cypress/support/commands/practicesoftwaretesting.js).
     // Se espera la carga inicial para que el próximo cy.wait('@pstList')
     // corresponda a una acción del test y no al listado de arranque.
-    visit() {
+    visit(options) {
         cy.fixture(FIXTURE).then(sel => {
             cy.intercept({ method: sel.api.method, hostname: sel.api.host, pathname: sel.api.listPath }).as('pstList')
             cy.intercept({ method: sel.api.method, hostname: sel.api.host, pathname: sel.api.searchPath }).as('pstSearch')
-            cy.gotoPSTUrl('/')
+            cy.gotoPSTUrl('/', options)
             cy.wait('@pstList', T)
         })
     }
