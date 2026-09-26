@@ -1,0 +1,36 @@
+{
+  "productName": "[data-test=\"product-name\"]",
+  "unitPrice": "[data-test=\"unit-price\"]",
+  "categoryBadge": "[aria-label=\"category\"]",
+  "brandBadge": "[aria-label=\"brand\"]",
+  "description": "[data-test=\"product-description\"]",
+  "outOfStock": "[data-test=\"out-of-stock\"]",
+  "addToCart": "[data-test=\"add-to-cart\"]",
+  "quantityInput": "[data-test=\"quantity\"]",
+  "increaseQuantity": "[data-test=\"increase-quantity\"]",
+  "decreaseQuantity": "[data-test=\"decrease-quantity\"]",
+  "specRowPattern": "tr[data-test-spec=\"{slug}\"]",
+  "specValue": "[data-test=\"spec-value-text\"]",
+  "specUnit": "[data-test=\"spec-unit\"]",
+  "relatedTitle": "h2",
+  "relatedCardTitle": ".card .card-title",
+  "cartQuantity": "[data-test=\"cart-quantity\"]",
+  "toastMessage": "#toast-container .toast-message",
+  "rentalDurationLabel": "label",
+  "rentalSliderPointer": ".ngx-slider-pointer-min",
+  "texts": {
+    "relatedTitle": "Related products",
+    "perHour": "per hour",
+    "outOfStock": "Out of stock",
+    "addedToCart": "Product added to shopping cart.",
+    "maxQuantity": "You can order at most 99 of this product.",
+    "durationPrefix": "Duration",
+    "duration": "Duration ({n} hour(s))"
+  },
+  "data": {
+    "minQuantity": 1,
+    "maxQuantity": 99,
+    "minDuration": 1,
+    "maxDuration": 10
+  }
+}
