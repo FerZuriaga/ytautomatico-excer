@@ -607,3 +607,68 @@ test('acciones del usuario sin verificacion no dan error ("Revisar el desglose",
 
   assert.deepEqual(errors, []);
 });
+
+// ─── Criterio compuesto y pasos de relleno (lote SCRUM-485/495, 2026-09-26) ──
+
+test('regresion SCRUM-485 CA-03: un criterio con dos reglas separadas por ";" avisa', () => {
+  const { warnings } = validateStoryText({
+    summary: 'Inicio de sesion',
+    historia: {
+      criterios: [
+        'CA-03: Tras 3 intentos fallidos seguidos la cuenta queda bloqueada y el siguiente intento muestra "Account locked", aun con la contraseña correcta; un ingreso exitoso reinicia el conteo.'
+      ]
+    }
+  });
+
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CA-03 parece combinar 2 reglas/);
+});
+
+test('regresion SCRUM-485 CA-03 reescrito como una sola regla: sin warning de criterio compuesto', () => {
+  const { warnings } = validateStoryText({
+    summary: 'Inicio de sesion',
+    historia: {
+      criterios: [
+        'CA-03: La cuenta se bloquea tras 3 intentos fallidos seguidos, sin un ingreso exitoso entre ellos, y desde ese momento todo intento muestra "Account locked", aun con la contraseña correcta.'
+      ]
+    }
+  });
+
+  assert.deepEqual(warnings, []);
+});
+
+test('criterio compuesto: "ademas" separa reglas y un fragmento corto tras ";" no cuenta', () => {
+  const texts = [
+    'CA-01: El carrito muestra el subtotal de cada linea y ademas el total general se recalcula al cambiar cantidades.',
+    'CA-02: El formulario muestra los errores de cada campo obligatorio; sin excepciones.'
+  ];
+  const { warnings } = validateStoryText({ summary: 'HU', historia: { criterios: texts } });
+
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CA-01 parece combinar 2 reglas/);
+});
+
+test('regresion SCRUM-499/500: pasos de relleno ("Observar", "Abrir nuevamente") avisan', () => {
+  const { errors, warnings } = validateTestCaseModel({
+    name: 'My account sin sesion', precondition: 'Sin sesion.',
+    steps: [
+      step('Abrir la direccion de la pantalla My account en el navegador'),
+      step('Abrir nuevamente la direccion de la pantalla My account'),
+      step('Observar el menu superior')
+    ]
+  });
+
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /el paso 2 repite una accion anterior \("nuevamente"\)/);
+  assert.match(warnings[1], /el paso 3 no describe una accion del usuario \("Observar\.\.\."\)/);
+});
+
+test('pasos de relleno: una accion real repetida con otro verbo ("Volver a iniciar sesion") no avisa', () => {
+  const { warnings } = validateTestCaseModel({
+    name: 'Reingreso', precondition: 'Sesion iniciada.',
+    steps: [step('Hacer clic en "Sign out"'), step('Hacer clic en "Sign in" en el menu superior')]
+  });
+
+  assert.deepEqual(warnings, []);
+});

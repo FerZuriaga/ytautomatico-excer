@@ -19,6 +19,10 @@ Requests se crean solo con `v3/scripts/create-pull-request.js`.
 
 ## Parte A — Rama (antes del código)
 
+0. **Límite de trabajo en curso:** `node v3/scripts/create-pull-request.js
+   --action wip-check`. Con más de 2 PRs abiertos no se arranca un lote
+   nuevo: informar al usuario y proponer mergear o cerrar primero (los
+   lotes sobre PRs sin mergear salen apilados y chocan entre sí).
 1. **Working directory:** si hay cambios ajenos al trabajo, informarlos y
    preservarlos (stash o commit aparte, con confirmación). Nunca
    descartarlos sin confirmación explícita.

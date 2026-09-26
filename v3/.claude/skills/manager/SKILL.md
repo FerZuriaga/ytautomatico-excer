@@ -57,6 +57,17 @@ Skills de fase (v3): `discovery`, `especificacion`,
 `plan-automatizacion`, `git`, `ejecucion`, `automation-review`,
 `bug-reporting`. Las anteriores están en `v3/.claude/skills-archive/`.
 
+**Antes de arrancar una funcionalidad nueva** (FASE 1 o FASE 3):
+`node v3/scripts/create-pull-request.js --action wip-check`. Si hay más
+de 2 PRs abiertos, informarlo y proponer mergear o cerrar antes de
+empezar; no arrancar un lote apilado sin que el usuario lo decida.
+
+**Proyecto limpio:** cada prevención acordada con el usuario se lleva a
+código cuando se puede (validador, script, chequeo en un CLI existente) y
+no solo a una regla escrita; si no se puede automatizar, se escribe en la
+skill que corresponde. Nunca scripts sueltos ni duplicados: se extiende
+la implementación oficial.
+
 ### FASE 1 — Discovery de la aplicación
 
 Si el usuario indica solo una aplicación, proyecto o URL: ejecutar la

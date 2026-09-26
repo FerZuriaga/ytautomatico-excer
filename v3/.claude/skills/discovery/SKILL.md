@@ -83,6 +83,20 @@ adaptador dentro de Cypress). Del informe, revisar siempre:
 - **`data-test` duplicados u ocultos** y campos sin atributo de test.
 - **Almacenamiento** (localStorage/sessionStorage) que condicione el estado.
 - **Errores de consola** y excepciones.
+- **Recargas completas de página** (`window.location.href`, `reload()`,
+  redirecciones por 401): todo lo que el test instala en la ventana
+  (adaptadores, `onBeforeLoad`, stubs) se pierde en la ventana nueva.
+  Buscarlas en el código (`location.href=`, `reload()`) y confirmar qué
+  sobrevive. Caso real: el login y el guard de la cuenta de Practice
+  Software Testing recargan la página y el catálogo quedó sin el adaptador
+  QUERY (SCRUM-500, iteración evitable).
+
+**Explorar el mismo camino que usará el test, no solo el de la UI.** Si el
+test prepara el estado por API (sesión inyectada, carrito sembrado) o entra
+directo a una pantalla interna, correr `explore-page.js` con ese mismo
+estado (`--storage`, `--actions` con `visit`) además del recorrido visual.
+Pasó dos veces (Carrito y Login): el camino de la UI andaba y el del test
+no.
 
 Verificar además, contra la API:
 
