@@ -1,5 +1,5 @@
 /**
- * CLI: corre Cypress UNA sola vez sobre los specs indicados, controla que
+ * CLI: corre Cypress una vez (una iteración) sobre los specs indicados, controla que
  * la corrida sea 100% exitosa y, solo entonces, reporta los resultados a
  * los Test Cycles de Xray y verifica por lectura que hayan quedado en
  * PASSED.
@@ -14,7 +14,7 @@
  *                   Default: carpeta temporal del sistema (nunca el repo).
  *
  * Reglas (CLAUDE.md, PASO 3):
- *   - una sola corrida: `npx cypress run --quiet --reporter json --spec ...`
+ *   - una corrida por invocación: `npx cypress run --quiet --reporter json --spec ...`
  *     (sin --quiet el JSON no parsea);
  *   - si hay fallas, pendientes o 0 tests: NO reporta y sale con código 1;
  *   - los tests que pasaron recién en el reintento (retries.runMode) se
@@ -56,7 +56,7 @@ function splitList(value) {
 }
 
 function runCypress(specs, resultsPath) {
-  console.log(`Corriendo Cypress (una sola vez) sobre ${specs.length} spec(s)...`);
+  console.log(`Corriendo Cypress (una iteracion) sobre ${specs.length} spec(s)...`);
   const run = spawnSync('npx', ['cypress', 'run', '--quiet', '--reporter', 'json', '--spec', specs.join(',')], {
     cwd: REPO_ROOT,
     shell: process.platform === 'win32',

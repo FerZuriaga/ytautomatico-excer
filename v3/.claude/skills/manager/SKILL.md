@@ -72,7 +72,8 @@ Ejecutar `scenario-builder` con la aplicación y la funcionalidad elegida.
 Si hay más de un escenario, mostrar la lista numerada y terminar el turno.
 
 En esta fase también se hace el relevamiento técnico del PASO 1 de
-CLAUDE.md: HTML real o sourcemap (nunca Cypress), selectores guardados en
+CLAUDE.md: HTML/código/API directo y exploración con navegador real
+mediante `v3/scripts/explore-page.js` (nunca los specs), selectores guardados en
 `cypress/fixtures/selectors/<app>/<modulo>.json` y hallazgos en
 `docs/discovery/<app>.md`. Los CA salen de las reglas de negocio
 relevadas acá.

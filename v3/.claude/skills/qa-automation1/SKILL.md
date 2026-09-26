@@ -54,8 +54,12 @@ Este rol nunca:
   instalado);
 - crea archivos temporales o de prueba dentro del repositorio; toda
   validación puntual va en el scratchpad de la sesión;
-- usa `cy.reconPage` / `cy.reconSubmit` ni corre Cypress para explorar
-  (CLAUDE.md: Cypress se corre una sola vez, al final);
+- usa `cy.reconPage` / `cy.reconSubmit`, ni usa los specs para explorar:
+  la exploración con navegador es solo `v3/scripts/explore-page.js`
+  (PASO 1);
+- vuelve a correr los specs sin diagnosticar antes la falla con evidencia
+  (captura, log o `explore-page.js`); con 3 iteraciones fallidas frena y
+  consulta al usuario;
 - usa `cy.wait()` estáticos ni timeouts mayores a 15s.
 
 # ENTRADA ESPERADA
@@ -78,7 +82,7 @@ Sin saltar pasos:
    código.
 4. `branch-management` — antes de crear o reutilizar ramas.
 5. Implementación (código).
-6. `test-execution` + `execution-validation` — UNA sola corrida de
+6. `test-execution` + `execution-validation` — una corrida por iteración de
    Cypress sobre los specs del lote con
    `node v3/scripts/run-and-report.js --spec <rutas> --test-cycle <ciclos>`
    (reporta a Xray solo si pasa 100% y lista los reintentos). El reporte a

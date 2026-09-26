@@ -59,6 +59,18 @@ staging propio (son demos públicas de terceros o el sitio real de un
 gobierno), así que este mecanismo queda listo para el día en que se use
 este framework contra una aplicación propia con staging real.
 
+## Herramientas del pipeline (v3)
+
+| Paso | Script | Qué hace |
+|---|---|---|
+| 1. Discovery | `node v3/scripts/explore-page.js --url <url>` | Explora una pantalla con navegador real: requests de red (método y status), `data-test` visibles/ocultos, idioma, almacenamiento y errores de consola. Informe fuera del repo. |
+| 2. Jira/Xray | `node v3/scripts/create-jira-task.js --data <lote.json> --dry-run` | Valida HU, criterios y Test Cases; sin `--dry-run` publica el lote (Historias, Test Cases, Test Cycles). |
+| 3. Ejecución | `node v3/scripts/run-and-report.js --spec <specs> --test-cycle <ciclos>` | Verifica la trazabilidad, corre Cypress y reporta a Xray solo si pasa el 100%. |
+| 3. Trazabilidad | `node v3/scripts/check-traceability.js --spec <carpeta>` | Cruza los tags `[CA-XX][TC-XX.Y][SCRUM-NNN]` de los specs contra Jira/Xray. |
+| 3. PR | `node v3/scripts/create-pull-request.js --action create --head <rama> --title "<t>"` | Abre el Pull Request por la API de GitHub. |
+
+Tests unitarios de la lógica del pipeline: `npm run test:unit`.
+
 ## Scripts disponibles
 
 ```bash
