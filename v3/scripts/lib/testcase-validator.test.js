@@ -40,7 +40,7 @@ const SCRUM_335_REWRITTEN = {
   name: 'Producto eliminado no reaparece al resetear el filtro',
   precondition: 'Sesion iniciada con las credenciales validas (test/test).',
   steps: [
-    step('Navegar a la Home https://commitquality.com/ y verificar el listado de productos.', 'Se muestran 10 productos.'),
+    step('Navegar a la Home https://commitquality.com/.', 'Se muestra el listado con 10 productos.'),
     step('Ingresar el texto en el filtro y presionar Filter.', 'El listado muestra solo los 5 productos llamados Product 1.'),
     step('Presionar Delete sobre el producto con ID 10.', 'La vista filtrada queda con 4 filas.'),
     step('Presionar Reset.', 'El listado completo muestra 10 productos y el ID 10 no aparece.')
@@ -82,10 +82,11 @@ test('error: paso sin resultado esperado o sin accion', () => {
 
 // ─── Warnings (heurísticas) ──────────────────────────────────────────────────
 
-test('regresion SCRUM-335 original: detecta acciones encadenadas y login sin precondicion', () => {
+test('regresion SCRUM-335 original: detecta acciones encadenadas, login sin precondicion y verificacion en la accion', () => {
   const { errors, warnings } = validateTestCaseModel(SCRUM_335_ORIGINAL);
 
-  assert.deepEqual(errors, []);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /el paso 1 incluye una verificacion en la accion \("verificar"\)/);
   assert.equal(warnings.length, 2);
   assert.match(warnings[0], /el paso 1 parece encadenar 3 acciones \(iniciar sesion, filtrar, eliminar\)/);
   assert.match(warnings[1], /el paso 1 incluye el login y la precondicion esta vacia/);
@@ -135,7 +136,7 @@ test('regresion SCRUM-331: una accion negada ("sin iniciar sesion") no cuenta co
     name: 'Accion Delete oculta sin sesion',
     precondition: '',
     steps: [
-      step('Navegar a https://commitquality.com/ sin iniciar sesion y verificar que el menu muestra el link Login.'),
+      step('Navegar a https://commitquality.com/ sin iniciar sesion.', 'El menu muestra el link Login.'),
       step('Reemplazar Name y Youtube sin presionar Save.')
     ]
   });
@@ -563,6 +564,110 @@ test('dato en la columna Datos o comillas de un texto visible no avisan', () => 
       { description: 'Ingresar el termino en el campo Search.', testData: 'pliers', expectedResult: 'Se muestran 4 productos.' },
       { description: 'Marcar la opcion "Show only eco-friendly products".', testData: '-', expectedResult: 'Solo productos ECO.' }
     ]
+  });
+
+  assert.deepEqual(warnings, []);
+});
+
+// ─── Verificación fuera de la columna Acción ────────────────────────────────
+// Nace de SCRUM-477 (2026-09-26): "Hacer clic en el icono del carrito y
+// verificar su contenido". Verificar no es una acción del usuario: va en el
+// resultado esperado. Es ERROR (bloquea la publicación).
+
+test('error: la accion incluye "y verificar" (regresion SCRUM-477)', () => {
+  const { errors } = validateTestCaseModel({
+    name: 'Descuento eco', precondition: 'Carrito con Wood Saw x1.',
+    steps: [step('Navegar a la Home y verificar que el menu muestra el carrito.'), step('Hacer clic en el icono del carrito y verificar su contenido.')]
+  });
+
+  assert.deepEqual(errors, [
+    'Descuento eco: el paso 1 incluye una verificacion en la accion ("verificar") -- la accion describe solo lo que hace el usuario; lo que se controla va en el resultado esperado.',
+    'Descuento eco: el paso 2 incluye una verificacion en la accion ("verificar") -- la accion describe solo lo que hace el usuario; lo que se controla va en el resultado esperado.'
+  ]);
+});
+
+test('error: "comprobar", "validar" y "revisar que" tambien son verificaciones', () => {
+  const { errors } = validateTestCaseModel({
+    name: 'TC', precondition: 'x',
+    steps: [step('Abrir el carrito y comprobar el total.'), step('Presionar Save y validar el mensaje.'), step('Revisar que el total sea $10.')]
+  });
+
+  assert.equal(errors.length, 3);
+});
+
+test('acciones del usuario sin verificacion no dan error ("Revisar el desglose", "confirmar el cambio")', () => {
+  const { errors } = validateTestCaseModel({
+    name: 'Carrito', precondition: 'Carrito con Wood Saw x1.',
+    steps: [
+      step('Abrir el carrito desde el icono del menu.', 'Se muestra Wood Saw con cantidad 1.'),
+      step('Revisar el desglose de totales del carrito.', 'Subtotal $12.18, descuento - $0.61, total $11.57.'),
+      { description: 'Cambiar la cantidad en el campo Quantity y confirmar el cambio.', testData: '2', expectedResult: 'Total $24.36.' }
+    ]
+  });
+
+  assert.deepEqual(errors, []);
+});
+
+// ─── Criterio compuesto y pasos de relleno (lote SCRUM-485/495, 2026-09-26) ──
+
+test('regresion SCRUM-485 CA-03: un criterio con dos reglas separadas por ";" avisa', () => {
+  const { warnings } = validateStoryText({
+    summary: 'Inicio de sesion',
+    historia: {
+      criterios: [
+        'CA-03: Tras 3 intentos fallidos seguidos la cuenta queda bloqueada y el siguiente intento muestra "Account locked", aun con la contraseña correcta; un ingreso exitoso reinicia el conteo.'
+      ]
+    }
+  });
+
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CA-03 parece combinar 2 reglas/);
+});
+
+test('regresion SCRUM-485 CA-03 reescrito como una sola regla: sin warning de criterio compuesto', () => {
+  const { warnings } = validateStoryText({
+    summary: 'Inicio de sesion',
+    historia: {
+      criterios: [
+        'CA-03: La cuenta se bloquea tras 3 intentos fallidos seguidos, sin un ingreso exitoso entre ellos, y desde ese momento todo intento muestra "Account locked", aun con la contraseña correcta.'
+      ]
+    }
+  });
+
+  assert.deepEqual(warnings, []);
+});
+
+test('criterio compuesto: "ademas" separa reglas y un fragmento corto tras ";" no cuenta', () => {
+  const texts = [
+    'CA-01: El carrito muestra el subtotal de cada linea y ademas el total general se recalcula al cambiar cantidades.',
+    'CA-02: El formulario muestra los errores de cada campo obligatorio; sin excepciones.'
+  ];
+  const { warnings } = validateStoryText({ summary: 'HU', historia: { criterios: texts } });
+
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CA-01 parece combinar 2 reglas/);
+});
+
+test('regresion SCRUM-499/500: pasos de relleno ("Observar", "Abrir nuevamente") avisan', () => {
+  const { errors, warnings } = validateTestCaseModel({
+    name: 'My account sin sesion', precondition: 'Sin sesion.',
+    steps: [
+      step('Abrir la direccion de la pantalla My account en el navegador'),
+      step('Abrir nuevamente la direccion de la pantalla My account'),
+      step('Observar el menu superior')
+    ]
+  });
+
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /el paso 2 repite una accion anterior \("nuevamente"\)/);
+  assert.match(warnings[1], /el paso 3 no describe una accion del usuario \("Observar\.\.\."\)/);
+});
+
+test('pasos de relleno: una accion real repetida con otro verbo ("Volver a iniciar sesion") no avisa', () => {
+  const { warnings } = validateTestCaseModel({
+    name: 'Reingreso', precondition: 'Sesion iniciada.',
+    steps: [step('Hacer clic en "Sign out"'), step('Hacer clic en "Sign in" en el menu superior')]
   });
 
   assert.deepEqual(warnings, []);

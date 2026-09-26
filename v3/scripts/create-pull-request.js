@@ -18,6 +18,16 @@ Acciones soportadas actualmente:
 
 - create
 - merge
+- view --pr <n>: muestra estado, ramas, título y descripción de un PR.
+- close --pr <n>[,<n>...]: cierra PRs abiertos SIN mergear (la rama queda
+  en el remoto). Solo con confirmación explícita del usuario.
+- update --pr <n> [--title "..."] [--body "..." | --body-file <archivo.md>]
+  [--base <rama>]: actualiza título, descripción o rama destino de un PR
+  abierto (ej. re-apuntar a main un PR apilado cuando se mergea su base).
+- wip-check  [--max <n>]  (default 2): lista los PRs abiertos y termina con
+  código 1 si hay más de <n>. Se corre antes de arrancar un lote nuevo:
+  con PRs acumulados sin mergear, los lotes nuevos salen apilados y
+  chocan entre sí (caso real 2026-09-26: #107, #108 y #109 abiertos).
  *
  *   --head        (obligatorio) rama origen del PR, ej: feature/SCRUM-48-alta-empleado-pim
  *   --base        (opcional, default "main") rama destino del PR
@@ -63,6 +73,9 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const API_HOSTNAME = 'api.github.com';
 const API_VERSION = '2022-11-28';
 
+// Máximo de PRs abiertos para arrancar un lote nuevo (wip-check).
+const DEFAULT_WIP_LIMIT = 2;
+
 function parseArgs(argv) {
   const args = {
     action: 'create',
@@ -83,6 +96,8 @@ function parseArgs(argv) {
       i++;
     } else if (argv[i] === '--base') {
       args.base = argv[i + 1];
+      // update solo cambia la rama destino si se pasa explícitamente.
+      args.baseGiven = true;
       i++;
     } else if (argv[i] === '--title') {
       args.title = argv[i + 1];
@@ -95,6 +110,9 @@ function parseArgs(argv) {
       i++;
     } else if (argv[i] === '--repo') {
       args.repo = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--max') {
+      args.max = Number(argv[i + 1]);
       i++;
     } else if (argv[i] === '--pr') {
       args.pullRequestNumber = argv[i + 1];
@@ -241,7 +259,32 @@ async function main() {
     process.exit(1);
   }
 
-  const { action, head, base, title, body, bodyFile, repo, pullRequestNumber } = parseArgs(process.argv.slice(2));;
+  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max } = parseArgs(process.argv.slice(2));
+
+  if ((action === 'view' || action === 'close') && !pullRequestNumber) {
+    console.error('Debe indicar --pr <numero>.');
+    process.exit(1);
+  }
+
+  if (action === 'update') {
+    if (!pullRequestNumber) {
+      console.error('Debe indicar --pr <numero>.');
+      process.exit(1);
+    }
+    if (!title && !body && !bodyFile && !baseGiven) {
+      console.error('update: indicar al menos --title, --body/--body-file o --base.');
+      process.exit(1);
+    }
+    if (body && bodyFile) {
+      console.error('--body y --body-file son mutuamente excluyentes. Usá solo uno.');
+      process.exit(1);
+    }
+  }
+
+  if (action === 'wip-check' && max !== undefined && (!Number.isInteger(max) || max < 0)) {
+    console.error('--max debe ser un entero >= 0.');
+    process.exit(1);
+  }
 
   if (action === 'create') {
     if (!head || !title) {
@@ -325,6 +368,76 @@ async function main() {
       console.log(`Merge realizado correctamente.`);
       console.log(`SHA: ${result.sha}`);
 
+      break;
+    }
+
+    case 'view': {
+      const res = await githubRequest('GET', `/repos/${owner}/${name}/pulls/${pullRequestNumber}`);
+      if (res.status !== 200) {
+        console.error('Error al leer el Pull Request:', JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+      const pr = res.body;
+      console.log(`#${pr.number} [${pr.state}${pr.merged ? ', mergeado' : ''}] ${pr.head.ref} -> ${pr.base.ref}`);
+      console.log(`Titulo: ${pr.title}`);
+      console.log(`URL: ${pr.html_url}`);
+      console.log('--- Descripcion ---');
+      console.log(pr.body || '(vacia)');
+      break;
+    }
+
+    case 'close': {
+      const numbers = String(pullRequestNumber).split(',').map(n => n.trim()).filter(Boolean);
+      let failed = 0;
+      for (const number of numbers) {
+        const res = await githubRequest('PATCH', `/repos/${owner}/${name}/pulls/${number}`, { state: 'closed' });
+        if (res.status === 200 && res.body.state === 'closed') {
+          console.log(`Cerrado sin mergear: #${number} ${res.body.head.ref} (la rama queda en el remoto).`);
+        } else {
+          failed++;
+          console.error(`No se pudo cerrar #${number}:`, JSON.stringify(res.body, null, 2));
+        }
+      }
+      if (failed) process.exit(1);
+      break;
+    }
+
+    case 'update': {
+      const changes = {};
+      if (title) changes.title = title;
+      if (resolvedBody) changes.body = resolvedBody;
+      if (baseGiven) changes.base = base;
+
+      console.log(`Actualizando Pull Request #${pullRequestNumber} (${Object.keys(changes).join(', ')})...`);
+      const res = await githubRequest('PATCH', `/repos/${owner}/${name}/pulls/${pullRequestNumber}`, changes);
+      if (res.status !== 200) {
+        console.error('Error al actualizar el Pull Request:', JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+      console.log(`Actualizado: #${res.body.number} ${res.body.head.ref} -> ${res.body.base.ref}`);
+      console.log(`URL: ${res.body.html_url}`);
+      break;
+    }
+
+    case 'wip-check': {
+      const limit = max === undefined ? DEFAULT_WIP_LIMIT : max;
+      const res = await githubRequest('GET', `/repos/${owner}/${name}/pulls?state=open&per_page=100`);
+      if (res.status !== 200 || !Array.isArray(res.body)) {
+        console.error('Error al listar los Pull Requests abiertos:', JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+
+      console.log(`Pull Requests abiertos en ${owner}/${name}: ${res.body.length} (limite ${limit}).`);
+      res.body.forEach(pr => {
+        const stacked = pr.base.ref !== 'main' ? ` [apilado sobre ${pr.base.ref}]` : '';
+        console.log(`  #${pr.number} ${pr.head.ref} -> ${pr.base.ref}${stacked}: ${pr.title}`);
+      });
+
+      if (res.body.length > limit) {
+        console.error(`Hay ${res.body.length} PRs sin mergear (mas de ${limit}): mergear o cerrar antes de arrancar un lote nuevo.`);
+        process.exit(1);
+      }
+      console.log('OK: se puede arrancar un lote nuevo.');
       break;
     }
 

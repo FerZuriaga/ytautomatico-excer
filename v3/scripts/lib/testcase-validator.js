@@ -38,6 +38,10 @@
  * exigía que los datos guardados se perdieran al recargar (un defecto
  * relevado en el discovery y documentado como requisito).
  *
+ * Lote SCRUM-485/495 (2026-09-26) sumó dos warnings: criterio compuesto
+ * (dos reglas unidas con ";" o "además") y paso de relleno (un paso que no
+ * es acción del usuario o que repite una anterior para llegar al mínimo).
+ *
  * validateStepUpdates cubre la reescritura de pasos de Test Cases ya
  * publicados (`--update-steps`), con las mismas reglas de pasos.
  *
@@ -123,12 +127,26 @@ function isBlank(value) {
   return !String(value || '').trim();
 }
 
+// Verificaciones escritas en la columna Acción: lo que se controla va solo
+// en el resultado esperado (acordado 2026-09-26 tras SCRUM-477, que decía
+// "Hacer clic en el carrito y verificar su contenido"). "revisar/confirmar"
+// solos son acciones del usuario; con "que" pasan a ser verificaciones.
+const VERIFY_IN_ACTION_REGEX = /\b(verificar|verifica|comprobar|validar|chequear|constatar)\b|\b(revisar|confirmar|asegurar|asegurarse|controlar) que\b/;
+
 // Acciones que cargan un dato de entrada (el valor debería ir en Datos).
 const INPUT_ACTION_REGEX = /^\s*(ingresar|escribir|tipear|completar|buscar|cargar)\b/;
 
 function isBlankData(value) {
   return isBlank(value) || String(value).trim() === '-';
 }
+
+// Pasos de relleno (acordado 2026-09-26 tras SCRUM-499/500): un paso que no
+// es una acción del usuario ("Observar el menú") o que repite una acción
+// anterior ("Abrir nuevamente ...") se agrega para llegar al mínimo de 2
+// pasos y no valida nada nuevo. Los casos de una sola acción quedan en 2
+// pasos: entrar a la pantalla y la acción.
+const NON_ACTION_STEP_REGEX = /^\s*(observar|mirar|esperar|contemplar|ver que)\b/;
+const REPEATED_STEP_REGEX = /\b(nuevamente|otra vez|de nuevo)\b/;
 
 /**
  * Valida un único Modelo Canónico de Test Case. `label` identifica al TC
@@ -156,11 +174,23 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
       errors.push(`${label}: el paso ${n} no tiene resultado esperado (expectedResult).`);
     }
 
+    const verification = normalize(step?.description).match(VERIFY_IN_ACTION_REGEX);
+    if (verification) {
+      errors.push(`${label}: el paso ${n} incluye una verificacion en la accion ("${verification[0]}") -- la accion describe solo lo que hace el usuario; lo que se controla va en el resultado esperado.`);
+    }
+
     // Dato de entrada escrito dentro de la acción: va en la columna Datos
     // (testData), así un cambio del seed se corrige solo en el dato.
     const description = String(step?.description || '');
     if (INPUT_ACTION_REGEX.test(normalize(description)) && /"[^"]+"/.test(description) && isBlankData(step?.testData)) {
       warnings.push(`${label}: el paso ${n} escribe un dato entre comillas en la accion y la columna Datos esta vacia -- mover el dato a testData.`);
+    }
+
+    const normalizedDescription = normalize(step?.description);
+    if (NON_ACTION_STEP_REGEX.test(normalizedDescription)) {
+      warnings.push(`${label}: el paso ${n} no describe una accion del usuario ("${String(step.description).trim().split(/\s+/)[0]}...") -- si no agrega un resultado nuevo es relleno; lo observado va en el resultado esperado del paso anterior.`);
+    } else if (REPEATED_STEP_REGEX.test(normalizedDescription)) {
+      warnings.push(`${label}: el paso ${n} repite una accion anterior ("${normalizedDescription.match(REPEATED_STEP_REGEX)[0]}") -- confirmar que produce un resultado nuevo; si no, es relleno.`);
     }
 
     const verbs = findActionVerbs(step?.description);
@@ -332,6 +362,20 @@ const DATA_LOSS_REGEX = /\b(revert\w*|se pierden?|no persist\w*|no se (guardan?|
 
 const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre', 'entre', 'como', 'cuando', 'donde', 'este', 'esta', 'esos', 'esas', 'todos', 'todas', 'mismo', 'misma']);
 
+// CA compuesto (acordado 2026-09-26 tras SCRUM-485 CA-03, que juntaba
+// "bloqueo tras 3 intentos" y "el exito reinicia el conteo" con ";"): cada
+// parte con al menos 4 palabras cuenta como una regla. Heurística: la
+// separación la decide quien escribe, el validador solo avisa.
+const MIN_CLAUSE_WORDS = 4;
+
+function compoundClauses(text) {
+  const body = normalize(text).replace(CRITERION_ID_REGEX, '').replace(/^\s*:/, '');
+  return body
+    .split(/;|\by ademas\b|\bademas,/)
+    .filter(part => part.split(/\s+/).filter(Boolean).length >= MIN_CLAUSE_WORDS)
+    .length;
+}
+
 function contentWords(text) {
   return new Set(normalize(text).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !STOPWORDS.has(w)));
 }
@@ -384,6 +428,10 @@ function validateStoryText(issue) {
   }
 
   for (const text of criterios) {
+    const clauses = compoundClauses(text);
+    if (clauses > 1) {
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";" o "ademas") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion.`);
+    }
     if (DATA_LOSS_REGEX.test(normalize(text))) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);
     }
