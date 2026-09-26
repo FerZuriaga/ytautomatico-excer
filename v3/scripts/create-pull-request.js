@@ -19,6 +19,8 @@ Acciones soportadas actualmente:
 - create
 - merge
 - view --pr <n>: muestra estado, ramas, título y descripción de un PR.
+- close --pr <n>[,<n>...]: cierra PRs abiertos SIN mergear (la rama queda
+  en el remoto). Solo con confirmación explícita del usuario.
 - update --pr <n> [--title "..."] [--body "..." | --body-file <archivo.md>]
   [--base <rama>]: actualiza título, descripción o rama destino de un PR
   abierto (ej. re-apuntar a main un PR apilado cuando se mergea su base).
@@ -259,7 +261,7 @@ async function main() {
 
   const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max } = parseArgs(process.argv.slice(2));
 
-  if (action === 'view' && !pullRequestNumber) {
+  if ((action === 'view' || action === 'close') && !pullRequestNumber) {
     console.error('Debe indicar --pr <numero>.');
     process.exit(1);
   }
@@ -381,6 +383,22 @@ async function main() {
       console.log(`URL: ${pr.html_url}`);
       console.log('--- Descripcion ---');
       console.log(pr.body || '(vacia)');
+      break;
+    }
+
+    case 'close': {
+      const numbers = String(pullRequestNumber).split(',').map(n => n.trim()).filter(Boolean);
+      let failed = 0;
+      for (const number of numbers) {
+        const res = await githubRequest('PATCH', `/repos/${owner}/${name}/pulls/${number}`, { state: 'closed' });
+        if (res.status === 200 && res.body.state === 'closed') {
+          console.log(`Cerrado sin mergear: #${number} ${res.body.head.ref} (la rama queda en el remoto).`);
+        } else {
+          failed++;
+          console.error(`No se pudo cerrar #${number}:`, JSON.stringify(res.body, null, 2));
+        }
+      }
+      if (failed) process.exit(1);
       break;
     }
 
