@@ -123,6 +123,12 @@ function isBlank(value) {
   return !String(value || '').trim();
 }
 
+// Verificaciones escritas en la columna Acción: lo que se controla va solo
+// en el resultado esperado (acordado 2026-09-26 tras SCRUM-477, que decía
+// "Hacer clic en el carrito y verificar su contenido"). "revisar/confirmar"
+// solos son acciones del usuario; con "que" pasan a ser verificaciones.
+const VERIFY_IN_ACTION_REGEX = /\b(verificar|verifica|comprobar|validar|chequear|constatar)\b|\b(revisar|confirmar|asegurar|asegurarse|controlar) que\b/;
+
 // Acciones que cargan un dato de entrada (el valor debería ir en Datos).
 const INPUT_ACTION_REGEX = /^\s*(ingresar|escribir|tipear|completar|buscar|cargar)\b/;
 
@@ -154,6 +160,11 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
     }
     if (isBlank(step?.expectedResult)) {
       errors.push(`${label}: el paso ${n} no tiene resultado esperado (expectedResult).`);
+    }
+
+    const verification = normalize(step?.description).match(VERIFY_IN_ACTION_REGEX);
+    if (verification) {
+      errors.push(`${label}: el paso ${n} incluye una verificacion en la accion ("${verification[0]}") -- la accion describe solo lo que hace el usuario; lo que se controla va en el resultado esperado.`);
     }
 
     // Dato de entrada escrito dentro de la acción: va en la columna Datos

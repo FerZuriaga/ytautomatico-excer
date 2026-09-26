@@ -70,9 +70,15 @@ selección y **terminar el turno**: el usuario decide.
   motivo (queda escrito en la HU en Jira).
 - **Precondición separada:** sesión iniciada, datos semilla, estado
   previo. Nunca repetida como acción del Paso 1.
-- **Paso 1:** entrada a la pantalla objetivo + verificación del estado
-  inicial. **Un paso por acción verificable** (2 es el mínimo, no el
-  molde); nunca varias acciones en un paso.
+- **Paso 1:** la acción es entrar a la pantalla objetivo (la que se
+  prueba, no una intermedia: si se prueba el carrito, "Abrir el carrito
+  desde el ícono del menú", no "Navegar a la Home"); el estado inicial va
+  en su resultado esperado. **Un paso por acción verificable** (2 es el
+  mínimo, no el molde); nunca varias acciones en un paso.
+- **La acción describe solo lo que hace el usuario.** Nunca "y verificar",
+  "comprobar", "validar" ni "revisar que" en la acción: lo que se controla
+  va en el resultado esperado (el validador lo marca como ERROR). Caso real:
+  SCRUM-477 ("Hacer clic en el carrito y verificar su contenido").
 - **Datos de prueba en la columna Datos** (`testData`), nunca dentro del
   texto de la acción: si el seed cambia, se corrige solo el dato.
 - Resultado esperado observable y concreto (textos exactos, cantidades).
