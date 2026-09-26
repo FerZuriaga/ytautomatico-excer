@@ -8,6 +8,11 @@
 // mismo por GET (verificado con curl). Lo unico que queda sin cubrir es el
 // metodo QUERY en si. Ver docs/discovery/practicesoftwaretesting.md.
 const sendQueryAsGet = (win) => {
+    // Una sola vez por ventana (gotoPSTUrl puede llamarse varias veces en
+    // un mismo test y cada llamada registra el listener).
+    if (win.__pstQueryAsGet) return
+    win.__pstQueryAsGet = true
+
     const proto = win.XMLHttpRequest.prototype
     const open = proto.open
     const send = proto.send
@@ -48,12 +53,17 @@ const sendQueryAsGet = (win) => {
 // Cases estan escritos con los textos en ingles: se fija "en" antes de
 // cargar. `sessionStorage` (opcional) precarga claves de la sesion, ej. el
 // cart_id de un carrito preparado con cy.pstSeedCart.
+//
+// El adaptador se instala en TODA carga de pagina del test, no solo en la
+// del cy.visit: la app recarga la pagina completa en el login, el logout y
+// al redirigir a Login ante un 401, y la ventana nueva quedaba sin el
+// adaptador (catalogo en skeleton). cy.on se limpia solo al terminar el test.
 Cypress.Commands.add("gotoPSTUrl", (route, { sessionStorage = {} } = {}) => {
+    cy.on('window:before:load', sendQueryAsGet)
     cy.visit(`${Cypress.env('practicesoftwaretestingUrl')}${route}`, {
         onBeforeLoad(win) {
             win.localStorage.setItem('language', 'en')
             Object.entries(sessionStorage).forEach(([key, value]) => win.sessionStorage.setItem(key, value))
-            sendQueryAsGet(win)
         }
     })
 })

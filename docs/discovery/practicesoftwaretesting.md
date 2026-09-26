@@ -187,3 +187,25 @@ selecciona como `a.card[data-test^="product-"]`. El slider de precio
   properties of undefined (reading 'cart_items')` mientras carga el
   carrito (el template lee `cart` antes de la respuesta). No es visible
   para el usuario.
+
+## Sesión (Login/Logout) — vale para todo módulo con usuario logueado (2026-09-26)
+
+- **Token en `localStorage["auth-token"]`** (JWT de `POST /users/login`).
+  Logout (`nav-menu` → `nav-sign-out`) solo borra esa clave y recarga la
+  página; queda en la misma URL.
+- **El login redirige con recarga completa** (`window.location.href`):
+  usuario → `/account` (título `My account`), admin → `/admin/dashboard`.
+  Con sesión, `nav-sign-in` desaparece y `nav-menu` muestra
+  "<nombre> <apellido>".
+- **Guard de `/account/*`:** sin token (o con rol distinto de `user`)
+  navega a `/auth/login`.
+- **Bloqueo por intentos:** 3 logins fallidos seguidos → el siguiente
+  intento (aunque la clave sea correcta) responde 423 `Account locked, too
+  many failed attempts. Please contact the administrator.` (el front lo
+  muestra tal cual en `login-error`). Un login exitoso reinicia el
+  contador. Por eso **nunca probar negativos contra las cuentas demo del
+  README**: cada test registra su propio usuario por API
+  (`POST /users/register`, 201) con un email único.
+- Credencial inexistente → 401 `Unauthorized` → `Invalid email or password`.
+- Tras el logout el front llama `GET /users/refresh` y recibe 500 (no
+  afecta al usuario; observado con `explore-page.js`).
