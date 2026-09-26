@@ -217,9 +217,7 @@ ACCIÓN RECOMENDADA
 
 ---
 
-Si además se necesita un resumen ejecutivo corto de esta revisión para
-otro consumidor, usar el skill `executive-summary` — no duplicar ese
-formato acá. La salida propia de este skill es la de abajo.
+La salida propia de este skill es la de abajo.
 
 ## SALIDA ESPERADA
 

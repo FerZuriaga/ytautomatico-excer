@@ -66,7 +66,7 @@ const UNIFORM_TC_PER_CRITERION_MIN_CRITERIA = 4;
 const CRITERION_ID_REGEX = /^\s*(CA-\d{2})\b/i;
 
 // Campo `tipo` del Test Case: permite auditar "al menos un caso negativo
-// por criterio" (regla de scenario-builder) como WARNING.
+// por criterio" (regla de la skill especificacion) como WARNING.
 const TEST_CASE_TYPES = ['positivo', 'negativo'];
 
 // Verbos de ACCIÓN del usuario (infinitivo) que producen un resultado
@@ -312,7 +312,7 @@ function contentWords(text) {
  * objetivo/criterios). Solo warnings: son heurísticas de texto, pueden dar
  * falsos positivos y se aceptan con --accept-warnings tras revisarlas.
  * Lo que no se puede detectar por texto (ej. un "Para" que repite el
- * "Quiero" con sinónimos) lo cubre la regla de scenario-builder.
+ * "Quiero" con sinónimos) lo cubre la regla de la skill especificacion.
  */
 function validateStoryText(issue) {
   const warnings = [];
