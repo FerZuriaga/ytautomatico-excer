@@ -154,3 +154,36 @@ selecciona como `a.card[data-test^="product-"]`. El slider de precio
   venta pero alquilables. La ficha muestra `per hour` y
   `Duration (N hour(s))` con un ngx-slider de 1 a 10 (teclado), sin campo
   Quantity. La búsqueda del Home sí devuelve alquileres (ej. "excavator").
+
+## Lote 3 — Carrito (2026-09-26, primer lote con explore-page.js)
+
+- **Estado:** el carrito vive en el servidor (`POST /carts` → id) y el
+  navegador guarda `cart_id` y `cart_quantity` en **sessionStorage**
+  (Cypress lo limpia entre tests). Pantalla: `/checkout`, paso 1 "Cart".
+  Para preparar un carrito sin pasar por la UI: `POST /carts`,
+  `POST /carts/{id}` con `{product_id, quantity}` (header
+  `Accept: application/json`, si no Laravel redirige) y cargar
+  `cart_id`/`cart_quantity` en sessionStorage antes de visitar.
+- **Reglas (código `app-cart` + API):** total = suma de cantidad × precio;
+  cantidad 1–99 al cambiar el campo (evento `change`: menor a 1 → 1, mayor
+  a 99 → 99 con `You can order at most 99 of this product.`); éxito
+  `Product quantity updated.`; eliminar → `Product deleted.`; vacío →
+  `The cart is empty. Nothing to display.`
+- **Descuento ecológico 5%:** si MÁS del 50% de las unidades tienen CO₂ A
+  o B (hoy solo hay B: Wood Saw, Safety Goggles, etc.). Exactamente 50%
+  no aplica. Wood Saw solo: Subtotal $12.18, Eco `- $0.61`, Total $11.57.
+  Las filas Subtotal/Descuento/Eco solo aparecen si hay algún descuento.
+- **Un solo Thor Hammer por carrito:** la API rechaza cantidad 2 (PUT) y
+  volver a agregarlo (POST) con `You can only have one Thor Hammer in the
+  cart.`; el front lo muestra como aviso de error.
+- **Ofertas por ubicación:** el listado muestra precio de oferta
+  (`is_location_offer`), pero el carrito devuelve `discount_percentage`
+  null y guarda `lat`/`lng`: el descuento depende de la ubicación. Fuera
+  de alcance del lote.
+- **Selectores:** fila `table tbody tr` con `product-title`,
+  `product-quantity`, `product-price`, `line-price`; el botón eliminar
+  (X roja) NO tiene data-test: `.btn-danger` dentro de la fila.
+- **Hallazgo de explore-page:** ~250 errores de consola `Cannot read
+  properties of undefined (reading 'cart_items')` mientras carga el
+  carrito (el template lee `cart` antes de la respuesta). No es visible
+  para el usuario.
