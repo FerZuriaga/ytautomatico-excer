@@ -74,9 +74,21 @@ function buildSpec(params) {
 ${initImport}
 const P = ${JSON.stringify(params)};
 
-function recorder(win) {
-  win.__explore = { requests: [], errors: [], pending: 0 };
+// El registro vive fuera de la ventana: si la app recarga la página
+// (ej. un login que redirige con window.location.href), cada ventana
+// nueva vuelve a instalar el recorder (window:before:load) y lo capturado
+// en las anteriores se conserva.
+const REC = { requests: [], errors: [], pending: 0 };
+
+function applyStorage(win) {
   Object.entries(P.storage).forEach(([k, v]) => win.localStorage.setItem(k, v));
+}
+
+function recorder(win) {
+  // Las requests de la página anterior que no terminaron se cortan con la
+  // recarga: no cuentan como en curso en la nueva.
+  REC.pending = 0;
+  win.__explore = REC;
   if (initScript) initScript(win);
 
   const proto = win.XMLHttpRequest.prototype;
@@ -132,7 +144,7 @@ function recorder(win) {
 function settle() {
   cy.window().then({ timeout: 15000 }, win => new Cypress.Promise(resolve => {
     const started = Date.now();
-    const check = () => (win.__explore.pending <= 0 || Date.now() - started > 10000) ? resolve() : setTimeout(check, 250);
+    const check = () => (REC.pending <= 0 || Date.now() - started > 10000) ? resolve() : setTimeout(check, 250);
     check();
   }));
 }
@@ -161,9 +173,9 @@ function collect(win) {
     headings: [...doc.querySelectorAll('h1, h2, h3')].filter(isVisible).map(text).filter(Boolean),
     localStorageKeys: Object.keys(win.localStorage),
     sessionStorageKeys: Object.keys(win.sessionStorage),
-    requests: win.__explore.requests,
-    pendingRequests: win.__explore.pending,
-    consoleErrors: win.__explore.errors,
+    requests: REC.requests,
+    pendingRequests: REC.pending,
+    consoleErrors: REC.errors,
     uncaughtExceptions: P.uncaught,
     failedStep: P.failure,
     inventory,
@@ -185,7 +197,8 @@ describe('explore', () => {
     Cypress.on('uncaught:exception', err => { P.uncaught.push(String(err.message).slice(0, 300)); return false; });
     Cypress.on('fail', err => { P.failure = String(err.message).slice(0, 300); throw err; });
 
-    cy.visit(P.url, { onBeforeLoad: recorder, failOnStatusCode: false });
+    Cypress.on('window:before:load', recorder);
+    cy.visit(P.url, { onBeforeLoad: applyStorage, failOnStatusCode: false });
     cy.document({ timeout: 15000 }).its('readyState').should('eq', 'complete');
     if (P.waitFor) cy.get(P.waitFor, { timeout: 15000 });
     settle();
@@ -194,7 +207,7 @@ describe('explore', () => {
       if (a.action === 'click') cy.get(a.selector, { timeout: 15000 }).first().click();
       else if (a.action === 'type') cy.get(a.selector, { timeout: 15000 }).first().clear().type(a.value);
       else if (a.action === 'select') cy.get(a.selector, { timeout: 15000 }).first().select(a.value);
-      else if (a.action === 'visit') cy.visit(new URL(a.value, P.url).href, { onBeforeLoad: recorder, failOnStatusCode: false });
+      else if (a.action === 'visit') cy.visit(new URL(a.value, P.url).href, { failOnStatusCode: false });
       else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
       settle();
     });

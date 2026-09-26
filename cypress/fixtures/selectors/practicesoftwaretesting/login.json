@@ -1,0 +1,32 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "loginPath": "/users/login",
+    "registerPath": "/users/register"
+  },
+  "path": "/auth/login",
+  "accountPath": "/account",
+  "form": "[data-test=\"login-form\"]",
+  "email": "[data-test=\"email\"]",
+  "password": "[data-test=\"password\"]",
+  "submit": "[data-test=\"login-submit\"]",
+  "emailError": "[data-test=\"email-error\"]",
+  "passwordError": "[data-test=\"password-error\"]",
+  "loginError": "[data-test=\"login-error\"]",
+  "navSignIn": "[data-test=\"nav-sign-in\"]",
+  "navMenu": "[data-test=\"nav-menu\"]",
+  "navSignOut": "[data-test=\"nav-sign-out\"]",
+  "pageTitle": "[data-test=\"page-title\"]",
+  "tokenKey": "auth-token",
+  "navMyAccount": "[data-test=\"nav-my-account\"]",
+  "texts": {
+    "loginTitle": "Login",
+    "accountTitle": "My account",
+    "emailRequired": "Email is required",
+    "emailFormat": "Email format is invalid",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password length is invalid",
+    "invalidCredentials": "Invalid email or password",
+    "accountLocked": "Account locked, too many failed attempts. Please contact the administrator."
+  }
+}
