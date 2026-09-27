@@ -67,12 +67,20 @@ diagnóstico.
 
 ## Regresión después del lote
 
-Solo de lo afectado, no de toda la app: los specs que importan un page
-object, fixture o helper modificado en la rama
-(`git diff --name-only main...HEAD`). La suite completa de la app solo
-si se tocó `cypress/support/` o `cypress.config.js`. Correrla en
-segundo plano y, mientras tanto, preparar el cuerpo del PR, el discovery
-y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
+Solo de lo afectado, no de toda la app:
+
+```
+node v3/scripts/run-and-report.js --affected
+```
+
+Calcula los specs afectados por la rama respecto de `main` (commits,
+cambios sin commitear y archivos nuevos): los que importan en cadena un
+page object modificado, usan un fixture modificado o llaman a un comando
+custom de un archivo de soporte modificado. La suite completa solo ante
+un cambio global (`cypress.config.js`, `support/e2e.js`,
+`support/commands.js`). `--list` muestra los specs y el motivo sin correr
+nada. Correrla en segundo plano y, mientras tanto, preparar el cuerpo del
+PR, el discovery y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
 regresión completa (108 tests) llevó 10,5 min de espera.
 
 Los cortes de red contra Jira/Xray (`socket hang up`, 5xx) se reintentan
