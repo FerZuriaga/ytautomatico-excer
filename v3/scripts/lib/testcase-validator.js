@@ -529,6 +529,10 @@ function validateStepUpdates(payload) {
       return;
     }
     seen.add(key);
+    // `criterio` es opcional: mueve el Test Case a otro CA (cambia su label).
+    if (tc.criterio !== undefined && !/^CA-\d{2}$/.test(String(tc.criterio).trim().toUpperCase())) {
+      errors.push(`--update-steps: ${key} tiene un "criterio" invalido ("${tc.criterio}"); el formato es CA-XX (ej. "CA-05").`);
+    }
     const result = validateTestCaseModel(tc, key);
     errors.push(...result.errors);
     warnings.push(...result.warnings);

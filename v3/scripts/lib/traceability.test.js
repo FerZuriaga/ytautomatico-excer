@@ -13,6 +13,7 @@ const path = require('path');
 const {
   buildTraceabilityLabels,
   criterionFromLabels,
+  criterionLabelChange,
   parseSpecTags,
   checkTraceability
 } = require('./traceability');
@@ -190,4 +191,16 @@ test('regresion SCRUM-508 CA-04: todos los negativos de un CA en it.skip avisa; 
 
   const corre = checkTraceability([spec([['CA-04', 'TC-04.1', 'SCRUM-2'], ['CA-04', 'TC-04.2', 'SCRUM-3'], ['CA-05', 'TC-05.1', 'SCRUM-4']])], issues);
   assert.deepEqual(corre.warnings, []);
+});
+
+// ─── Cambio de criterio de un Test Case publicado (--update-steps) ──────────
+
+test('criterionLabelChange: regresion SCRUM-549 -- mueve CA-01 a CA-05 sin tocar el resto de los labels', () => {
+  assert.deepEqual(criterionLabelChange(['CA-01', 'negativo', 'regresion'], 'CA-05'), { remove: ['CA-01'], add: ['CA-05'] });
+});
+
+test('criterionLabelChange: mismo criterio no cambia nada; sin criterio previo solo agrega; varios CA quedan en uno', () => {
+  assert.deepEqual(criterionLabelChange(['CA-05', 'negativo'], 'ca-05'), { remove: [], add: [] });
+  assert.deepEqual(criterionLabelChange(['negativo'], 'CA-02'), { remove: [], add: ['CA-02'] });
+  assert.deepEqual(criterionLabelChange(['CA-01', 'CA-03'], 'CA-03'), { remove: ['CA-01'], add: [] });
 });
