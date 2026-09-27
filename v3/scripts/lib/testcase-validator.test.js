@@ -688,3 +688,30 @@ test('pasos de relleno: una accion real repetida con otro verbo ("Volver a inici
 
   assert.deepEqual(warnings, []);
 });
+
+test('regresion SCRUM-469 TC-02.3: sumar un TC a una HU publicada cuenta los TC que ya tiene vinculados', () => {
+  const payload = {
+    summary: 'Quitar productos del carrito',
+    historia: {
+      criterios: ['CA-01: Al quitar un producto se recalcula el total.', 'CA-02: Un carrito sin productos no ofrece continuar con la compra.'],
+      sinNegativo: { 'CA-01': 'Quitar no tiene entrada invalida.' }
+    },
+    testcaseModels: [{
+      name: 'Vaciar el carrito no permite continuar', precondition: 'Carrito con Hammer x1.', criterio: 'CA-02', tipo: 'negativo',
+      steps: [step('Abrir el carrito desde el icono del menu'), step('Presionar el boton X de la fila del producto')]
+    }]
+  };
+
+  const sinExistentes = validatePayload(payload);
+  assert.ok(sinExistentes.errors.some(e => /CA-01 tiene 0 Test Case\(s\)/.test(e)));
+
+  const existingTestCases = [
+    { key: 'SCRUM-471', criterio: 'CA-01', tipo: 'positivo' },
+    { key: 'SCRUM-472', criterio: 'CA-01', tipo: 'positivo' },
+    { key: 'SCRUM-473', criterio: 'CA-02', tipo: 'positivo' },
+    { key: 'SCRUM-474', criterio: 'CA-02', tipo: 'negativo' }
+  ];
+  const conExistentes = validatePayload(payload, { existingTestCases });
+  assert.deepEqual(conExistentes.errors, []);
+  assert.deepEqual(conExistentes.warnings, []);
+});

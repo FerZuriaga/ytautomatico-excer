@@ -246,8 +246,12 @@ function normalizeCriterionId(value) {
  *
  * Devuelve además los conteos que validatePayload necesita para las
  * reglas de uniformidad a nivel lote.
+ *
+ * `existingTestCases` ([{ key, criterio, tipo }]): Test Cases ya publicados
+ * de la HU cuando se le suma uno nuevo (create-jira-task con issueKey);
+ * cuentan para el mínimo por CA y para el caso negativo.
  */
-function validateStoryCriteria(issue) {
+function validateStoryCriteria(issue, existingTestCases = []) {
   const errors = [];
   const warnings = [];
   const story = issue.summary || '(HU sin summary)';
@@ -291,6 +295,13 @@ function validateStoryCriteria(issue) {
   const tcCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
   const negativeCountByCriterion = Object.fromEntries(ids.map(id => [id, 0]));
   const sinNegativo = issue.historia.sinNegativo && typeof issue.historia.sinNegativo === 'object' ? issue.historia.sinNegativo : {};
+
+  for (const existing of existingTestCases) {
+    const id = normalizeCriterionId(existing.criterio);
+    if (!id || !(id in tcCountByCriterion)) continue;
+    tcCountByCriterion[id]++;
+    if (existing.tipo === 'negativo') negativeCountByCriterion[id]++;
+  }
 
   for (const model of models) {
     const label = labelOf(issue, model);
@@ -433,7 +444,7 @@ function validateStoryText(issue) {
   for (const text of criterios) {
     const clauses = compoundClauses(text);
     if (clauses > 1) {
-      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";" o "ademas") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion.`);
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";", "ademas", "mientras que", "en cambio", "y si no" o ", y sin") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion.`);
     }
     if (DATA_LOSS_REGEX.test(normalize(text))) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);
@@ -448,7 +459,7 @@ function validateStoryText(issue) {
  * --data. Si el payload no trae Test Cases ni Historias (ej. un Bug),
  * devuelve listas vacías.
  */
-function validatePayload(payload) {
+function validatePayload(payload, { existingTestCases = [] } = {}) {
   const testCases = collectTestCases(payload);
   const errors = [];
   const warnings = [];
@@ -467,7 +478,7 @@ function validatePayload(payload) {
   const criteriaCounts = [];
   const tcPerCriterionCounts = [];
   for (const issue of issuesOf(payload)) {
-    const result = validateStoryCriteria(issue);
+    const result = validateStoryCriteria(issue, existingTestCases);
     errors.push(...result.errors);
     warnings.push(...result.warnings);
     warnings.push(...validateStoryText(issue).warnings);

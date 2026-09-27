@@ -152,15 +152,39 @@ if (dataPath) {
     console.error(`No se pudo leer o parsear "${dataPath}": ${e.message}`);
     process.exit(1);
   }
+}
 
-  // Validación de pasos de los Test Cases ANTES de tocar Jira/Xray (ver
-  // lib/testcase-validator.js y CLAUDE.md sección 3). Los errores frenan
-  // siempre; los warnings frenan salvo --accept-warnings, que se pasa
-  // recién después de revisarlos (son heurísticas, pueden ser falsos
-  // positivos).
+/**
+ * Test Cases ya publicados y vinculados a la HU que se actualiza, con su
+ * criterio y tipo (labels de Xray), para que el validador cuente la
+ * cobertura completa del CA al sumarle un Test Case nuevo. Sin esto, un
+ * payload con un solo TC nuevo fallaba por "CA-XX tiene 1 Test Case(s)"
+ * (caso real 2026-09-27: TC-02.3 de SCRUM-469).
+ */
+async function existingTestCasesOf(issueKey) {
+  const story = (await jira.getIssuesByKeys([issueKey])).get(issueKey);
+  if (!story || !story.linkedTests.length) return [];
+  const tests = await jira.getIssuesByKeys(story.linkedTests);
+  return story.linkedTests.map(key => {
+    const labels = tests.get(key)?.labels || [];
+    return { key, criterio: labels.find(l => /^CA-\d{2}$/.test(l)) || null, tipo: labels.find(l => l === 'positivo' || l === 'negativo') || null };
+  });
+}
+
+// Validación de pasos de los Test Cases ANTES de tocar Jira/Xray (ver
+// lib/testcase-validator.js y CLAUDE.md sección 3). Los errores frenan
+// siempre; los warnings frenan salvo --accept-warnings, que se pasa
+// recién después de revisarlos (son heurísticas, pueden ser falsos
+// positivos).
+async function validateData() {
+  const addsToPublishedStory = !updateSteps && ISSUE_KEY && ISSUE.historia && (ISSUE.testcaseModel || Array.isArray(ISSUE.testcaseModels));
+  const existingTestCases = addsToPublishedStory ? await existingTestCasesOf(ISSUE_KEY) : [];
+  if (existingTestCases.length) {
+    console.log(`${ISSUE_KEY} ya tiene ${existingTestCases.length} Test Case(s) vinculados: se suman a la cobertura de cada CA.`);
+  }
   const validation = updateSteps
     ? testcaseValidator.validateStepUpdates(ISSUE)
-    : testcaseValidator.validatePayload(ISSUE);
+    : testcaseValidator.validatePayload(ISSUE, { existingTestCases });
   if (validation.errors.length) {
     console.error(`Validacion de Test Cases: ${validation.errors.length} error(es). No se publica nada.`);
     validation.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
@@ -384,6 +408,8 @@ async function updateTestCaseSteps(testcases) {
 }
 
 async function main() {
+  if (dataPath) await validateData();
+
   if (updateSteps) {
     await updateTestCaseSteps(ISSUE.testcases);
     return;
