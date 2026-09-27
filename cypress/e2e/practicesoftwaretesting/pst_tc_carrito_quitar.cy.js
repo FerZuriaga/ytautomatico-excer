@@ -3,7 +3,9 @@
 // Ticket Jira: SCRUM-469 (CA-01/CA-02, Test Cycle SCRUM-470)
 //
 // Precondicion por API (cy.pstSeedCart). El carrito vacio sin cart_id se
-// abre por URL directa (TC SCRUM-474 en skip por el Bug SCRUM-483).
+// abre por URL directa (TC SCRUM-474 en skip por el Bug SCRUM-483). CA-02
+// se valida en dos partes: el aviso de vacio (TC-02.1) y que no se pueda
+// continuar la compra (TC-02.3, el negativo que corre).
 
 import PSTCartPage from '../../pages/practicesoftwaretesting/PSTCartPage'
 
@@ -39,13 +41,13 @@ describe('Carrito: quitar productos [SCRUM-469]', () => {
         cart.verifyTotal('$25.16')
     })
 
-    it('[CA-02][TC-02.1][SCRUM-473] Quitar el ultimo producto debe dejar el carrito vacio', () => {
+    it('[CA-02][TC-02.1][SCRUM-473] Quitar el ultimo producto debe informar que el carrito esta vacio', () => {
         openCartWith([{ name: 'Hammer', quantity: 1 }])
         cart.verifyTotal('$12.58')
 
         cart.removeProduct('Hammer')
 
-        cart.verifyEmpty()
+        cart.verifyEmptyMessage()
     })
 
     // Bug SCRUM-483: sin productos el carrito queda en blanco (sin el
@@ -54,5 +56,15 @@ describe('Carrito: quitar productos [SCRUM-469]', () => {
         cy.gotoPSTUrl('/checkout')
 
         cart.verifyEmpty()
+    })
+
+    it('[CA-02][TC-02.3][SCRUM-529] Vaciar el carrito no debe permitir continuar la compra', () => {
+        openCartWith([{ name: 'Hammer', quantity: 1 }])
+        cart.verifyTotal('$12.58')
+        cart.verifyProceedAvailable()
+
+        cart.removeProduct('Hammer')
+
+        cart.verifyCannotProceed()
     })
 })
