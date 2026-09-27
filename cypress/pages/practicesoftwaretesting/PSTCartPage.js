@@ -105,12 +105,30 @@ class PSTCartPage {
         })
     }
 
-    verifyEmpty() {
+    // Carrito vacío: mensaje de vacío (CA-02 "informa") y sin forma de
+    // continuar la compra (CA-02 "no ofrece continuar"), por separado para
+    // que cada TC valide una sola cosa.
+    verifyEmptyMessage() {
         cy.fixture(FIXTURE).then(sel => {
             cy.contains(sel.texts.empty, T).should('be.visible')
             cy.get(sel.productTitle).should('not.exist')
+        })
+    }
+
+    verifyCannotProceed() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.productTitle, T).should('not.exist')
             cy.get(sel.proceedToCheckout).should('not.exist')
         })
+    }
+
+    verifyEmpty() {
+        this.verifyEmptyMessage()
+        this.verifyCannotProceed()
+    }
+
+    verifyProceedAvailable() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.proceedToCheckout, T).should('be.visible'))
     }
 
     verifyToast(textKey) {
