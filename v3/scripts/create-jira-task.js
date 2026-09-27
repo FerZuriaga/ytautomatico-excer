@@ -51,10 +51,12 @@
  * --dry-run: con --data, valida y termina sin publicar ni modificar nada.
  *
  * --update-steps --data <archivo.json>: reescribe precondición y pasos de
- * Test Cases YA publicados ({ "testcases": [ { key, precondition, steps } ] }),
+ * Test Cases YA publicados ({ "testcases": [ { key, precondition, steps, criterio? } ] }),
  * validados con las mismas reglas (todo o nada), conservando el vínculo
  * con la Historia y verificando cada uno por lectura. Nombre y objetivo se
- * conservan salvo que el elemento traiga `name` / `objective` opcionales.
+ * conservan salvo que el elemento traiga `name` / `objective` opcionales;
+ * `criterio` (opcional, "CA-XX") mueve el Test Case a otro criterio
+ * cambiando su label en Xray.
  *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
@@ -71,6 +73,7 @@ const testRunner = require('./lib/test-runner');
 const testcaseValidator = require('./lib/testcase-validator');
 const testcaseDescription = require('./lib/testcase-description');
 const negativeEvidence = require('./lib/negative-evidence');
+const traceability = require('./lib/traceability');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
@@ -413,8 +416,26 @@ async function updateTestCaseSteps(testcases) {
       abort(`${tc.key}: la verificacion por lectura no encontro la precondicion esperada.`);
     }
 
+    // `criterio` opcional: mueve el Test Case a otro CA cambiando su label
+    // (el resto de los labels se conserva). Verificado por lectura.
+    let movedTo = '';
+    if (tc.criterio) {
+      const target = String(tc.criterio).trim().toUpperCase();
+      const change = traceability.criterionLabelChange(issue.body.fields.labels, target);
+      if (change.remove.length || change.add.length) {
+        const labelRes = await jira.changeLabels(tc.key, change);
+        if (labelRes.status !== 204) abort(`Error al cambiar el criterio de ${tc.key}: ${JSON.stringify(labelRes.body)}`);
+      }
+      const reread = await jira.getIssue(tc.key);
+      const criteria = (reread.body.fields.labels || []).filter(l => traceability.CRITERION_LABEL_REGEX.test(l));
+      if (criteria.length !== 1 || criteria[0] !== target) {
+        abort(`${tc.key}: la verificacion por lectura encontro los criterios [${criteria.join(', ')}], se esperaba ${target}.`);
+      }
+      movedTo = ` + criterio ${target}`;
+    }
+
     applied.push(tc.key);
-    console.log(`${tc.key}: precondicion + ${tc.steps.length} pasos (verificado por lectura).`);
+    console.log(`${tc.key}: precondicion + ${tc.steps.length} pasos${movedTo} (verificado por lectura).`);
   }
 
   console.log(`Update-steps completo: ${applied.length} Test Case(s) actualizados.`);

@@ -124,6 +124,17 @@ async function addLabels(key, labels) {
 }
 
 /**
+ * Quita y agrega labels puntuales sin tocar el resto (operaciones
+ * "remove"/"add" de Jira). Lo usa --update-steps al cambiar el criterio
+ * (CA-XX) de un Test Case ya publicado.
+ */
+async function changeLabels(key, { remove = [], add = [] }) {
+  return jiraRequest('PUT', `/rest/api/3/issue/${key}`, {
+    update: { labels: [...remove.map(label => ({ remove: label })), ...add.map(label => ({ add: label }))] }
+  });
+}
+
+/**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
  * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud;
  * esta instancia no tiene instalado "Tests"/"is tested by" — verificado
@@ -311,6 +322,7 @@ module.exports = {
   getIssue,
   getIssuesByKeys,
   addLabels,
+  changeLabels,
   linkIssue,
   transitionIssue,
   addComment,

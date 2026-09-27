@@ -33,6 +33,22 @@ function criterionFromLabels(labels) {
   return (labels || []).find(l => CRITERION_LABEL_REGEX.test(l)) || null;
 }
 
+/**
+ * Cambio de criterio de un Test Case ya publicado (--update-steps con
+ * `criterio`): qué labels CA-XX quitar y cuál agregar, sin tocar el resto.
+ * Nace del 2026-09-27: el usuario movió el caso "email repetido"
+ * (SCRUM-549) de CA-01 a un CA-05 nuevo y no había forma oficial de
+ * cambiarle el label.
+ */
+function criterionLabelChange(labels, criterio) {
+  const target = String(criterio || '').trim().toUpperCase();
+  const current = (labels || []).filter(l => CRITERION_LABEL_REGEX.test(l));
+  return {
+    remove: current.filter(l => l !== target),
+    add: current.includes(target) ? [] : [target]
+  };
+}
+
 function lineAt(source, index) {
   return source.slice(0, index).split('\n').length;
 }
@@ -163,6 +179,8 @@ function checkTraceability(specs, issuesByKey) {
 module.exports = {
   buildTraceabilityLabels,
   criterionFromLabels,
+  criterionLabelChange,
+  CRITERION_LABEL_REGEX,
   parseSpecTags,
   checkTraceability
 };

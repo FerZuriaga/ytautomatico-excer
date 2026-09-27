@@ -715,3 +715,11 @@ test('regresion SCRUM-469 TC-02.3: sumar un TC a una HU publicada cuenta los TC 
   assert.deepEqual(conExistentes.errors, []);
   assert.deepEqual(conExistentes.warnings, []);
 });
+
+test('update-steps: criterio opcional -- valido si es CA-XX, error si no', () => {
+  const tc = (criterio) => ({ key: 'SCRUM-549', criterio, ...SCRUM_335_REWRITTEN });
+
+  assert.deepEqual(validateStepUpdates({ testcases: [tc('CA-05')] }).errors, []);
+  assert.deepEqual(validateStepUpdates({ testcases: [tc('5')] }).errors,
+    ['--update-steps: SCRUM-549 tiene un "criterio" invalido ("5"); el formato es CA-XX (ej. "CA-05").']);
+});
