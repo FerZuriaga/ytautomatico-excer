@@ -8,6 +8,7 @@
  *   node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,<SCRUM-2>...]] [--results-out <archivo.json>]
  *   node v3/scripts/run-and-report.js --from-results <archivo.json> --test-cycle <SCRUM-1>[,...]
  *   node v3/scripts/run-and-report.js --affected [--base <rama>] [--list]
+ *   node v3/scripts/run-and-report.js --timing-report [<rama>]
  *
  *   --spec          (obligatorio) specs a correr, separados por coma.
  *   --test-cycle    (opcional) ciclos de Xray donde reportar. Sin este flag
@@ -29,6 +30,13 @@
  *   --base          (opcional) rama o commit de referencia para --affected.
  *   --list          (opcional) con --affected: lista los specs y el motivo,
  *                   sin correr Cypress.
+ *   --timing-report (opcional) no corre nada: resume los tiempos
+ *                   registrados (de una rama o de todas).
+ *
+ * Tiempos (lib/run-timing.js): cada corrida imprime la duración de cada
+ * fase (trazabilidad, Cypress, reporte a Xray, verificación) y la deja en
+ * .qa-metrics/run-and-report.jsonl (local, ignorado por Git), con el
+ * número de iteración del lote en la rama, para comparar lotes con datos.
  *
  * Reglas (CLAUDE.md, PASO 3):
  *   - una corrida por invocación: `npx cypress run --quiet --reporter json --spec ...`
@@ -55,6 +63,7 @@ const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
 const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
+const runTiming = require('./lib/run-timing');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
@@ -69,6 +78,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--test-cycle') args.cycles = splitList(argv[++i]);
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
     else if (argv[i] === '--from-results') args.fromResults = argv[++i];
+    else if (argv[i] === '--timing-report') args.timingReport = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : null;
   }
   return args;
 }
@@ -152,8 +162,49 @@ async function verifyCycles(cycles, expectedKeys) {
   return testRunner.compareReportedStatuses(executions, expectedKeys);
 }
 
+const METRICS_LOG = path.join(REPO_ROOT, '.qa-metrics', 'run-and-report.jsonl');
+
+function readTimingLog() {
+  try {
+    return runTiming.parseLog(fs.readFileSync(METRICS_LOG, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+// El registro nunca corta la corrida: si no se puede escribir, se avisa.
+function appendTimingLog(entry) {
+  try {
+    fs.mkdirSync(path.dirname(METRICS_LOG), { recursive: true });
+    fs.appendFileSync(METRICS_LOG, JSON.stringify(entry) + '\n');
+  } catch (e) {
+    console.warn(`No se pudo registrar el tiempo de la corrida (${e.message}).`);
+  }
+}
+
+function currentBranch() {
+  try {
+    return git(['rev-parse', '--abbrev-ref', 'HEAD'])[0];
+  } catch {
+    return 'desconocida';
+  }
+}
+
+function printTimingReport(branch) {
+  const summaries = runTiming.summarizeLog(readTimingLog(), branch);
+  if (!summaries.length) {
+    console.log(`Sin corridas registradas${branch ? ` en la rama ${branch}` : ''} (${METRICS_LOG}).`);
+    return;
+  }
+  summaries.forEach(s => console.log(runTiming.formatSummary(s)));
+}
+
 async function main() {
-  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list } = parseArgs(process.argv.slice(2));
+  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport } = parseArgs(process.argv.slice(2));
+  if (timingReport !== undefined) {
+    printTimingReport(timingReport);
+    return;
+  }
   const specs = affected ? [...new Set([...specArgs, ...resolveAffected(base)])] : specArgs;
   if (affected && list) return;
   if (affected && !specs.length) {
@@ -165,57 +216,79 @@ async function main() {
     process.exit(1);
   }
   if (!specs.length && !fromResults) {
-    console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] | --affected [--base <rama>] [--list] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>]');
+    console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] | --affected [--base <rama>] [--list] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>] | --timing-report [<rama>]');
     process.exit(1);
   }
 
+  // Tiempos por fase (lib/run-timing.js): se imprimen y se registran en
+  // .qa-metrics/run-and-report.jsonl en toda salida, exitosa o no.
+  const timer = runTiming.createTimer();
+  const startedAt = new Date().toISOString();
+  const branch = currentBranch();
+  const key = runTiming.specsKey(specs);
+  const mode = fromResults ? 'from-results' : (affected && !specArgs.length ? 'regresion' : 'lote');
+  if (mode === 'lote') console.log(`Iteracion ${runTiming.iterationNumber(readTimingLog(), branch, key)} de este lote en la rama ${branch}.`);
+  let summary = null;
+  let reported = false;
+  const finish = (ok, exitCode = 0) => {
+    const totalMs = timer.totalMs();
+    console.log(`\n${runTiming.formatPhases(timer.phases, totalMs)}`);
+    appendTimingLog({
+      at: startedAt, branch, mode, specsKey: key, specs: specs.length, ok, reported, totalMs, phases: timer.phases,
+      result: summary && { total: summary.total, passed: summary.passed, failed: summary.failed.length, knownBugSkips: summary.knownBugSkips.length, retried: summary.retriedPasses.length }
+    });
+    if (exitCode) process.exit(exitCode);
+  };
+
   if (cycles.length && specs.length) {
-    const trace = await runCheck(specs);
+    const trace = await timer.measure('trazabilidad', () => runCheck(specs));
     if (trace.errors.length) {
-      console.error(`
-Trazabilidad rota (${trace.errors.length} error(es)): no se corre Cypress ni se reporta a Xray.`);
-      process.exit(1);
+      console.error(`\nTrazabilidad rota (${trace.errors.length} error(es)): no se corre Cypress ni se reporta a Xray.`);
+      finish(false, 1);
     }
   }
 
   const resultsPath = path.resolve(fromResults || resultsOut || path.join(os.tmpdir(), `cypress-results-${Date.now()}.json`));
-  const exitCode = fromResults ? 0 : runCypress(specs, resultsPath);
+  const exitCode = fromResults ? 0 : await timer.measure('cypress', async () => runCypress(specs, resultsPath));
   if (fromResults) console.log(`Sin correr Cypress: se usa la corrida guardada en ${resultsPath}`);
 
-  const summary = testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath));
+  summary = testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath));
   printSummary(summary);
 
   if (!testRunner.isReportable(summary)) {
     console.error(`\nLa corrida NO es 100% exitosa (codigo de salida de Cypress: ${exitCode}). No se reporta a Xray.`);
-    process.exit(1);
+    finish(false, 1);
   }
 
   if (!cycles.length) {
     console.log('\nCorrida 100% exitosa. Sin --test-cycle: no se reporta a Xray.');
+    finish(true);
     return;
   }
 
   console.log(`\nCorrida 100% exitosa. Reportando a ${cycles.join(', ')} con la implementacion oficial...`);
-  const report = spawnSync('node', [path.join(__dirname, 'create-jira-task.js'), '--report-results', resultsPath, '--test-cycle', cycles.join(',')], {
+  const report = await timer.measure('reporte', async () => spawnSync('node', [path.join(__dirname, 'create-jira-task.js'), '--report-results', resultsPath, '--test-cycle', cycles.join(',')], {
     cwd: REPO_ROOT,
     stdio: 'inherit'
-  });
+  }));
   if (report.status !== 0) {
     console.error('El reporte a Xray fallo (ver salida anterior). Es idempotente: se puede reintentar con el mismo JSON.');
-    process.exit(1);
+    finish(true, 1);
   }
 
   const expectedKeys = testRunner.collectTaggedTests(testRunner.parseResultsFile(resultsPath)).map(t => t.testCaseKey);
-  const { missing, notPassed } = await verifyCycles(cycles, expectedKeys);
+  const { missing, notPassed } = await timer.measure('verificacion', () => verifyCycles(cycles, expectedKeys));
   if (missing.length || notPassed.length) {
     missing.forEach(k => console.error(`  ✘ ${k}: sin Test Execution en ${cycles.join(', ')}`));
     notPassed.forEach(e => console.error(`  ✘ ${e.key}: quedo en ${e.status}`));
-    process.exit(1);
+    finish(true, 1);
   }
+  reported = true;
   console.log(`\nVerificado por lectura: ${expectedKeys.length} Test Execution(s) en PASSED en ${cycles.join(', ')}.`);
   if (summary.retriedPasses.length) {
     console.warn(`Atencion: ${summary.retriedPasses.length} de esos tests pasaron solo en el reintento (ver arriba).`);
   }
+  finish(true);
 }
 
 main().catch(e => { console.error(e.message); process.exit(1); });

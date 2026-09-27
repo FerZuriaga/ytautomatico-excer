@@ -65,6 +65,16 @@ Nunca volver a correr "a ver si pasa". Antes de cada nueva corrida:
 **Con 3 iteraciones fallidas, frenar y consultar al usuario** con el
 diagnóstico.
 
+## Tiempos
+
+Cada corrida imprime cuánto tardó cada fase (trazabilidad, Cypress,
+reporte a Xray, verificación) y el número de iteración del lote en la
+rama, y lo registra en `.qa-metrics/run-and-report.jsonl` (local, fuera
+de Git). Al cerrar el lote, `node v3/scripts/run-and-report.js
+--timing-report <rama>` resume corridas, iteraciones fallidas y tiempos:
+va al Informe de Cierre y a la memoria del proyecto, para comparar lotes
+con datos.
+
 ## Regresión después del lote
 
 Solo de lo afectado, no de toda la app:

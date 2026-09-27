@@ -112,6 +112,13 @@ para tickets y Test Cases. Hoy soporta:
 - **validación previa obligatoria** de pasos, Criterios de Aceptación y
   relación TC → CA (`v3/scripts/lib/testcase-validator.js`): los errores
   frenan siempre; los warnings frenan salvo `--accept-warnings`;
+- **evidencia de los negativos** (`lib/negative-evidence.js`): cada Test
+  Case con `tipo: "negativo"` trae `evidencia: { reporte, observado }` con
+  el informe de `explore-page.js`; sin eso no se publica (nunca
+  resolverlo quitando el `tipo` ni con `--accept-warnings`: es error);
+- sumar Test Cases a una HU ya publicada (`issueKey` + `historia` +
+  `testcaseModels` + `testCycle: { key }`): cuenta los TC que la HU ya
+  tiene para la cobertura de cada CA;
 - `--dry-run`: valida el payload sin publicar ni modificar nada (usarlo
   siempre antes de publicar un lote);
 - `--update-steps --data <archivo>`: reescribe precondición y pasos de
