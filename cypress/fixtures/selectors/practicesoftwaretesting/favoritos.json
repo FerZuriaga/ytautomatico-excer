@@ -1,0 +1,27 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "favoritesPath": "/favorites"
+  },
+  "path": "/account/favorites",
+  "pageTitle": "[data-test=\"page-title\"]",
+  "favoriteCard": "[data-test^=\"favorite-\"]",
+  "productName": "[data-test=\"product-name\"]",
+  "productDescription": "[data-test=\"product-description\"]",
+  "deleteButton": "[data-test=\"delete\"]",
+  "navMenu": "[data-test=\"nav-menu\"]",
+  "navSignIn": "[data-test=\"nav-sign-in\"]",
+  "navMyFavorites": "[data-test=\"nav-my-favorites\"]",
+  "addToFavorites": "[data-test=\"add-to-favorites\"]",
+  "toastSuccess": "#toast-container .toast-success",
+  "toastError": "#toast-container .toast-error",
+  "toastMessage": "#toast-container .toast-message",
+  "texts": {
+    "title": "Favorites",
+    "empty": "There are no favorites yet. In order to add favorites, please go to the product listing and mark some products as your favorite.",
+    "added": "Product added to your favorites list.",
+    "alreadyAdded": "Product already in your favorites list.",
+    "unauthorized": "Unauthorized, can not add product to your favorite list.",
+    "loginTitle": "Login"
+  }
+}
