@@ -258,3 +258,26 @@ usan los tests (carrito por API + sesión por token), no solo por la UI.
 - **Los campos inválidos de la dirección nunca se marcan** (Bug SCRUM-528):
   la condición usa `cusAddress.street.errors` (siempre undefined en un
   FormGroup).
+
+## Favoritos (2026-09-27)
+
+Explorado con `explore-page.js` con sesión inyectada (`auth-token` en
+localStorage) y favoritos sembrados por API, el mismo camino que usan los
+tests. Selectores en `cypress/fixtures/selectors/practicesoftwaretesting/favoritos.json`.
+
+- **API:** `POST /favorites {product_id}` → 201; repetido → 409
+  `Duplicate Entry`; sin token → 401 `Unauthorized`. `GET /favorites`
+  devuelve cada favorito con su `product`. `DELETE /favorites/{id}` → 204
+  (también 204 si ya no existe).
+- **Ficha (`add-to-favorites`):** alta → aviso `Product added to your
+  favorites list.`; repetido → `Product already in your favorites list.`
+  (no se duplica en la lista); sin sesión → `Unauthorized, can not add
+  product to your favorite list.` y se queda en la ficha (sin redirigir a
+  Login, a diferencia de las pantallas de la cuenta).
+- **Pantalla `/account/favorites`** (menú `nav-menu` → `nav-my-favorites`):
+  tarjeta `favorite-{id del favorito}` (id inestable: ubicar por
+  `product-name`), descripción truncada a 250, botón `delete` sin
+  confirmación ni aviso: recarga la lista. Vacía: `There are no favorites
+  yet. In order to add favorites, please go to the product listing and mark
+  some products as your favorite.` La baja persiste al recargar. Sin sesión
+  el guard lleva a Login.
