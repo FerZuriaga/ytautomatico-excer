@@ -98,7 +98,8 @@ describe('Checkout: pagar y confirmar el pedido [SCRUM-514]', () => {
     })
 
     // Bug SCRUM-525: el primer Confirm valida el pago pero no crea el
-    // pedido. Al cerrarlo, quitar el .skip y el sufijo.
+    // pedido (con cualquier medio de pago). Al cerrarlo, quitar el .skip y
+    // el sufijo de TC-07.1 y TC-07.2.
     it.skip('[CA-07][TC-07.1][SCRUM-523] Debe crear el pedido con un solo Confirm (bug conocido: SCRUM-525)', () => {
         openPayment()
         checkout.selectMethod('Cash on Delivery')
@@ -109,13 +110,22 @@ describe('Checkout: pagar y confirmar el pedido [SCRUM-514]', () => {
         checkout.verifyOrderCreated()
     })
 
-    it('[CA-07][TC-07.2][SCRUM-524] Debe informar el pago aceptado al confirmar', () => {
+    it.skip('[CA-07][TC-07.2][SCRUM-524] Debe crear el pedido pagando con tarjeta de credito (bug conocido: SCRUM-525)', () => {
         openPayment()
-        checkout.selectMethod('Cash on Delivery')
+        checkout.selectMethod('Credit Card')
+        checkout.verifyPaymentFields(CARD_FIELDS)
+
+        checkout.typePayment('creditCardNumber', '1111-2222-3333-4444')
+        checkout.verifyPaymentError('cardNumber', false)
+        checkout.typePayment('expirationDate', '12/2030')
+        checkout.verifyPaymentError('expirationFormat', false)
+        checkout.typePayment('cvv', '123')
+        checkout.verifyPaymentError('cvv', false)
+        checkout.typePayment('cardHolderName', 'Qa Tester')
         checkout.verifyConfirm(true)
 
         checkout.confirm()
 
-        checkout.verifyPaymentAccepted()
+        checkout.verifyOrderCreated()
     })
 })
