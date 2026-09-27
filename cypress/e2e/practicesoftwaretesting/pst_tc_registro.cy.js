@@ -1,6 +1,6 @@
 // Modulo: Registro - Alta de clientes
 // Sitio bajo prueba: https://practicesoftwaretesting.com (Toolshop v5)
-// Ticket Jira: SCRUM-545 (CA-01..CA-04, Test Cycle SCRUM-546)
+// Ticket Jira: SCRUM-545 (CA-01..CA-05, Test Cycle SCRUM-546)
 //
 // Cada test registra un email unico. El texto exacto de los errores de la
 // contrasena no se controla (Bug SCRUM-562) ni los mensajes duplicados del
@@ -31,14 +31,6 @@ describe('Registro: alta de clientes [SCRUM-545]', () => {
 
         login.loginWith(customer.email, customer.password)
         login.verifyLoggedIn(customer)
-    })
-
-    it('[CA-01][TC-01.3][SCRUM-549] No debe registrar un email que ya tiene cuenta', () => {
-        login.createCustomer().then(existing => {
-            registration.register(registration.buildCustomer({ email: existing.email }))
-
-            registration.verifyServerError('emailInUse', 409)
-        })
     })
 
     it('[CA-02][TC-02.1][SCRUM-550] No debe enviar el formulario vacio', () => {
@@ -99,5 +91,21 @@ describe('Registro: alta de clientes [SCRUM-545]', () => {
         registration.register(registration.buildCustomer({ dob: '1940-01-01' }))
 
         registration.verifyServerError('overage', 422)
+    })
+
+    it('[CA-05][TC-05.1][SCRUM-549] No debe registrar un email que ya tiene cuenta', () => {
+        login.createCustomer().then(existing => {
+            registration.register(registration.buildCustomer({ email: existing.email }))
+
+            registration.verifyServerError('emailInUse', 409)
+        })
+    })
+
+    it('[CA-05][TC-05.2][SCRUM-564] No debe registrar un email ya registrado escrito en mayusculas', () => {
+        login.createCustomer().then(existing => {
+            registration.register(registration.buildCustomer({ email: existing.email.toUpperCase() }))
+
+            registration.verifyServerError('emailInUse', 409)
+        })
     })
 })
