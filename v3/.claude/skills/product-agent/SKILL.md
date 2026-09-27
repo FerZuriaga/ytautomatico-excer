@@ -344,9 +344,16 @@ Historia, CA → CA, casos → casos y la numeración recibida.
 
 ## PLANTILLA DE BUG
 
-Campos del payload (`bug`): resumen, precondiciones, pasos, resultado
-actual, resultado esperado, severidad (Alta/Media/Baja), prioridad
-(opcional), evidencia, entorno (opcional), observaciones (opcional).
+Campos del payload (`bug`), todos obligatorios salvo prioridad:
+resumen, precondiciones, pasos, resultadoActual, resultadoEsperado,
+evidencia, entorno, severidad (Alta/Media/Baja), prioridad (opcional).
+Ningún otro campo: `lib/bug-validator.js` frena el payload (también en
+`--dry-run`) si trae secciones fuera del estándar, Test Cases, ciclos o
+keys de issues en el texto (las relaciones van en `linkTo`, que acepta
+un enlace o una lista), o una evidencia que especula sobre el código
+interno de la app en vez de citar hechos observables (consola, HTTP,
+informe de explore-page, entorno; nombres del código solo desde un stack
+trace real).
 
 **Pasos para reproducir:** solo acciones funcionales del usuario — nunca
 selectores, aliases, variables ni código (eso va en Evidencia). Si el Bug

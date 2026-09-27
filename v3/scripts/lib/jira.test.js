@@ -9,7 +9,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildHistoriaDescription } = require('./jira');
+const { buildHistoriaDescription, buildBugDescription } = require('./jira');
 
 const base = {
   como: 'cliente', quiero: 'comparar productos', para: 'elegir mejor',
@@ -48,4 +48,24 @@ test('secciones opcionales vacias o con motivos en blanco no se agregan', () => 
   const doc = buildHistoriaDescription({ ...base, sinNegativo: { 'CA-01': ' ' }, reglasNegocio: [], fueraDeAlcance: ['  '] });
 
   assert.deepEqual(headings(doc), ['Contexto', 'Objetivo', 'Criterios de aceptación']);
+});
+
+// Estándar del Bug (2026-09-27, ver lib/bug-validator.js): secciones fijas y
+// sin "Observaciones", donde terminaban las listas de Test Cases.
+const bug = {
+  resumen: 'Resumen.', precondiciones: 'Precondiciones.', pasos: ['Paso uno.', 'Paso dos.'],
+  resultadoActual: 'Actual.', resultadoEsperado: 'Esperado.', evidencia: 'PUT /users/{id} responde 200.',
+  entorno: 'Toolshop v5.', severidad: 'Media'
+};
+
+test('Bug: secciones del estándar en orden, sin Observaciones', () => {
+  const doc = buildBugDescription({ ...bug, observaciones: 'Afecta al TC SCRUM-559.' });
+
+  assert.deepEqual(headings(doc), ['Resumen del problema', 'Precondiciones', 'Pasos para reproducir', 'Resultado actual', 'Resultado esperado', 'Evidencia', 'Entorno', 'Severidad']);
+  assert.deepEqual(listAfter(doc, 'Pasos para reproducir'), bug.pasos);
+  assert.ok(!JSON.stringify(doc).includes('SCRUM-559'));
+});
+
+test('Bug con prioridad: se agrega al final', () => {
+  assert.deepEqual(headings(buildBugDescription({ ...bug, prioridad: 'Alta' })).slice(-2), ['Severidad', 'Prioridad']);
 });

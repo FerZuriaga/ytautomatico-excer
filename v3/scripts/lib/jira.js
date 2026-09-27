@@ -231,9 +231,11 @@ function buildDescription(steps) {
 }
 
 /**
- * Descripción ADF para un Bug: Resumen, Precondiciones, Pasos para
- * reproducir, Resultado actual, Resultado esperado, Severidad, Prioridad,
- * Evidencia, Entorno, Observaciones.
+ * Descripción ADF para un Bug, con el estándar de lib/bug-validator.js:
+ * Resumen, Precondiciones, Pasos para reproducir, Resultado actual,
+ * Resultado esperado, Evidencia y Entorno, más Severidad y Prioridad
+ * (opcional) que clasifican el ticket. Sin secciones libres: los Test
+ * Cases viven en Xray y las relaciones van como enlaces de Jira.
  */
 function buildBugDescription(bug) {
   const content = [
@@ -242,12 +244,11 @@ function buildBugDescription(bug) {
     h(2, 'Pasos para reproducir'), olist(bug.pasos),
     h(2, 'Resultado actual'), p(bug.resultadoActual),
     h(2, 'Resultado esperado'), p(bug.resultadoEsperado),
+    h(2, 'Evidencia'), p(bug.evidencia),
+    h(2, 'Entorno'), p(bug.entorno),
     h(2, 'Severidad'), p(bug.severidad)
   ];
   if (bug.prioridad) content.push(h(2, 'Prioridad'), p(bug.prioridad));
-  content.push(h(2, 'Evidencia'), p(bug.evidencia));
-  if (bug.entorno) content.push(h(2, 'Entorno'), p(bug.entorno));
-  if (bug.observaciones) content.push(h(2, 'Observaciones'), p(bug.observaciones));
   return { type: 'doc', version: 1, content };
 }
 

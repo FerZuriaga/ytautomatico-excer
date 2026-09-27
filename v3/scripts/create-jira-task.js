@@ -48,6 +48,11 @@
  * observado } con el report.json de explore-page.js donde se probó
  * (lib/negative-evidence.js); sin ella no se publica.
  *
+ * Los Bugs del JSON se validan con lib/bug-validator.js: secciones del
+ * estándar (sin "Observaciones"), sin Test Cases ni keys de issues en el
+ * texto (las relaciones van en "linkTo", que acepta uno o varios enlaces)
+ * y evidencia sin especular sobre el código interno de la app.
+ *
  * --dry-run: con --data, valida y termina sin publicar ni modificar nada.
  *
  * --update-steps --data <archivo.json>: reescribe precondición y pasos de
@@ -71,6 +76,7 @@ const jira = require('./lib/jira');
 const xray = require('./lib/xray');
 const testRunner = require('./lib/test-runner');
 const testcaseValidator = require('./lib/testcase-validator');
+const bugValidator = require('./lib/bug-validator');
 const testcaseDescription = require('./lib/testcase-description');
 const negativeEvidence = require('./lib/negative-evidence');
 const traceability = require('./lib/traceability');
@@ -201,6 +207,15 @@ async function validateData() {
     validation.errors.push(...evidence.errors);
     validation.warnings.push(...evidence.warnings);
   }
+  // Estándar del Bug (lib/bug-validator.js): secciones fijas, sin Test
+  // Cases ni keys en el texto y evidencia sin especular sobre el código.
+  const bugs = updateSteps ? { errors: [], bugCount: 0 } : bugValidator.validateBugs(ISSUE, { projectKey: PROJECT || 'SCRUM' });
+  if (bugs.errors.length) {
+    console.error(`Validacion de Bugs: ${bugs.errors.length} error(es). No se publica nada.`);
+    bugs.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
+    process.exit(1);
+  }
+  if (bugs.bugCount) console.log(`Validacion de Bugs: ${bugs.bugCount} OK.`);
   if (validation.errors.length) {
     console.error(`Validacion de Test Cases: ${validation.errors.length} error(es). No se publica nada.`);
     validation.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
@@ -358,17 +373,29 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
     }
   }
 
-  if (issueDef.linkTo && issueDef.linkTo.key) {
-    console.log(`Vinculando ${key} con ${issueDef.linkTo.key} (${issueDef.linkTo.type || 'Relates'})...`);
-    const linkRes = await jira.linkIssue(key, issueDef.linkTo.key, issueDef.linkTo.type);
+  await linkAll(key, issueDef);
+
+  return key;
+}
+
+// `linkTo` acepta un enlace ({ key, type }) o varios ([{ key, type }, ...]):
+// las relaciones con otros issues van como enlaces de Jira, no citadas en
+// el texto del ticket (lib/bug-validator.js).
+function linksOf(issueDef) {
+  const links = issueDef && issueDef.linkTo;
+  return (Array.isArray(links) ? links : [links]).filter(link => link && link.key);
+}
+
+async function linkAll(key, issueDef) {
+  for (const link of linksOf(issueDef)) {
+    console.log(`Vinculando ${key} con ${link.key} (${link.type || 'Relates'})...`);
+    const linkRes = await jira.linkIssue(key, link.key, link.type);
     if (linkRes.status === 201) {
-      console.log(`Vinculado correctamente con ${issueDef.linkTo.key}.`);
+      console.log(`Vinculado correctamente con ${link.key}.`);
     } else {
       console.error('Error al vincular issue:', JSON.stringify(linkRes.body, null, 2));
     }
   }
-
-  return key;
 }
 
 /**
@@ -573,15 +600,7 @@ async function main() {
           }
         }
 
-        if (ISSUE && ISSUE.linkTo && ISSUE.linkTo.key) {
-          console.log(`Vinculando ${key} con ${ISSUE.linkTo.key} (${ISSUE.linkTo.type || 'Relates'})...`);
-          const linkRes = await jira.linkIssue(key, ISSUE.linkTo.key, ISSUE.linkTo.type);
-          if (linkRes.status === 201) {
-            console.log(`Vinculado correctamente con ${ISSUE.linkTo.key}.`);
-          } else {
-            console.error('Error al vincular issue:', JSON.stringify(linkRes.body, null, 2));
-          }
-        }
+        await linkAll(key, ISSUE);
       } else {
         console.error('Error al crear:', JSON.stringify(res.body, null, 2));
         process.exit(1);
