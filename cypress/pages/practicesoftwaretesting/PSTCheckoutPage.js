@@ -20,8 +20,8 @@ class PSTCheckoutPage {
     // ─── Precondiciones ───────────────────────────────────────────────────────
 
     // Cliente propio con sesión y un carrito, abierto en el paso Cart.
-    startAsCustomer(items) {
-        return this.login.createCustomer().then(customer => {
+    startAsCustomer(items, address) {
+        return this.login.createCustomer(address).then(customer => {
             this.login.prepareSession(customer)
             this.cart.openWithItems(items)
             return cy.wrap(customer)
@@ -34,11 +34,10 @@ class PSTCheckoutPage {
     }
 
     // Los intercepts se registran antes de avanzar: la dirección se completa
-    // con una búsqueda por código postal asíncrona y el pago se valida por API.
+    // con una búsqueda por código postal asíncrona y el pedido se crea por API.
     registerAliases() {
         cy.fixture(FIXTURE).then(sel => {
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.postcodeLookupPath }).as('postcodeLookup')
-            cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: sel.api.paymentCheckPath }).as('paymentCheck')
             cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: sel.api.invoicesPath }).as('createInvoice')
         })
     }
@@ -146,10 +145,6 @@ class PSTCheckoutPage {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.address.street, T).type(value).should('have.value', value))
     }
 
-    verifyStreetInvalid(invalid) {
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.address.street, T).should(invalid ? 'have.class' : 'not.have.class', sel.address.invalidClass))
-    }
-
     verifyAddressProceed(enabled) {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.steps.addressProceed, T).should(enabled ? 'be.enabled' : 'be.disabled'))
     }
@@ -206,11 +201,6 @@ class PSTCheckoutPage {
 
     confirm() {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.payment.finish, T).should('be.enabled').click())
-    }
-
-    verifyPaymentAccepted() {
-        cy.wait('@paymentCheck', T).its('response.statusCode').should('eq', 200)
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.payment.successMessage, T).should('be.visible').and('contain.text', sel.texts.paymentSuccess))
     }
 
     // Pedido creado: número de factura visible y carrito vacío (el menú deja

@@ -4,6 +4,9 @@ const T = { timeout: 15000 }
 
 const JSON_HEADERS = { Accept: 'application/json' }
 
+// Dirección del perfil por defecto de los clientes de prueba.
+const DEFAULT_ADDRESS = { street: 'Calle 1', house_number: '42', city: 'Cordoba', state: 'Cordoba', country: 'AR', postal_code: '5000' }
+
 // Pantalla Login y menú del usuario (sesión). Cada test usa un cliente
 // propio registrado por API: 3 intentos fallidos bloquean la cuenta, así
 // que nunca se prueba contra las cuentas demo compartidas.
@@ -11,8 +14,9 @@ class PSTLoginPage {
 
     // ─── Precondiciones por API ───────────────────────────────────────────────
 
-    // Registra un cliente nuevo con email único y lo devuelve.
-    createCustomer() {
+    // Registra un cliente nuevo con email único y lo devuelve. `address`
+    // reemplaza la dirección del perfil por defecto.
+    createCustomer(address = DEFAULT_ADDRESS) {
         const unique = `${Date.now()}${Math.floor(Math.random() * 1000)}`
         const customer = {
             firstName: 'Qa',
@@ -20,7 +24,7 @@ class PSTLoginPage {
             email: `qa.sesion.${unique}@example.com`,
             password: 'Qa!Sesion2026#',
             // Dirección del perfil: la precarga el paso Billing Address del checkout.
-            address: { street: 'Calle 1', house_number: '42', city: 'Cordoba', state: 'Cordoba', country: 'AR', postal_code: '5000' }
+            address
         }
         customer.fullName = `${customer.firstName} ${customer.lastName}`
         return cy.fixture(FIXTURE).then(sel => {

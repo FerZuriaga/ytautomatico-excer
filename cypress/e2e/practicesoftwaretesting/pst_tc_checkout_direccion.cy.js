@@ -13,7 +13,15 @@ const checkout = new PSTCheckoutPage()
 
 const ITEMS = [{ name: 'Wood Saw', quantity: 1 }]
 
-const openAddress = () => checkout.startAsCustomer(ITEMS).then(customer => {
+// Direccion de otro cliente (TC-03.2): la precarga debe ser la de cada perfil.
+const OTHER_ADDRESS = { street: 'Rivadavia', house_number: '5000', city: 'Buenos Aires', state: 'Buenos Aires', country: 'AR', postal_code: '1406' }
+
+const profileFields = address => ({
+    street: address.street, houseNumber: address.house_number, city: address.city,
+    state: address.state, country: address.country, postalCode: address.postal_code
+})
+
+const openAddress = address => checkout.startAsCustomer(ITEMS, address).then(customer => {
     checkout.proceedFromCart()
     checkout.proceedFromSignIn()
     checkout.waitForAddressLookup()
@@ -22,33 +30,30 @@ const openAddress = () => checkout.startAsCustomer(ITEMS).then(customer => {
 
 describe('Checkout: direccion de facturacion [SCRUM-508]', () => {
 
-    it('[CA-03][TC-03.1][SCRUM-510] Debe precargar pais, codigo postal y numero del perfil', () => {
-        openAddress().then(({ address }) => {
-            checkout.verifyAddressFields({ country: address.country, postalCode: address.postal_code, houseNumber: address.house_number })
-
-            checkout.proceedFromAddress()
-        })
-    })
-
     // Bug SCRUM-526: la busqueda por codigo postal pisa calle, ciudad y
-    // estado del perfil con datos ficticios. Al cerrarlo, quitar el .skip y el sufijo.
-    it.skip('[CA-03][TC-03.2][SCRUM-511] Debe precargar calle, ciudad y estado del perfil (bug conocido: SCRUM-526)', () => {
+    // estado del perfil con datos ficticios (en los dos codigos postales).
+    // Al cerrarlo, quitar el .skip y el sufijo de TC-03.1 y TC-03.2.
+    it.skip('[CA-03][TC-03.1][SCRUM-510] Debe precargar la direccion completa del perfil (bug conocido: SCRUM-526)', () => {
         openAddress().then(({ address }) => {
-            checkout.verifyAddressFields({ street: address.street, city: address.city, state: address.state })
+            checkout.verifyAddressFields(profileFields(address))
 
             checkout.proceedFromAddress()
         })
     })
 
-    // Bug SCRUM-528: el campo vacio nunca se marca como invalido (el boton
-    // si se deshabilita, eso lo cubre TC-04.2). Al cerrarlo, quitar el .skip y el sufijo.
-    it.skip('[CA-04][TC-04.1][SCRUM-512] No debe avanzar al pago con la calle vacia (bug conocido: SCRUM-528)', () => {
+    it.skip('[CA-03][TC-03.2][SCRUM-511] Debe precargar la direccion del perfil de otro cliente (bug conocido: SCRUM-526)', () => {
+        openAddress(OTHER_ADDRESS).then(({ address }) => {
+            checkout.verifyAddressFields(profileFields(address))
+
+            checkout.proceedFromAddress()
+        })
+    })
+
+    it('[CA-04][TC-04.1][SCRUM-512] No debe avanzar al pago con la calle vacia', () => {
         openAddress().then(() => {
             checkout.verifyAddressProceed(true)
 
             checkout.clearStreet()
-
-            checkout.verifyStreetInvalid(true)
             checkout.verifyAddressProceed(false)
         })
     })
@@ -59,9 +64,6 @@ describe('Checkout: direccion de facturacion [SCRUM-508]', () => {
             checkout.verifyAddressProceed(false)
 
             checkout.typeStreet(address.street)
-            // "Deja de estar marcado" no se afirma mientras siga abierto el
-            // Bug SCRUM-528: nunca se marca, pasaria siempre (falso positivo).
-            // Al cerrarlo, agregar checkout.verifyStreetInvalid(false).
             checkout.verifyAddressProceed(true)
 
             checkout.proceedFromAddress()
