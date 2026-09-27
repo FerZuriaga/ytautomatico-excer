@@ -1,0 +1,69 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "registerPath": "/users/register",
+    "postcodeLookupPath": "/postcode-lookup"
+  },
+  "path": "/auth/register",
+  "loginPath": "/auth/login",
+  "registerLink": "[data-test=\"register-link\"]",
+  "form": "[data-test=\"register-form\"]",
+  "fields": {
+    "firstName": "[data-test=\"first-name\"]",
+    "lastName": "[data-test=\"last-name\"]",
+    "dob": "[data-test=\"dob\"]",
+    "country": "[data-test=\"country\"]",
+    "postalCode": "[data-test=\"postal_code\"]",
+    "houseNumber": "[data-test=\"house_number\"]",
+    "street": "[data-test=\"street\"]",
+    "city": "[data-test=\"city\"]",
+    "state": "[data-test=\"state\"]",
+    "phone": "[data-test=\"phone\"]",
+    "email": "[data-test=\"email\"]",
+    "password": "[data-test=\"password\"]"
+  },
+  "errors": {
+    "firstName": "[data-test=\"first-name-error\"]",
+    "lastName": "[data-test=\"last-name-error\"]",
+    "dob": "[data-test=\"dob-error\"]",
+    "country": "[data-test=\"country-error\"]",
+    "postalCode": "[data-test=\"postal_code-error\"]",
+    "houseNumber": "[data-test=\"house_number-error\"]",
+    "street": "[data-test=\"street-error\"]",
+    "city": "[data-test=\"city-error\"]",
+    "state": "[data-test=\"state-error\"]",
+    "phone": "[data-test=\"phone-error\"]",
+    "email": "[data-test=\"email-error\"]",
+    "password": "[data-test=\"password-error\"]"
+  },
+  "submit": "[data-test=\"register-submit\"]",
+  "postcodeLoading": "[data-test=\"postcode-lookup-loading\"]",
+  "registerError": "[data-test=\"register-error\"]",
+  "loginSubmit": "[data-test=\"login-submit\"]",
+  "texts": {
+    "title": "Customer registration",
+    "required": {
+      "firstName": "First name is required",
+      "lastName": "Last name is required",
+      "dob": "Date of Birth is required",
+      "country": "Country is required",
+      "postalCode": "Postcode is required",
+      "houseNumber": "House number is required",
+      "street": "Street is required",
+      "city": "City is required",
+      "state": "State is required",
+      "phone": "Phone is required.",
+      "email": "Email is required",
+      "password": "Password is required"
+    },
+    "dobFormat": "Please enter a valid date in YYYY-MM-DD format.",
+    "phoneFormat": "Only numbers are allowed.",
+    "emailFormat": "Email format is invalid",
+    "passwordMinLength": "Password must be minimal 6 characters long.",
+    "passwordPattern": "Password can not include invalid characters.",
+    "underage": "Customer must be 18 years old.",
+    "overage": "Customer must be younger than 75 years old.",
+    "emailInUse": "A customer with this email address already exists.",
+    "leakedPassword": "The given password has appeared in a data leak. Please choose a different password."
+  }
+}

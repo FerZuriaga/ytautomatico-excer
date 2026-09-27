@@ -281,3 +281,35 @@ tests. Selectores en `cypress/fixtures/selectors/practicesoftwaretesting/favorit
   yet. In order to add favorites, please go to the product listing and mark
   some products as your favorite.` La baja persiste al recargar. Sin sesión
   el guard lleva a Login.
+
+## Registro de clientes (2026-09-27)
+
+Explorado con `explore-page.js` (8 recorridos: vacío, formatos, contraseña
+sin símbolo, menor de edad, email repetido, alta correcta, contraseña
+filtrada y 86 años) y la API. Selectores en
+`cypress/fixtures/selectors/practicesoftwaretesting/registro.json`.
+
+- **Entrada:** Login → `register-link` ("Register your account") →
+  `Customer registration`. Alta correcta → `POST /users/register` 201 y
+  vuelve a Login **sin ningún mensaje**; el cliente ya puede ingresar.
+- **Validaciones del front** (se muestran al enviar, `updateOn: blur`):
+  todos obligatorios; fecha `YYYY-MM-DD` real (`Please enter a valid date
+  in YYYY-MM-DD format.`); teléfono solo dígitos (`Only numbers are
+  allowed.`); email con patrón; contraseña mínimo 8 + mayúscula y minúscula
+  + número + símbolo. Con errores del front no sale la request.
+- **Validaciones del backend** (texto tal cual en `register-error`): menor
+  de 18 → `Customer must be 18 years old.` (también fecha futura); email
+  existente → 409 `A customer with this email address already exists.`
+  (el front espera "Duplicate Entry" y nunca muestra su texto propio
+  `Email is already in use.`); contraseña filtrada (ej. `Password1!`) →
+  `The given password has appeared in a data leak...`.
+- **País + código postal + número** disparan `GET /postcode-lookup` y
+  pisan calle/ciudad/estado (mismo servicio simulado del checkout): cargar
+  esos tres primero y la calle después.
+- **Posibles defectos:** el número de casa es obligatorio pero no se envía
+  ni se guarda (`house_number: null`); el límite "younger than 75" solo
+  rechaza desde ~93 años (1940 se registra); la contraseña corta muestra
+  `Password must be minimal 6 characters long.` (la regla es 8) y la que
+  no tiene mayúscula/número/símbolo `Password can not include invalid
+  characters.`; el formulario vacío muestra dos mensajes en la fecha y tres
+  en la contraseña.
