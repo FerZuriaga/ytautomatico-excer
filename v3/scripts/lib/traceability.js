@@ -61,7 +61,8 @@ function parseSpecTags(source, file = 'spec') {
       title,
       ca: tags.find(t => /^CA-\d{2}$/.test(t)) || null,
       tc: tags.find(t => /^TC-\d{2}\.\d+$/.test(t)) || null,
-      key: tags.filter(t => !/^(CA|TC)-/.test(t)).pop() || null
+      key: tags.filter(t => !/^(CA|TC)-/.test(t)).pop() || null,
+      skipped: match[0].startsWith('it.skip')
     });
   }
 
@@ -80,7 +81,10 @@ function parseSpecTags(source, file = 'spec') {
  * criterio en Xray distinto del CA del spec.
  * Warnings: spec sin HU en el describe, Test Case sin label de criterio
  * (publicado antes del 2026-09-24; `missingLabels` permite sincronizarlo),
- * Test Case vinculado a la HU que ningún it() automatiza.
+ * Test Case vinculado a la HU que ningún it() automatiza, CA con todos sus
+ * negativos en it.skip (no se ejecuta ningún negativo: caso real
+ * 2026-09-26, SCRUM-508 CA-04 quedó sin negativo por saltear el TC entero
+ * cuando el bug afectaba solo una parte de lo esperado).
  */
 function checkTraceability(specs, issuesByKey) {
   const errors = [];
@@ -132,6 +136,18 @@ function checkTraceability(specs, issuesByKey) {
         missingLabels.push({ key: t.key, label: t.ca });
       }
     }
+
+    const negativesByCa = new Map();
+    for (const t of spec.tests) {
+      if (!t.ca || !(issuesByKey.get(t.key)?.labels || []).includes('negativo')) continue;
+      if (!negativesByCa.has(t.ca)) negativesByCa.set(t.ca, []);
+      negativesByCa.get(t.ca).push(t);
+    }
+    negativesByCa.forEach((negatives, ca) => {
+      if (negatives.every(t => t.skipped)) {
+        warnings.push(`${spec.file}: ${ca} tiene todos sus negativos en it.skip (${negatives.map(t => t.key).join(', ')}) -- ningun negativo se ejecuta; si el bug afecta solo parte del resultado esperado, separar lo que la app si cumple en un TC que corra.`);
+      }
+    });
 
     if (story) {
       const automated = new Set(spec.tests.map(t => t.key));

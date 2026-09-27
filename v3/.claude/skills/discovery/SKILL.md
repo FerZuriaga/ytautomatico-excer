@@ -107,6 +107,20 @@ Verificar además, contra la API:
   probar con la API las acciones que el test va a disparar con los datos
   elegidos.
 
+**Probar cada regla antes de especificar.** Toda validación que vaya a ser
+un caso negativo (campo vacío, formato inválido, dato faltante, medio de
+pago sin datos) se ejecuta con `explore-page.js --actions` sobre el mismo
+camino del test, y se anota lo observado: mensaje exacto, clase del campo,
+estado del botón. Lo que no se observó no se escribe como resultado
+esperado. Caso real (Checkout, 2026-09-26): los Bugs SCRUM-527 y SCRUM-528
+aparecieron recién en la corrida del PASO 3 y costaron 2 iteraciones
+(~8 min); con la acción probada en el discovery salían antes de publicar.
+
+**Preguntas al usuario: una sola vez, al final del discovery.** Las dudas
+que surjan (alcance, datos, posibles defectos) se juntan en un único
+mensaje junto con la lista de escenarios; no se corta el trabajo por cada
+una. Un defecto confirmado no se pregunta: sigue `bug-reporting`.
+
 ### Artefactos (se commitean, nunca se borran)
 
 - Selectores en `cypress/fixtures/selectors/<app>/<modulo>.json`.

@@ -648,6 +648,22 @@ test('criterio compuesto: "ademas" separa reglas y un fragmento corto tras ";" n
   assert.match(warnings[0], /CA-01 parece combinar 2 reglas/);
 });
 
+test('regresion SCRUM-502: "mientras que" y ", y sin" separan reglas; la version reescrita no avisa', () => {
+  const compuestos = validateStoryText({ summary: 'Checkout', historia: { criterios: [
+    'CA-01: El cliente con la sesión iniciada es saludado por su nombre y avanza a la dirección de facturación sin volver a identificarse, mientras que sin sesión se le pide iniciar sesión o continuar como invitado.',
+    'CA-02: El visitante que completa email, nombre y apellido continúa como invitado y avanza a la dirección de facturación, y sin esos datos se le indica cuáles faltan.'
+  ] } });
+  assert.equal(compuestos.warnings.length, 2);
+  assert.match(compuestos.warnings[0], /CA-01 parece combinar 2 reglas/);
+  assert.match(compuestos.warnings[1], /CA-02 parece combinar 2 reglas/);
+
+  const reescritos = validateStoryText({ summary: 'Checkout', historia: { criterios: [
+    'CA-01: El cliente con la sesión iniciada avanza a la dirección de facturación sin volver a identificarse.',
+    'CA-02: El visitante sin cuenta avanza a la dirección de facturación como invitado con su email, nombre y apellido.'
+  ] } });
+  assert.deepEqual(reescritos.warnings, []);
+});
+
 test('regresion SCRUM-499/500: pasos de relleno ("Observar", "Abrir nuevamente") avisan', () => {
   const { errors, warnings } = validateTestCaseModel({
     name: 'My account sin sesion', precondition: 'Sin sesion.',

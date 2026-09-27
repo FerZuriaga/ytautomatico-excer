@@ -10,11 +10,23 @@
  */
 require('dotenv').config();
 const https = require('https');
+const { withRetry, logRetry } = require('./http-retry');
 
 const HOSTNAME = new URL(process.env.JIRA_URL).hostname;
 const AUTH = 'Basic ' + Buffer.from(process.env.JIRA_EMAIL + ':' + process.env.JIRA_API_TOKEN).toString('base64');
 
+// Solo las operaciones idempotentes se reintentan ante una falla de red
+// (lib/http-retry.js): lecturas, PUT y la búsqueda JQL (POST de solo lectura).
+function isIdempotent(method, path) {
+  return method === 'GET' || method === 'PUT' || (method === 'POST' && path.startsWith('/rest/api/3/search'));
+}
+
 function jiraRequest(method, path, body = null) {
+  if (isIdempotent(method, path)) return withRetry(() => jiraRequestOnce(method, path, body), { onRetry: logRetry(`Jira ${method} ${path}`) });
+  return jiraRequestOnce(method, path, body);
+}
+
+function jiraRequestOnce(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const bodyStr = body ? JSON.stringify(body) : null;
     const req = https.request({
@@ -291,6 +303,7 @@ function buildTareaDescription(tarea) {
 }
 
 module.exports = {
+  isIdempotent,
   HOSTNAME,
   jiraRequest,
   createIssue,

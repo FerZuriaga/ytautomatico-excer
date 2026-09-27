@@ -235,6 +235,20 @@ async function reportResults(resultsPath, testCycleKeys, projectKey) {
     await xray.updateTestExecutionStatus(execution.id, statusName);
     console.log(`${test.testCaseKey} -> ${statusName} (ejecucion ${execution.key || execution.id} en ${matchedCycleKey}).`);
   }
+
+  // Los salteados por bug conocido no se reportan, pero su ejecución vuelve
+  // a TO DO si quedó con un resultado de antes (ver collectKnownBugSkips).
+  for (const skip of testRunner.collectKnownBugSkips(results)) {
+    for (const cycleKey of testCycleKeys) {
+      const execution = await xray.findTestExecution(projectKey, cycleKey, skip.testCaseKey);
+      if (!execution) continue;
+      if (execution.status && execution.status !== 'TO DO') {
+        await xray.updateTestExecutionStatus(execution.id, 'TO DO');
+        console.log(`${skip.testCaseKey} -> TO DO (estaba en ${execution.status}; en espera del bug ${skip.bug}, en ${cycleKey}).`);
+      }
+      break;
+    }
+  }
 }
 
 /**

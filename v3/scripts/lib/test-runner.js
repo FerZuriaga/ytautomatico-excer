@@ -215,6 +215,44 @@ function collectTaggedTests(results) {
 }
 
 /**
+ * Tests salteados por bug conocido que automatizan un Test Case publicado.
+ * No se reportan como resultado, pero su Test Execution tiene que quedar
+ * en TO DO: si el TC había pasado antes y después se pasó a it.skip (caso
+ * real 2026-09-26: SCRUM-510 y SCRUM-524 quedaron en PASSED tras la
+ * revisión del lote de Checkout), Xray seguiría mostrando un PASSED viejo.
+ */
+function collectKnownBugSkips(results) {
+  return collectTestsWithState(results)
+    .filter(isKnownBugSkip)
+    .map(t => ({ fullTitle: t.fullTitle, bug: extractKnownBug(t.fullTitle), testCaseKey: extractTestCaseKey(t.fullTitle) }))
+    .filter(t => t.testCaseKey);
+}
+
+/**
+ * Pista de diagnóstico para una falla, según su mensaje (acordado el
+ * 2026-09-26: en el lote de Checkout la iteración 2 corrigió el page object
+ * cuando la falla era un defecto de la app, SCRUM-528, y se perdió una
+ * corrida). No reemplaza el diagnóstico con evidencia: orienta el primero.
+ */
+const ELEMENT_NOT_FOUND_REGEX = /Expected to find (element|content)|never found it|element is detached|is being covered|not visible because/;
+const ASSERTION_REGEX = /\bexpected\b[\s\S]*\bto (not )?(have|be|equal|eq|contain|include|match|exist)/;
+const API_STATUS_REGEX = /cy\.request\(\)|statusCode|status code/i;
+
+function classifyFailure(message) {
+  const text = String(message || '');
+  if (ELEMENT_NOT_FOUND_REGEX.test(text)) {
+    return 'no encontro el elemento: revisar selector, espera o el camino previo del test (captura).';
+  }
+  if (API_STATUS_REGEX.test(text)) {
+    return 'fallo una llamada por API: revisar la precondicion (token, datos sembrados, re-siembra de la demo).';
+  }
+  if (ASSERTION_REGEX.test(text)) {
+    return 'el elemento esta pero no cumple lo esperado: reproducir con explore-page.js ANTES de tocar el codigo; puede ser un defecto de la app (bug-reporting).';
+  }
+  return null;
+}
+
+/**
  * Resumen de una corrida ya parseada, para decidir si se puede reportar a
  * Xray (run-and-report.js). `retriedPasses` son los tests que pasaron
  * recién en un reintento (config `retries.runMode`): figuran como passes
@@ -230,7 +268,7 @@ function summarizeResults(results) {
   return {
     total: all.length,
     passed: passes.length,
-    failed: (results.failures || []).map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '' })),
+    failed: (results.failures || []).map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '', hint: classifyFailure(t.err?.message) })),
     pending: (results.pending || []).filter(t => !extractKnownBug(t.fullTitle)).map(t => t.fullTitle),
     knownBugSkips: (results.pending || []).filter(t => extractKnownBug(t.fullTitle)).map(t => ({ fullTitle: t.fullTitle, bug: extractKnownBug(t.fullTitle) })),
     retriedPasses: passes.filter(t => (t.currentRetry || 0) > 0).map(t => t.fullTitle),
@@ -276,5 +314,7 @@ module.exports = {
   parseResultsText,
   parseResultsFile,
   collectTaggedTests,
+  collectKnownBugSkips,
+  classifyFailure,
   extractKnownBug
 };

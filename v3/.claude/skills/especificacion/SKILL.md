@@ -61,7 +61,10 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
   misma regla, se redacta como una sola oración (ej. "3 intentos fallidos
   seguidos, sin un ingreso exitoso entre ellos, bloquean la cuenta"), no
   unida con ";". Partir un criterio no justifica inventar casos para
-  llegar al mínimo de 2. El validador avisa (criterio compuesto).
+  llegar al mínimo de 2. El validador avisa (criterio compuesto), también
+  con "mientras que", "en cambio", "y si no" y ", y sin" (caso real:
+  SCRUM-502 CA-01 "con sesión avanza…, mientras que sin sesión se le
+  pide…").
 - Id al inicio: `"CA-01: ..."`. Numeración global sin reinicios.
 - Un resultado negativo de una regla ya cubierta es un caso de ese
   criterio, no un criterio nuevo.
@@ -102,6 +105,20 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
 - Resultado esperado observable y concreto (textos exactos, cantidades).
 - Elegir datos que no choquen con defectos conocidos ni con reglas
   ocultas del backend (verificadas en `discovery`).
+- **Los TC se arman por la regla del CA, nunca según un bug.** Si un
+  defecto rompe la regla del CA, todos los TC que la validan quedan en
+  espera (`it.skip` con "(bug conocido: KEY)"), aunque una parte "pase":
+  partir el TC para que una mitad quede en verde muestra el CA cumplido
+  cuando no lo está. Tampoco se valida el síntoma del bug como si fuera el
+  resultado. Casos reales: SCRUM-508 CA-03 (país/CP pasaba y calle/ciudad
+  en espera) y SCRUM-514 CA-07 (el TC en verde validaba "Payment was
+  successful", justo lo que muestra el Bug SCRUM-525 sin crear el pedido).
+  Si el defecto afecta solo un resultado secundario que no es la regla del
+  CA, ese resultado sale del TC y queda en `defectosConocidos`: el TC
+  corre con lo que la regla exige (SCRUM-508 CA-04: no avanzar sin la
+  calle corre; el campo sin marcar es el Bug SCRUM-528).
+  `check-traceability.js` avisa si un CA queda con todos sus negativos en
+  `it.skip`.
 
 ## Modelo Canónico (uno por TC-XX.Y)
 
