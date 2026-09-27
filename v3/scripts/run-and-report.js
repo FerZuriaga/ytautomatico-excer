@@ -7,6 +7,7 @@
  * Uso:
  *   node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,<SCRUM-2>...]] [--results-out <archivo.json>]
  *   node v3/scripts/run-and-report.js --from-results <archivo.json> --test-cycle <SCRUM-1>[,...]
+ *   node v3/scripts/run-and-report.js --affected [--base <rama>] [--list]
  *
  *   --spec          (obligatorio) specs a correr, separados por coma.
  *   --test-cycle    (opcional) ciclos de Xray donde reportar. Sin este flag
@@ -18,6 +19,16 @@
  *                   reporte se cortó (502, socket hang up): el reporte es
  *                   idempotente y así se verifica sin volver a correr los
  *                   specs (caso real 2026-09-26, lote Checkout).
+ *   --affected      (opcional) suma a --spec los specs afectados por lo que
+ *                   cambió en la rama respecto de --base (default main):
+ *                   commits, cambios sin commitear y archivos nuevos. Es la
+ *                   regresión después de un lote (ver lib/affected-specs.js):
+ *                   solo lo que importa un page object, fixture o comando
+ *                   modificado; la suite completa solo ante un cambio global
+ *                   (cypress.config.js, support/e2e.js, support/commands.js).
+ *   --base          (opcional) rama o commit de referencia para --affected.
+ *   --list          (opcional) con --affected: lista los specs y el motivo,
+ *                   sin correr Cypress.
  *
  * Reglas (CLAUDE.md, PASO 3):
  *   - una corrida por invocación: `npx cypress run --quiet --reporter json --spec ...`
@@ -43,14 +54,18 @@ const { spawnSync } = require('child_process');
 const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
 const { runCheck } = require('./check-traceability');
+const affectedSpecs = require('./lib/affected-specs');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 function parseArgs(argv) {
-  const args = { specs: [], cycles: [], resultsOut: null, fromResults: null };
+  const args = { specs: [], cycles: [], resultsOut: null, fromResults: null, affected: false, base: 'main', list: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--spec') args.specs = splitList(argv[++i]);
+    else if (argv[i] === '--affected') args.affected = true;
+    else if (argv[i] === '--base') args.base = argv[++i];
+    else if (argv[i] === '--list') args.list = true;
     else if (argv[i] === '--test-cycle') args.cycles = splitList(argv[++i]);
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
     else if (argv[i] === '--from-results') args.fromResults = argv[++i];
@@ -60,6 +75,41 @@ function parseArgs(argv) {
 
 function splitList(value) {
   return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function git(args) {
+  const run = spawnSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' });
+  if (run.status !== 0) throw new Error(`git ${args.join(' ')} fallo: ${(run.stderr || '').trim()}`);
+  return run.stdout.split('\n').map(l => l.trim()).filter(Boolean);
+}
+
+// Todos los .js de cypress/ salvo fixtures y artefactos de corridas.
+function readCypressSources() {
+  const skip = new Set(['fixtures', 'screenshots', 'downloads', 'videos']);
+  const sources = new Map();
+  const walk = dir => fs.readdirSync(path.join(REPO_ROOT, dir), { withFileTypes: true }).forEach(entry => {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      if (!(dir === 'cypress' && skip.has(entry.name))) walk(rel);
+    } else if (entry.name.endsWith('.js')) {
+      sources.set(rel, fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8'));
+    }
+  });
+  walk('cypress');
+  return sources;
+}
+
+function resolveAffected(base) {
+  const changed = [
+    ...git(['diff', '--name-only', `${base}...HEAD`]),
+    ...git(['diff', '--name-only', 'HEAD']),
+    ...git(['ls-files', '--others', '--exclude-standard'])
+  ];
+  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed);
+  console.log(`Regresion por impacto (respecto de ${base}): ${new Set(changed).size} archivo(s) cambiado(s), ${result.specs.length} spec(s) afectado(s).`);
+  if (result.global) console.warn('  Cambio global: se corre la suite completa.');
+  else result.reasons.forEach((reason, spec) => console.log(`  - ${spec} (${reason})`));
+  return result.specs;
 }
 
 function runCypress(specs, resultsPath) {
@@ -103,13 +153,19 @@ async function verifyCycles(cycles, expectedKeys) {
 }
 
 async function main() {
-  const { specs, cycles, resultsOut, fromResults } = parseArgs(process.argv.slice(2));
+  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list } = parseArgs(process.argv.slice(2));
+  const specs = affected ? [...new Set([...specArgs, ...resolveAffected(base)])] : specArgs;
+  if (affected && list) return;
+  if (affected && !specs.length) {
+    console.log('Ningun spec afectado por los cambios: no hay regresion que correr.');
+    return;
+  }
   if (fromResults && !cycles.length) {
     console.error('--from-results requiere --test-cycle (solo sirve para reportar y verificar).');
     process.exit(1);
   }
   if (!specs.length && !fromResults) {
-    console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>]');
+    console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] | --affected [--base <rama>] [--list] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>]');
     process.exit(1);
   }
 
