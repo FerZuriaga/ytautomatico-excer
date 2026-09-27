@@ -53,10 +53,31 @@ Nunca volver a correr "a ver si pasa". Antes de cada nueva corrida:
      para que pase;
    - limitación técnica del entorno → evidencia objetiva y decisión del
      usuario.
+   `run-and-report.js` imprime una **Pista** por falla según su mensaje:
+   "no encontró el elemento" (selector, espera o camino previo) vs. "el
+   elemento está pero no cumple lo esperado" → reproducir con
+   `explore-page.js` ANTES de tocar el código, porque puede ser un defecto
+   de la app. Caso real: en Checkout la iteración 2 cambió el page object
+   y la falla era el Bug SCRUM-528 (una corrida perdida).
 3. Corregir y volver a correr el **lote completo**.
 
 **Con 3 iteraciones fallidas, frenar y consultar al usuario** con el
 diagnóstico.
+
+## Regresión después del lote
+
+Solo de lo afectado, no de toda la app: los specs que importan un page
+object, fixture o helper modificado en la rama
+(`git diff --name-only main...HEAD`). La suite completa de la app solo
+si se tocó `cypress/support/` o `cypress.config.js`. Correrla en
+segundo plano y, mientras tanto, preparar el cuerpo del PR, el discovery
+y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
+regresión completa (108 tests) llevó 10,5 min de espera.
+
+Los cortes de red contra Jira/Xray (`socket hang up`, 5xx) se reintentan
+solos en las lecturas y en el cambio de estado de las ejecuciones
+(`lib/http-retry.js`); un test en `it.skip` por bug conocido vuelve su
+ejecución a TO DO si tenía un resultado anterior.
 
 ## Salida
 

@@ -161,6 +161,16 @@ NO debes:
 
 Solo debes mostrar el proceso de validación y el reporte utilizando el formato obligatorio indicado arriba.
 
+### Defecto confirmado durante un lote
+
+No se le pregunta al usuario si se suma al lote (acordado el 2026-09-26:
+esa pregunta costó ~5 min de espera en el lote de Checkout). Con el
+defecto validado (Pasos 1 y 2): se genera el reporte, el Manager carga
+`product-agent` para crear el Bug vinculado a la HU, y el Test Case queda
+automatizado con el comportamiento correcto en `it.skip` con "(bug
+conocido: KEY)". Se informa en el cierre del lote. Solo se consulta si el
+defecto obliga a cambiar el alcance de la HU.
+
  Si el usuario solicita crear el bug
 
 Si el usuario solicita explícitamente crear el bug como ticket:
