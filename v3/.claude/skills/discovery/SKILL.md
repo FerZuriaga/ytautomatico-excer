@@ -115,6 +115,12 @@ estado del botón. Lo que no se observó no se escribe como resultado
 esperado. Caso real (Checkout, 2026-09-26): los Bugs SCRUM-527 y SCRUM-528
 aparecieron recién en la corrida del PASO 3 y costaron 2 iteraciones
 (~8 min); con la acción probada en el discovery salían antes de publicar.
+Es obligatorio: cada Test Case negativo lleva `evidencia: { reporte,
+observado }` con el `report.json` de esa exploración, y sin eso
+`create-jira-task.js` no publica. El informe guarda el texto visible
+después de cada acción, así queda el aviso aunque desaparezca después.
+Usar `--out` con una carpeta del scratchpad por caso, para no pisar
+informes.
 
 **Preguntas al usuario: una sola vez, al final del discovery.** Las dudas
 que surjan (alcance, datos, posibles defectos) se juntan en un único

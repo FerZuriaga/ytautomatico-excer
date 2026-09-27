@@ -134,6 +134,7 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
   "folder": "/<App>/<Modulo>",
   "criterio": "CA-01",
   "tipo": "positivo | negativo",
+  "evidencia": { "reporte": "<report.json de explore-page.js>", "observado": "Se muestra \"<mensaje exacto>\" ..." },
   "steps": [{ "inline": 1, "description": "", "testData": "-", "expectedResult": "" }],
   "traceability": { "scenario": "", "testCase": "TC-01.1" }
 }
@@ -142,6 +143,12 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
 - `criterio` y `tipo` son obligatorios: se publican como labels en Xray y
   los audita `check-traceability.js`.
 - `folder`: la misma ruta exacta para todos los lotes de la app.
+- `evidencia` es **obligatoria en cada caso negativo**: el `report.json`
+  de `explore-page.js` donde se probó ese caso en el discovery y lo que se
+  observó (textos exactos entre comillas). Sin ella `create-jira-task.js`
+  no publica; si el informe no lo generó `explore-page.js` o la
+  exploración se cortó, tampoco. Un texto entre comillas que no aparece en
+  la exploración da warning. Los positivos no la llevan.
 - Nunca agregar campos propios de una herramienta: la adaptación la hace
   `product-agent` con `create-jira-task.js`.
 

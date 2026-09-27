@@ -44,6 +44,9 @@
  * lib/testcase-validator.js (mínimo de pasos, resultado esperado,
  * acciones encadenadas, login sin precondición). Los errores frenan
  * siempre; los warnings frenan salvo que se pase --accept-warnings.
+ * Cada Test Case negativo tiene que traer "evidencia": { reporte,
+ * observado } con el report.json de explore-page.js donde se probó
+ * (lib/negative-evidence.js); sin ella no se publica.
  *
  * --dry-run: con --data, valida y termina sin publicar ni modificar nada.
  *
@@ -67,6 +70,7 @@ const xray = require('./lib/xray');
 const testRunner = require('./lib/test-runner');
 const testcaseValidator = require('./lib/testcase-validator');
 const testcaseDescription = require('./lib/testcase-description');
+const negativeEvidence = require('./lib/negative-evidence');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
@@ -185,6 +189,15 @@ async function validateData() {
   const validation = updateSteps
     ? testcaseValidator.validateStepUpdates(ISSUE)
     : testcaseValidator.validatePayload(ISSUE, { existingTestCases });
+  // Cada Test Case negativo nuevo trae el informe de explore-page.js donde
+  // se probó (lib/negative-evidence.js): sin evidencia no se publica.
+  if (!updateSteps) {
+    const evidence = negativeEvidence.validateNegativeEvidence(ISSUE, {
+      readReport: reportPath => JSON.parse(fs.readFileSync(path.resolve(reportPath), 'utf8'))
+    });
+    validation.errors.push(...evidence.errors);
+    validation.warnings.push(...evidence.warnings);
+  }
   if (validation.errors.length) {
     console.error(`Validacion de Test Cases: ${validation.errors.length} error(es). No se publica nada.`);
     validation.errors.forEach(msg => console.error(`  ERROR: ${msg}`));

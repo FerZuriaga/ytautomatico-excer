@@ -31,6 +31,10 @@
  *                del sistema (nunca el repo).
  *
  * El informe (report.json + captura de pantalla completa) trae:
+ *   - quién lo generó (generator: "explore-page"), cuándo y las acciones
+ *     ejecutadas, más el texto visible después de la carga y de cada
+ *     acción (snapshots): es la evidencia que exige create-jira-task.js
+ *     para publicar un Test Case negativo;
  *   - requests de red vistas desde el navegador (método, URL, status),
  *     antes del proxy de Cypress: un método que Cypress no soporta aparece
  *     igual, con status 0;
@@ -84,6 +88,18 @@ const P = ${JSON.stringify(params)};
 // nueva vuelve a instalar el recorder (window:before:load) y lo capturado
 // en las anteriores se conserva.
 const REC = { requests: [], errors: [], pending: 0 };
+
+// Texto visible después de la carga y de cada acción: es la evidencia de
+// lo observado en el discovery (un toast o un mensaje de error puede
+// desaparecer antes del informe final). La usa create-jira-task.js para
+// exigir que cada Test Case negativo se haya probado.
+const SNAPSHOTS = [];
+function snapshot(step, action) {
+  cy.window().then(win => {
+    const text = ((win.document.body && win.document.body.innerText) || '').replace(/\\s+/g, ' ').trim();
+    SNAPSHOTS.push({ step, action, text: text.slice(0, 8000) });
+  });
+}
 
 function applyStorage(win) {
   Object.entries(P.storage).forEach(([k, v]) => win.localStorage.setItem(k, v));
@@ -184,6 +200,7 @@ function collect(win) {
     consoleErrors: REC.errors,
     uncaughtExceptions: P.uncaught,
     failedStep: P.failure,
+    snapshots: SNAPSHOTS,
     inventory,
     fieldsWithoutTestAttr: fields
   };
@@ -208,14 +225,16 @@ describe('explore', () => {
     cy.document({ timeout: 15000 }).its('readyState').should('eq', 'complete');
     if (P.waitFor) cy.get(P.waitFor, { timeout: 15000 });
     settle();
+    snapshot(0, 'carga');
 
-    P.actions.forEach(a => {
+    P.actions.forEach((a, i) => {
       if (a.action === 'click') cy.get(a.selector, { timeout: 15000 }).first().click();
       else if (a.action === 'type') cy.get(a.selector, { timeout: 15000 }).first().clear().type(a.value);
       else if (a.action === 'select') cy.get(a.selector, { timeout: 15000 }).first().select(a.value);
       else if (a.action === 'visit') cy.visit(new URL(a.value, P.url).href, { failOnStatusCode: false });
       else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
       settle();
+      snapshot(i + 1, a.action + ' ' + (a.selector || a.value || ''));
     });
   });
 });
@@ -304,7 +323,14 @@ function main() {
     process.exit(1);
   }
 
-  summarize(JSON.parse(fs.readFileSync(outJson, 'utf8')));
+  // Metadatos para usar el informe como evidencia (create-jira-task.js
+  // exige uno por Test Case negativo): quién lo generó, cuándo y con qué
+  // acciones.
+  const report = JSON.parse(fs.readFileSync(outJson, 'utf8'));
+  Object.assign(report, { generator: 'explore-page', generatedAt: new Date().toISOString(), requestedUrl: args.url, actions: args.actions });
+  fs.writeFileSync(outJson, JSON.stringify(report, null, 2));
+
+  summarize(report);
   console.log(`\nInforme completo: ${outJson}`);
   console.log(`Capturas: ${path.join(outDir, 'screenshots')}`);
 }
