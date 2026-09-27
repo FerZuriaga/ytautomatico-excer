@@ -41,6 +41,7 @@ require('dotenv').config();
 const https = require('https');
 const jira = require('./jira');
 const traceability = require('./traceability');
+const { withRetry, logRetry } = require('./http-retry');
 
 const HOST = 'xray.cloud.getxray.app';
 
@@ -79,11 +80,23 @@ function xrayAuth() {
 
 let tokenPromise = null;
 function getToken() {
-    if (!tokenPromise) tokenPromise = xrayAuth();
+    if (!tokenPromise) tokenPromise = withRetry(xrayAuth, { onRetry: logRetry('Xray authenticate') });
     return tokenPromise;
 }
 
-async function xrayRequest(query, variables = null) {
+// Las consultas (`query`) y las mutaciones idempotentes (`{ idempotent: true }`,
+// ej. cambiar el estado de un Test Run) se reintentan ante una falla de red
+// (lib/http-retry.js); una creación nunca, para no duplicar.
+function isIdempotentQuery(query) {
+    return /^\s*(query\b|\{)/.test(query);
+}
+
+async function xrayRequest(query, variables = null, { idempotent = isIdempotentQuery(query) } = {}) {
+    if (idempotent) return withRetry(() => xrayRequestOnce(query, variables), { onRetry: logRetry('Xray GraphQL') });
+    return xrayRequestOnce(query, variables);
+}
+
+async function xrayRequestOnce(query, variables = null) {
     const token = await getToken();
 
     return new Promise((resolve, reject) => {
@@ -515,7 +528,7 @@ async function findTestExecution(projectKey, testCycleKey, testCaseKey) {
     assertNoErrors(res);
 
     const run = res.body.data.getTestRun;
-    return run ? { id: run.id, key: null } : null;
+    return run ? { id: run.id, key: null, status: run.status?.name || null } : null;
 }
 
 /**
@@ -529,7 +542,7 @@ async function updateTestExecutionStatus(executionIdOrKey, statusName) {
             updateTestRunStatus(id: $id, status: $status)
         }
     `;
-    const res = await xrayRequest(query, { id: executionIdOrKey, status: statusName });
+    const res = await xrayRequest(query, { id: executionIdOrKey, status: statusName }, { idempotent: true });
     assertNoErrors(res);
     return res.body.data;
 }
@@ -746,7 +759,7 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId, share
 }
 
 module.exports = {
-
+    isIdempotentQuery,
     createTestCase,
     createTestSteps,
     removeAllTestSteps,

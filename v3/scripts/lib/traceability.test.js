@@ -22,7 +22,7 @@ const IFRAME_SPEC = path.resolve(__dirname, '../../../cypress/e2e/commitquality/
 const spec = (tests, story = 'SCRUM-1') => ({
   file: 'x.cy.js',
   story,
-  tests: tests.map(([ca, tc, key], i) => ({ file: 'x.cy.js', line: i + 1, title: `[${ca}][${tc}][${key}] t`, ca, tc, key }))
+  tests: tests.map(([ca, tc, key, skipped = false], i) => ({ file: 'x.cy.js', line: i + 1, title: `[${ca}][${tc}][${key}] t`, ca, tc, key, skipped }))
 });
 
 const testIssue = (labels = []) => ({ issuetype: 'Test', labels, linkedTests: [] });
@@ -55,7 +55,8 @@ test('regresion spec real de IFrame: HU del describe y los 7 it() con sus tags',
     title: '[CA-02][TC-02.1][SCRUM-353] Debe filtrar productos por nombre dentro del iframe',
     ca: 'CA-02',
     tc: 'TC-02.1',
-    key: 'SCRUM-353'
+    key: 'SCRUM-353',
+    skipped: false
   });
   assert.ok(parsed.tests[2].line > 1);
 });
@@ -84,7 +85,7 @@ test('parseSpecTags: it.skip (bug conocido) tambien se parsea con su key', () =>
   const parsed = parseSpecTags(source, 'z.cy.js');
 
   assert.equal(parsed.story, 'SCRUM-338');
-  assert.deepEqual(parsed.tests.map(t => [t.ca, t.tc, t.key]), [['CA-04', 'TC-04.1', 'SCRUM-346']]);
+  assert.deepEqual(parsed.tests.map(t => [t.ca, t.tc, t.key, t.skipped]), [['CA-04', 'TC-04.1', 'SCRUM-346', true]]);
 });
 
 // ─── Cruce contra Jira/Xray ──────────────────────────────────────────────────
@@ -172,4 +173,21 @@ test('error: la HU del describe no existe', () => {
   const { errors } = checkTraceability([spec([], 'SCRUM-404')], new Map());
 
   assert.deepEqual(errors, ['x.cy.js: la HU SCRUM-404 del describe no existe en Jira.']);
+});
+
+test('regresion SCRUM-508 CA-04: todos los negativos de un CA en it.skip avisa; con uno que corre, no', () => {
+  const issues = new Map([
+    ['SCRUM-1', { issuetype: 'Historia', labels: [], linkedTests: ['SCRUM-2', 'SCRUM-3', 'SCRUM-4'] }],
+    ['SCRUM-2', testIssue(['CA-04', 'negativo'])],
+    ['SCRUM-3', testIssue(['CA-04', 'positivo'])],
+    ['SCRUM-4', testIssue(['CA-05', 'negativo'])]
+  ]);
+
+  const salteado = checkTraceability([spec([['CA-04', 'TC-04.1', 'SCRUM-2', true], ['CA-04', 'TC-04.2', 'SCRUM-3'], ['CA-05', 'TC-05.1', 'SCRUM-4']])], issues);
+  assert.deepEqual(salteado.errors, []);
+  assert.equal(salteado.warnings.length, 1);
+  assert.match(salteado.warnings[0], /CA-04 tiene todos sus negativos en it\.skip \(SCRUM-2\)/);
+
+  const corre = checkTraceability([spec([['CA-04', 'TC-04.1', 'SCRUM-2'], ['CA-04', 'TC-04.2', 'SCRUM-3'], ['CA-05', 'TC-05.1', 'SCRUM-4']])], issues);
+  assert.deepEqual(corre.warnings, []);
 });

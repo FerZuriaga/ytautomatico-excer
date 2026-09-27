@@ -20,6 +20,8 @@ const {
   isReportable,
   compareReportedStatuses,
   collectTaggedTests,
+  collectKnownBugSkips,
+  classifyFailure,
   extractTestCaseKey
 } = require('./test-runner');
 
@@ -140,7 +142,7 @@ test('resumen: cuenta passes, fallas con mensaje, pendientes y tests sin tag', (
 
   assert.equal(summary.total, 3);
   assert.equal(summary.passed, 2);
-  assert.deepEqual(summary.failed, [{ fullTitle: '[CA-01][TC-01.2][SCRUM-352] falla', message: 'expected 10 to equal 11' }]);
+  assert.deepEqual(summary.failed, [{ fullTitle: '[CA-01][TC-01.2][SCRUM-352] falla', message: 'expected 10 to equal 11', hint: classifyFailure('expected 10 to equal 11') }]);
   assert.deepEqual(summary.untagged, ['sin tag']);
   assert.equal(isReportable(summary), false);
 });
@@ -204,4 +206,31 @@ test('pendiente sin bug conocido sigue frenando; corrida con solo salteados no s
   const soloSalteados = mochaJsonDoc({ testsCount: 1 });
   soloSalteados.pending = [{ fullTitle: '[SCRUM-3] skip (bug conocido: SCRUM-9)' }];
   assert.equal(isReportable(summarizeResults(soloSalteados)), false);
+});
+
+test('regresion Checkout 2026-09-26: los salteados por bug conocido se juntan para volver su ejecucion a TO DO', () => {
+  const entry = fullTitle => ({ title: fullTitle, fullTitle, currentRetry: 0, err: {} });
+  const results = {
+    passes: [entry('[CA-04][TC-04.1][SCRUM-512] No debe avanzar al pago con la calle vacia')],
+    failures: [],
+    pending: [
+      entry('[CA-03][TC-03.1][SCRUM-510] Debe precargar la direccion completa del perfil (bug conocido: SCRUM-526)'),
+      entry('[CA-07][TC-07.2][SCRUM-524] Debe crear el pedido pagando con tarjeta (bug conocido: SCRUM-525)'),
+      entry('[CA-01][TC-01.9][SCRUM-999] Pendiente sin bug')
+    ]
+  };
+
+  assert.deepEqual(collectKnownBugSkips(results).map(t => [t.testCaseKey, t.bug]), [['SCRUM-510', 'SCRUM-526'], ['SCRUM-524', 'SCRUM-525']]);
+  assert.deepEqual(collectTaggedTests(results).map(t => t.testCaseKey), ['SCRUM-512', 'SCRUM-999']);
+});
+
+test('regresion Checkout 2026-09-26: la pista distingue elemento no encontrado, API y comportamiento de la app', () => {
+  // Mensajes reales de la corrida del lote de Checkout.
+  assert.match(classifyFailure('Timed out retrying after 15000ms: Expected to find element: `[data-test=proceed-2]`, but never found it.'), /no encontro el elemento/);
+  assert.match(classifyFailure("Timed out retrying after 15000ms: expected '<input#street.form-control.ng-dirty.ng-invalid.ng-touched>' to have class 'is-invalid'"), /reproducir con explore-page\.js ANTES de tocar el codigo/);
+  assert.match(classifyFailure('cy.request() failed on:\n\nhttps://api.practicesoftwaretesting.com/users/login\n\nThe response we received from your web server was:\n\n  > 401: Unauthorized'), /llamada por API/);
+  assert.equal(classifyFailure('Cannot read properties of undefined'), null);
+
+  const summary = summarizeResults({ passes: [], pending: [], failures: [{ fullTitle: 't', err: { message: "expected '<button>' to be 'disabled'" } }] });
+  assert.match(summary.failed[0].hint, /no cumple lo esperado/);
 });

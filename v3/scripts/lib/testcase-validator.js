@@ -366,12 +366,15 @@ const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre',
 // "bloqueo tras 3 intentos" y "el exito reinicia el conteo" con ";"): cada
 // parte con al menos 4 palabras cuenta como una regla. Heurística: la
 // separación la decide quien escribe, el validador solo avisa.
+// Lote SCRUM-502 (2026-09-26) sumó los conectores que esquivaban el ";":
+// "mientras que", "en cambio", "y si no" y ", y sin" (la regla opuesta:
+// "con sesión avanza…, mientras que sin sesión se le pide…").
 const MIN_CLAUSE_WORDS = 4;
 
 function compoundClauses(text) {
   const body = normalize(text).replace(CRITERION_ID_REGEX, '').replace(/^\s*:/, '');
   return body
-    .split(/;|\by ademas\b|\bademas,/)
+    .split(/;|\by ademas\b|\bademas,|\bmientras que\b|\ben cambio\b|\by si no\b|,\s*y sin\b/)
     .filter(part => part.split(/\s+/).filter(Boolean).length >= MIN_CLAUSE_WORDS)
     .length;
 }
