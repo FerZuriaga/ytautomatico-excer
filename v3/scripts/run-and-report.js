@@ -6,12 +6,18 @@
  *
  * Uso:
  *   node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,<SCRUM-2>...]] [--results-out <archivo.json>]
+ *   node v3/scripts/run-and-report.js --from-results <archivo.json> --test-cycle <SCRUM-1>[,...]
  *
  *   --spec          (obligatorio) specs a correr, separados por coma.
  *   --test-cycle    (opcional) ciclos de Xray donde reportar. Sin este flag
  *                   solo corre y resume (no toca Xray).
  *   --results-out   (opcional) dónde guardar el JSON crudo de Cypress.
  *                   Default: carpeta temporal del sistema (nunca el repo).
+ *   --from-results  (opcional) NO corre Cypress: toma el JSON de una corrida
+ *                   ya hecha y reporta + verifica por lectura. Para cuando el
+ *                   reporte se cortó (502, socket hang up): el reporte es
+ *                   idempotente y así se verifica sin volver a correr los
+ *                   specs (caso real 2026-09-26, lote Checkout).
  *
  * Reglas (CLAUDE.md, PASO 3):
  *   - una corrida por invocación: `npx cypress run --quiet --reporter json --spec ...`
@@ -42,11 +48,12 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 function parseArgs(argv) {
-  const args = { specs: [], cycles: [], resultsOut: null };
+  const args = { specs: [], cycles: [], resultsOut: null, fromResults: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--spec') args.specs = splitList(argv[++i]);
     else if (argv[i] === '--test-cycle') args.cycles = splitList(argv[++i]);
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
+    else if (argv[i] === '--from-results') args.fromResults = argv[++i];
   }
   return args;
 }
@@ -93,13 +100,17 @@ async function verifyCycles(cycles, expectedKeys) {
 }
 
 async function main() {
-  const { specs, cycles, resultsOut } = parseArgs(process.argv.slice(2));
-  if (!specs.length) {
+  const { specs, cycles, resultsOut, fromResults } = parseArgs(process.argv.slice(2));
+  if (fromResults && !cycles.length) {
+    console.error('--from-results requiere --test-cycle (solo sirve para reportar y verificar).');
+    process.exit(1);
+  }
+  if (!specs.length && !fromResults) {
     console.error('Uso: node v3/scripts/run-and-report.js --spec <spec1>[,<spec2>...] [--test-cycle <SCRUM-1>[,...]] [--results-out <archivo.json>]');
     process.exit(1);
   }
 
-  if (cycles.length) {
+  if (cycles.length && specs.length) {
     const trace = await runCheck(specs);
     if (trace.errors.length) {
       console.error(`
@@ -108,8 +119,9 @@ Trazabilidad rota (${trace.errors.length} error(es)): no se corre Cypress ni se 
     }
   }
 
-  const resultsPath = path.resolve(resultsOut || path.join(os.tmpdir(), `cypress-results-${Date.now()}.json`));
-  const exitCode = runCypress(specs, resultsPath);
+  const resultsPath = path.resolve(fromResults || resultsOut || path.join(os.tmpdir(), `cypress-results-${Date.now()}.json`));
+  const exitCode = fromResults ? 0 : runCypress(specs, resultsPath);
+  if (fromResults) console.log(`Sin correr Cypress: se usa la corrida guardada en ${resultsPath}`);
 
   const summary = testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath));
   printSummary(summary);

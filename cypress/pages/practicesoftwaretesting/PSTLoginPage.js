@@ -4,6 +4,9 @@ const T = { timeout: 15000 }
 
 const JSON_HEADERS = { Accept: 'application/json' }
 
+// Dirección del perfil por defecto de los clientes de prueba.
+const DEFAULT_ADDRESS = { street: 'Calle 1', house_number: '42', city: 'Cordoba', state: 'Cordoba', country: 'AR', postal_code: '5000' }
+
 // Pantalla Login y menú del usuario (sesión). Cada test usa un cliente
 // propio registrado por API: 3 intentos fallidos bloquean la cuenta, así
 // que nunca se prueba contra las cuentas demo compartidas.
@@ -11,14 +14,17 @@ class PSTLoginPage {
 
     // ─── Precondiciones por API ───────────────────────────────────────────────
 
-    // Registra un cliente nuevo con email único y lo devuelve.
-    createCustomer() {
+    // Registra un cliente nuevo con email único y lo devuelve. `address`
+    // reemplaza la dirección del perfil por defecto.
+    createCustomer(address = DEFAULT_ADDRESS) {
         const unique = `${Date.now()}${Math.floor(Math.random() * 1000)}`
         const customer = {
             firstName: 'Qa',
             lastName: `Sesion${unique.slice(-6)}`,
             email: `qa.sesion.${unique}@example.com`,
-            password: 'Qa!Sesion2026#'
+            password: 'Qa!Sesion2026#',
+            // Dirección del perfil: la precarga el paso Billing Address del checkout.
+            address
         }
         customer.fullName = `${customer.firstName} ${customer.lastName}`
         return cy.fixture(FIXTURE).then(sel => {
@@ -29,7 +35,7 @@ class PSTLoginPage {
                 body: {
                     first_name: customer.firstName, last_name: customer.lastName, dob: '1990-01-01',
                     phone: '123456789', email: customer.email, password: customer.password,
-                    address: { street: 'Calle 1', city: 'Cordoba', state: 'Cordoba', country: 'AR', postal_code: '5000' }
+                    address: customer.address
                 }
             }).its('status').should('eq', 201)
             return cy.wrap(customer)
@@ -56,14 +62,19 @@ class PSTLoginPage {
     }
 
     // Sesión iniciada: el token se guarda solo en la próxima carga de
-    // página (once), para que un Sign out posterior no lo reponga.
-    startSession(customer) {
+    // página (once), para que un Sign out posterior no lo reponga. El token
+    // dura 5 minutos: pedirlo en el mismo test que lo usa.
+    prepareSession(customer) {
         this.apiLogin(customer.email, customer.password, 200).then(({ access_token }) => {
             cy.fixture(FIXTURE).then(sel => {
                 cy.once('window:before:load', win => win.localStorage.setItem(sel.tokenKey, access_token))
-                cy.gotoPSTUrl('/')
             })
         })
+    }
+
+    startSession(customer) {
+        this.prepareSession(customer)
+        cy.gotoPSTUrl('/')
     }
 
     // ─── Pantalla Login ───────────────────────────────────────────────────────

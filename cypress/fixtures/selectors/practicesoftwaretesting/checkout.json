@@ -1,0 +1,84 @@
+{
+  "path": "/checkout",
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "paymentCheckPath": "/payment/check",
+    "invoicesPath": "/invoices",
+    "postcodeLookupPath": "/postcode-lookup",
+    "sessionGuest": "guestCheckout"
+  },
+  "steps": {
+    "cartProceed": "[data-test=\"proceed-1\"]",
+    "signInProceed": "[data-test=\"proceed-2\"]",
+    "guestProceed": "[data-test=\"proceed-2-guest\"]",
+    "addressProceed": "[data-test=\"proceed-3\"]"
+  },
+  "signIn": {
+    "loginEmail": "[data-test=\"email\"]",
+    "loginPassword": "[data-test=\"password\"]",
+    "guestTab": "a[href=\"#guest-tab\"]",
+    "guestEmail": "[data-test=\"guest-email\"]",
+    "guestFirstName": "[data-test=\"guest-first-name\"]",
+    "guestLastName": "[data-test=\"guest-last-name\"]",
+    "guestSubmit": "[data-test=\"guest-submit\"]",
+    "guestEmailError": "[data-test=\"guest-email-error\"]",
+    "guestFirstNameError": "[data-test=\"guest-first-name-error\"]",
+    "guestLastNameError": "[data-test=\"guest-last-name-error\"]"
+  },
+  "address": {
+    "street": "[data-test=\"street\"]",
+    "houseNumber": "[data-test=\"house_number\"]",
+    "city": "[data-test=\"city\"]",
+    "state": "[data-test=\"state\"]",
+    "country": "[data-test=\"country\"]",
+    "postalCode": "[data-test=\"postal_code\"]",
+    "invalidClass": "is-invalid"
+  },
+  "payment": {
+    "method": "[data-test=\"payment-method\"]",
+    "bankName": "[data-test=\"bank_name\"]",
+    "accountName": "[data-test=\"account_name\"]",
+    "accountNumber": "[data-test=\"account_number\"]",
+    "giftCardNumber": "[data-test=\"gift_card_number\"]",
+    "validationCode": "[data-test=\"validation_code\"]",
+    "creditCardNumber": "[data-test=\"credit_card_number\"]",
+    "expirationDate": "[data-test=\"expiration_date\"]",
+    "cvv": "[data-test=\"cvv\"]",
+    "cardHolderName": "[data-test=\"card_holder_name\"]",
+    "monthlyInstallments": "[data-test=\"monthly_installments\"]",
+    "finish": "[data-test=\"finish\"]",
+    "successMessage": "[data-test=\"payment-success-message\"]",
+    "errorMessage": "[data-test=\"payment-error-message\"]",
+    "orderConfirmation": "#order-confirmation"
+  },
+  "navCart": "[data-test=\"nav-cart\"]",
+  "texts": {
+    "signInTitle": "Sign in",
+    "alreadyLoggedIn": "Hello {first} {last}, you are already logged in. You can proceed to checkout.",
+    "guestProceed": "Continuing as guest: {first} {last} ({email})",
+    "addressTitle": "Billing Address",
+    "paymentTitle": "Payment",
+    "paymentSuccess": "Payment was successful",
+    "orderConfirmation": "Thanks for your order! Your invoice number is ",
+    "methods": {
+      "bank-transfer": "Bank Transfer",
+      "cash-on-delivery": "Cash on Delivery",
+      "credit-card": "Credit Card",
+      "buy-now-pay-later": "Buy Now Pay Later",
+      "gift-card": "Gift Card"
+    },
+    "errors": {
+      "bankName": "Bank name can only contain letters and spaces.",
+      "accountNumber": "Account number must be numeric.",
+      "cardNumber": "Invalid card number format.",
+      "expirationFormat": "Invalid date format. Use MM/YYYY.",
+      "expirationPast": "Expiration date must be in the future.",
+      "cvv": "CVV must be 3 or 4 digits.",
+      "giftCardNumber": "Please enter a valid gift card number: exactly 16 letters and/or digits.",
+      "validationCode": "Please enter a valid validation code: exactly 4 letters and/or digits.",
+      "guestEmailRequired": "Email is required",
+      "guestFirstNameRequired": "First name is required",
+      "guestLastNameRequired": "Last name is required"
+    }
+  }
+}

@@ -209,3 +209,52 @@ selecciona como `a.card[data-test^="product-"]`. El slider de precio
 - Credencial inexistente → 401 `Unauthorized` → `Invalid email or password`.
 - Tras el logout el front llama `GET /users/refresh` y recibe 500 (no
   afecta al usuario; observado con `explore-page.js`).
+
+## Checkout pasos 2-4: Sign in, Billing Address, Payment (2026-09-26)
+
+Explorado con `explore-page.js --session-storage` sobre el mismo estado que
+usan los tests (carrito por API + sesión por token), no solo por la UI.
+
+- **Paso 2 (Sign in):** con sesión muestra `Hello <nombre> <apellido>, you
+  are already logged in...` y `proceed-2`. Sin sesión: login embebido o
+  pestaña "Continue as Guest" (`a[href="#guest-tab"]`): email obligatorio y
+  con formato, nombre y apellido obligatorios (mínimo 2 caracteres). Los
+  datos del invitado quedan en `sessionStorage.guestCheckout` y se usa
+  `proceed-2-guest`.
+- **Paso 3 (Billing Address):** precargada del perfil del cliente. Todos
+  los campos obligatorios (street ≤70, city/state/country ≤40, postal code
+  y house number ≤10); un campo inválido solo se marca con `is-invalid`
+  (sin mensaje) y `proceed-3` queda **deshabilitado**.
+- **Búsqueda por código postal (servicio simulado de la demo):** con país +
+  código + número de casa llama `GET /postcode-lookup` y **pisa** calle,
+  ciudad y estado con datos ficticios deterministas por código (AR 5000 →
+  "Eduardo Points", "North Gudrun", "Illinois"); formato inválido para el
+  país → 422. La factura sale con esa dirección, no con la del perfil
+  (posible defecto).
+- **Paso 4 (Payment):** `payment-method` obligatorio; `finish` (Confirm)
+  deshabilitado hasta que el formulario es válido. Reglas por medio: Bank
+  Transfer (nombre del banco solo letras/espacios, titular letras/números/
+  `.'-`, cuenta numérica), Gift Card (16 alfanuméricos + código de 4),
+  Credit Card (`0000-0000-0000-0000`, vencimiento `MM/YYYY` futuro, CVV 3-4
+  dígitos, titular solo letras), Buy Now Pay Later (cuotas obligatorias),
+  Cash on Delivery (sin datos). `POST /payment/check` responde 200
+  `Payment was successful` para todos.
+- **Confirm necesita DOS clics (posible defecto):** el primero valida el
+  pago y muestra `Payment was successful` (`payment-success-message`) pero
+  **no crea el pedido**; recién el segundo hace `POST /invoices` (201),
+  vacía el carrito (`DELETE /carts/{id}`, limpia sessionStorage) y muestra
+  `Thanks for your order! Your invoice number is INV-...` en
+  `#order-confirmation` (el `id="invoice-number"` del texto lo elimina el
+  sanitizador de Angular). La factura queda en la cuenta del cliente
+  (`GET /invoices`, estado `AWAITING_FULFILLMENT`).
+- **Token de sesión de 5 minutos** (`exp - iat = 300`): pedirlo dentro del
+  mismo test que lo usa (`PSTLoginPage.prepareSession`), nunca reutilizarlo.
+- **La re-siembra borra los usuarios registrados** (visto 2026-09-26: un
+  cliente creado ~20 min antes dejó de existir y el mismo email se pudo
+  registrar de nuevo). Cada test registra su propio cliente.
+- **Dos búsquedas por código postal al cargar Billing Address:** esperar
+  ambas respuestas antes de editar el formulario, o la segunda vuelve a
+  completar la calle.
+- **Los campos inválidos de la dirección nunca se marcan** (Bug SCRUM-528):
+  la condición usa `cusAddress.street.errors` (siempre undefined en un
+  FormGroup).

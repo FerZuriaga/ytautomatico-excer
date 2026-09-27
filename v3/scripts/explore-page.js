@@ -4,13 +4,17 @@
  * aserciones de negocio y no deja ningún spec en el repo.
  *
  * Uso:
- *   node v3/scripts/explore-page.js --url <url> [--storage '<json>'] [--actions <archivo.json>]
+ *   node v3/scripts/explore-page.js --url <url> [--storage '<json>'] [--session-storage '<json>']
+ *                                   [--actions <archivo.json>]
  *                                   [--wait-for <selector>] [--init-script <archivo.js>]
  *                                   [--viewport 1280x800] [--out <carpeta>]
  *
  *   --url        (obligatorio) pantalla a explorar.
  *   --storage    (opcional) claves de localStorage a fijar antes de cargar,
  *                ej. '{"language":"en"}'.
+ *   --session-storage (opcional) idem para sessionStorage, ej. el cart_id de
+ *                un carrito preparado por API: explorar con el mismo estado
+ *                que usará el test, no solo el camino de la UI.
  *   --actions    (opcional) JSON con acciones para llegar a una pantalla
  *                interna: [{ "action": "click", "selector": "..." },
  *                { "action": "type", "selector": "...", "value": "..." },
@@ -52,10 +56,11 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const STANDARD_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
 function parseArgs(argv) {
-  const args = { url: null, storage: {}, actions: [], waitFor: null, initScript: null, viewport: '1280x800', out: null };
+  const args = { url: null, storage: {}, sessionStorage: {}, actions: [], waitFor: null, initScript: null, viewport: '1280x800', out: null };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--url') args.url = argv[++i];
     else if (argv[i] === '--storage') args.storage = JSON.parse(argv[++i]);
+    else if (argv[i] === '--session-storage') args.sessionStorage = JSON.parse(argv[++i]);
     else if (argv[i] === '--actions') args.actions = JSON.parse(fs.readFileSync(argv[++i], 'utf8'));
     else if (argv[i] === '--wait-for') args.waitFor = argv[++i];
     else if (argv[i] === '--init-script') args.initScript = path.resolve(argv[++i]);
@@ -82,6 +87,7 @@ const REC = { requests: [], errors: [], pending: 0 };
 
 function applyStorage(win) {
   Object.entries(P.storage).forEach(([k, v]) => win.localStorage.setItem(k, v));
+  Object.entries(P.sessionStorage).forEach(([k, v]) => win.sessionStorage.setItem(k, v));
 }
 
 function recorder(win) {
@@ -262,7 +268,7 @@ function summarize(report) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.url) {
-    console.error('Uso: node v3/scripts/explore-page.js --url <url> [--storage \'<json>\'] [--actions <archivo.json>] [--wait-for <selector>] [--init-script <archivo.js>] [--viewport 1280x800] [--out <carpeta>]');
+    console.error('Uso: node v3/scripts/explore-page.js --url <url> [--storage \'<json>\'] [--session-storage \'<json>\'] [--actions <archivo.json>] [--wait-for <selector>] [--init-script <archivo.js>] [--viewport 1280x800] [--out <carpeta>]');
     process.exit(1);
   }
 
@@ -281,7 +287,7 @@ function main() {
   specPattern: 'explore.cy.js', supportFile: false, video: false, screenshotOnRunFailure: true,
   viewportWidth: ${width}, viewportHeight: ${height}, pageLoadTimeout: 20000, defaultCommandTimeout: 15000, retries: 0
 } };\n`);
-  fs.writeFileSync(path.join(projectDir, 'explore.cy.js'), buildSpec({ url: args.url, storage: args.storage, actions: args.actions, waitFor: args.waitFor, initScript: args.initScript, outJson }));
+  fs.writeFileSync(path.join(projectDir, 'explore.cy.js'), buildSpec({ url: args.url, storage: args.storage, sessionStorage: args.sessionStorage, actions: args.actions, waitFor: args.waitFor, initScript: args.initScript, outJson }));
 
   console.log(`Explorando ${args.url} con navegador real (Cypress headless)...`);
   const run = spawnSync('npx', ['cypress', 'run', '--project', projectDir, '--quiet'], {
