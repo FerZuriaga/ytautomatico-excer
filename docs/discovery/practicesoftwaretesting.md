@@ -417,6 +417,7 @@ Selectores en `cypress/fixtures/selectors/practicesoftwaretesting/contacto.json`
   cuenta varias veces y nombre/apellido/email pasan a ser obligatorios
   recién cuando el formulario recibe su 401. Si se envía antes (visto en la
   1ra corrida del PASO 3), la consulta sale sin nombre ni email y la API la
-  acepta (`POST /messages` con `name: " "` y sin `email` → 200). Los tests
+  acepta (`POST /messages` con `name: " "` y sin `email` → 200): Bug
+  SCRUM-620. Los tests
   esperan a que el nombre vacío figure inválido (`ng-invalid`) antes de
   tocar el formulario.

@@ -54,8 +54,8 @@ class PSTContactPage {
             // La pantalla consulta la cuenta varias veces y los campos pasan a
             // ser obligatorios recién con la respuesta que recibe el
             // formulario: se espera a que el nombre vacío figure inválido.
-            // Enviar antes manda una consulta sin nombre ni email (posible
-            // defecto, ver docs/discovery/practicesoftwaretesting.md).
+            // Enviar antes manda una consulta sin nombre ni email (
+            // Bug SCRUM-620).
             cy.get(sel.form.firstName, T).should('have.class', 'ng-invalid')
             cy.contains('h3', sel.texts.title, T).should('be.visible')
             ;[sel.form.firstName, sel.form.lastName, sel.form.email, sel.form.subject, sel.form.message, sel.form.attachment, sel.form.submit]
