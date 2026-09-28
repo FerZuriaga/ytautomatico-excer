@@ -111,6 +111,16 @@ Verificar:
 
 ---
 
+### Alcance de cada test
+
+Verificar que cada `it()` afirme solo los resultados esperados de su Test
+Case (sin validar la regla completa de otro CA en un paso intermedio) y
+que los mensajes redactados por el servidor se verifiquen de forma
+funcional (status, motivo devuelto por el servicio, consecuencia de la
+regla), no copiados. Si no se cumple: hallazgo Obligatorio.
+
+---
+
 ### Reutilización
 
 Verificar si:

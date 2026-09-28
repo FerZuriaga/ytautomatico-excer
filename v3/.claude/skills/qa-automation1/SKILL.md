@@ -181,6 +181,20 @@ commitean.
 3. Documentarlo exclusivamente con la skill `bug-reporting`.
 4. No crear tickets (eso es de `product-agent`): informar al Manager.
 
+## CADA TEST AFIRMA SOLO LO QUE PROMETE SU TC
+
+- Un `it()` verifica los resultados esperados de su Test Case, ni más ni
+  menos. Si un paso intermedio pasa por otra pantalla, se afirma lo
+  mínimo para saber que se llegó (ej. cantidad de filas y total), no la
+  regla completa de otro CA: si esa regla se rompe, tiene que fallar el
+  test de su CA, no uno ajeno. Caso real: SCRUM-588 (listado) validaba el
+  detalle completo de la factura, que es la regla del CA-02.
+- **Mensajes redactados por el servidor:** aserción funcional, no el
+  texto copiado. Se verifica el status del rechazo, que la pantalla
+  muestre el motivo que devolvió el servicio (`response.body.message`) y
+  la consecuencia de la regla (ej. la contraseña actual sigue entrando).
+  Los textos propios del front sí van exactos desde el fixture.
+
 ## ALCANCE DE LA AUTOMATIZACIÓN
 
 La Historia es la fuente oficial del comportamiento esperado. Si la

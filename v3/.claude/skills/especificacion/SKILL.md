@@ -50,6 +50,9 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
   `reglasNegocio` (reglas relevadas que la HU respeta, ej. "un solo Thor
   Hammer por carrito"), `fueraDeAlcance`, `defectosConocidos` (keys de
   Bugs relacionados).
+- **Sin contradicciones entre secciones:** una regla que queda fuera de
+  alcance no se lista en `reglasNegocio` (caso real: SCRUM-586 listaba
+  "15 por página" y a la vez dejaba la paginación fuera de alcance).
 
 ## Criterios de Aceptación
 
@@ -68,6 +71,12 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
 - Id al inicio: `"CA-01: ..."`. Numeración global sin reinicios.
 - Un resultado negativo de una regla ya cubierta es un caso de ese
   criterio, no un criterio nuevo.
+- **Cada TC pertenece a la regla de su CA, no a una vecina.** Antes de
+  asignarlo, preguntarse qué regla se rompe si el TC falla: esa es su CA.
+  Tampoco se meten reglas distintas en un criterio para no pasar de 4.
+  Casos reales: "factura inexistente" estaba bajo "solo ve sus propias
+  facturas" (es el negativo del detalle, SCRUM-593 → CA-02); "distinta de
+  la actual" estaba dentro de "reglas de seguridad" (CA-08 propio).
 - **Comportamiento relevado ≠ requisito:** si lo que la app hace hoy
   contradice el "Para" (ej. perder datos guardados), NO es criterio: va a
   LIMITACIONES O POSIBLES DEFECTOS (y a `bug-reporting` si corresponde).
@@ -103,6 +112,14 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
 - **Datos de prueba en la columna Datos** (`testData`), nunca dentro del
   texto de la acción: si el seed cambia, se corrige solo el dato.
 - Resultado esperado observable y concreto (textos exactos, cantidades).
+  **Excepción: los mensajes que redacta el servidor** (errores de
+  validación de una API) se describen por su significado ("se muestra un
+  aviso que indica que la contraseña actual no es correcta") más la
+  consecuencia de la regla ("y la contraseña no cambia"), no copiados
+  palabra por palabra: si el equipo corrige la redacción, la regla se
+  sigue cumpliendo y el TC no tiene que cambiar. Los textos propios de la
+  pantalla (etiquetas, avisos del front) sí van exactos. Caso real:
+  SCRUM-578..584 copiaban "does not matches" y "(and 3 more errors)".
 - Elegir datos que no choquen con defectos conocidos ni con reglas
   ocultas del backend (verificadas en `discovery`).
 - **Los TC se arman por la regla del CA, nunca según un bug.** Si un
