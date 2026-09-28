@@ -138,9 +138,33 @@ EVIDENCIA:
 
 ENTORNO:
 
-OBSERVACIONES:
-
 ---
+
+### Estándar del ticket (lo valida `lib/bug-validator.js`)
+
+- **Solo estas secciones:** Resumen, Precondiciones, Pasos para
+  reproducir, Resultado actual, Resultado esperado, Evidencia y Entorno
+  (más Severidad y, opcional, Prioridad). No hay "Observaciones" ni
+  secciones libres.
+- **Nunca Test Cases ni ciclos en el Bug** (ni keys, ni "TC-02.1", ni
+  "casos de prueba"): viven en Xray. Las relaciones con la HU u otros
+  Bugs van como enlaces de Jira (`linkTo`, acepta varios), nunca citadas
+  en el texto.
+- **Evidencia = hechos observables y medibles:** error de consola exacto,
+  respuestas HTTP (método, ruta, status, cuerpo relevante), captura o
+  informe de `explore-page.js` y entorno. Prohibido especular sobre el
+  código interno de la app (funciones, componentes, condiciones,
+  "probablemente…"): un nombre del código solo se cita si aparece en un
+  stack trace real. Caso real: SCRUM-528 explicaba "la condición usa
+  cusAddress.street.errors".
+- **Captura de pantalla obligatoria:** `captura` con el `.png` que deja
+  `explore-page.js` (`<out>/screenshots/explore.cy.js/explore.png`) al
+  reproducir el defecto en el navegador real durante el discovery. Sin
+  captura, con un archivo que no es PNG o con una imagen que no salió de
+  una exploración (sin su `report.json`) el Bug no se publica.
+  `create-jira-task.js` la adjunta al ticket y lo verifica por lectura.
+  Reproducir el defecto con `explore-page.js --actions` hasta el estado
+  que lo muestra, así la captura final es la evidencia.
 
 ## REGLAS ESPECIALES
 

@@ -9,7 +9,8 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildHistoriaDescription } = require('./jira');
+const path = require('path');
+const { buildHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody } = require('./jira');
 
 const base = {
   como: 'cliente', quiero: 'comparar productos', para: 'elegir mejor',
@@ -48,4 +49,46 @@ test('secciones opcionales vacias o con motivos en blanco no se agregan', () => 
   const doc = buildHistoriaDescription({ ...base, sinNegativo: { 'CA-01': ' ' }, reglasNegocio: [], fueraDeAlcance: ['  '] });
 
   assert.deepEqual(headings(doc), ['Contexto', 'Objetivo', 'Criterios de aceptación']);
+});
+
+// Estándar del Bug (2026-09-27, ver lib/bug-validator.js): secciones fijas y
+// sin "Observaciones", donde terminaban las listas de Test Cases.
+const bug = {
+  resumen: 'Resumen.', precondiciones: 'Precondiciones.', pasos: ['Paso uno.', 'Paso dos.'],
+  resultadoActual: 'Actual.', resultadoEsperado: 'Esperado.', evidencia: 'PUT /users/{id} responde 200.',
+  entorno: 'Toolshop v5.', severidad: 'Media', captura: 'exp/pw-vieja/screenshots/explore.cy.js/explore.png'
+};
+
+test('Bug: secciones del estándar en orden, sin Observaciones', () => {
+  const doc = buildBugDescription({ ...bug, observaciones: 'Afecta al TC SCRUM-559.' });
+
+  assert.deepEqual(headings(doc), ['Resumen del problema', 'Precondiciones', 'Pasos para reproducir', 'Resultado actual', 'Resultado esperado', 'Evidencia', 'Entorno', 'Severidad']);
+  assert.deepEqual(listAfter(doc, 'Pasos para reproducir'), bug.pasos);
+  assert.ok(!JSON.stringify(doc).includes('SCRUM-559'));
+});
+
+test('Bug con prioridad: se agrega al final', () => {
+  assert.deepEqual(headings(buildBugDescription({ ...bug, prioridad: 'Alta' })).slice(-2), ['Severidad', 'Prioridad']);
+});
+
+test('Bug: la Evidencia nombra la captura adjunta', () => {
+  const doc = buildBugDescription(bug);
+  const i = doc.content.findIndex(n => n.type === 'heading' && n.content[0].text === 'Evidencia');
+  assert.equal(doc.content[i + 2].content[0].text, 'Captura del navegador adjunta: explore.png');
+});
+
+test('captureFileName: carpeta del informe de explore-page + archivo', () => {
+  const report = path.join('exp', 'pw-vieja', 'report.json');
+  const exists = p => p === report;
+  assert.equal(captureFileName(path.join('exp', 'pw-vieja', 'screenshots', 'explore.cy.js', 'explore.png'), { exists }), 'pw-vieja-explore.png');
+  assert.equal(captureFileName(path.join('otra', 'captura.png'), { exists }), 'captura.png');
+});
+
+test('buildMultipartBody: un archivo en el campo "file" con su nombre y el contenido intacto', () => {
+  const content = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff]);
+  const body = buildMultipartBody('B0UND', 'pw-vieja-explore.png', content);
+  const text = body.toString('latin1');
+  assert.ok(text.startsWith('--B0UND\r\nContent-Disposition: form-data; name="file"; filename="pw-vieja-explore.png"\r\nContent-Type: image/png\r\n\r\n'));
+  assert.ok(text.endsWith('\r\n--B0UND--\r\n'));
+  assert.ok(body.includes(content));
 });
