@@ -1,0 +1,60 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "registerPath": "/notes/api/users/register",
+    "loginPath": "/notes/api/users/login",
+    "notesPath": "/notes/api/notes"
+  },
+  "path": "/notes/app",
+  "tokenKey": "token",
+  "list": {
+    "addNote": "[data-testid=\"add-new-note\"]",
+    "notesList": "[data-testid=\"notes-list\"]",
+    "progress": "[data-testid=\"progress-info\"]",
+    "noNotes": "[data-testid=\"no-notes-message\"]",
+    "categoryTab": "[data-testid=\"category-{category}\"]"
+  },
+  "form": {
+    "category": "[data-testid=\"note-category\"]",
+    "completed": "[data-testid=\"note-completed\"]",
+    "title": "[data-testid=\"note-title\"]",
+    "description": "[data-testid=\"note-description\"]",
+    "submit": "[data-testid=\"note-submit\"]",
+    "cancel": "[data-testid=\"note-cancel\"]",
+    "error": ".invalid-feedback"
+  },
+  "card": {
+    "root": "[data-testid=\"note-card\"]",
+    "title": "[data-testid=\"note-card-title\"]",
+    "description": "[data-testid=\"note-card-description\"]",
+    "updatedAt": "[data-testid=\"note-card-updated-at\"]",
+    "completedSwitch": "[data-testid=\"toggle-note-switch\"]",
+    "view": "[data-testid=\"note-view\"]",
+    "edit": "[data-testid=\"note-edit\"]",
+    "delete": "[data-testid=\"note-delete\"]"
+  },
+  "categories": [
+    "Home",
+    "Work",
+    "Personal"
+  ],
+  "data": {
+    "titleMin": 4,
+    "titleMax": 100,
+    "descriptionMin": 4,
+    "descriptionMax": 1000
+  },
+  "texts": {
+    "formTitle": "Add new note",
+    "create": "Create",
+    "noNotesAll": "You don't have any notes in all categories",
+    "noNotesInCategory": "You don't have any notes in the {category} category",
+    "progressAll": "You have {done}/{total} notes completed in the all categories",
+    "progressCategory": "You have {done}/{total} notes completed in the {category} category",
+    "allCompleted": "You have completed all notes",
+    "titleRequired": "Title is required",
+    "titleLength": "Title should be between 4 and 100 characters",
+    "descriptionRequired": "Description is required",
+    "descriptionLength": "Description should be between 4 and 1000 characters"
+  }
+}
