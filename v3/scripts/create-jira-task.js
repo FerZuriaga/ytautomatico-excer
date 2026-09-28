@@ -422,8 +422,20 @@ async function attachCaptures(key, issueDef) {
   console.log(`Verificado por lectura: ${names.length} captura(s) adjunta(s) en ${key}.`);
 }
 
-async function linkAll(key, issueDef) {
+// Al actualizar un issue existente (`skipExisting`) no se repiten los
+// enlaces que ya tiene con el mismo issue.
+async function linkAll(key, issueDef, { skipExisting = false } = {}) {
+  let linked = [];
+  if (skipExisting && linksOf(issueDef).length) {
+    const res = await jira.getIssue(key);
+    linked = ((res.body.fields && res.body.fields.issuelinks) || [])
+      .map(l => (l.inwardIssue || l.outwardIssue || {}).key).filter(Boolean);
+  }
   for (const link of linksOf(issueDef)) {
+    if (linked.includes(link.key)) {
+      console.log(`${key} ya esta vinculado con ${link.key}.`);
+      continue;
+    }
     console.log(`Vinculando ${key} con ${link.key} (${link.type || 'Relates'})...`);
     const linkRes = await jira.linkIssue(key, link.key, link.type);
     if (linkRes.status === 201) {
@@ -570,6 +582,7 @@ async function main() {
       if (res.status === 204) {
         console.log(`Actualizado: https://${jira.HOSTNAME}/browse/${ISSUE_KEY}`);
         await attachCaptures(ISSUE_KEY, ISSUE);
+        await linkAll(ISSUE_KEY, ISSUE, { skipExisting: true });
       } else {
         console.error('Error al actualizar:', JSON.stringify(res.body, null, 2));
         process.exit(1);
