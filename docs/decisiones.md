@@ -48,6 +48,12 @@ agrega una contradictoria.
 - **Por qué:** cerrar el ticket antes del merge da una foto falsa: dice
   "terminado" y el código no está en `main` (SCRUM-65, 2026-07-29).
 - **Dónde:** `CLAUDE.md` §2, skills `manager` y `product-agent`.
+- **Cómo se mergea (2026-09-28):** siempre con `create-pull-request.js
+  --action merge --pr <n> --delete-branch`. El script espera a que GitHub
+  confirme que el PR se puede mergear, confirma el merge por lectura y
+  recién ahí borra la rama. Nació del #123: un 405 recién pusheado quedó
+  oculto por un pipe, la rama se borró igual y el PR se cerró sin mergear.
+  Controlado en `lib/pr-merge.js` con test.
 
 ### D-05 · Máximo 2 PRs abiertos antes de un lote nuevo
 - **Decisión:** `create-pull-request.js --action wip-check` antes de

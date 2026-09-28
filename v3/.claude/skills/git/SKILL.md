@@ -52,7 +52,17 @@ Requests se crean solo con `v3/scripts/create-pull-request.js`.
    (el body en un archivo del scratchpad). Base: `main`, o la rama de la
    que depende si es un PR apilado (avisarlo en el body). El body cierra
    con la línea de atribución vigente.
-5. **Merge a `main`: solo con confirmación explícita del usuario.**
+5. **Merge a `main`: solo con confirmación explícita del usuario**, y
+   siempre con `node v3/scripts/create-pull-request.js --action merge --pr
+   <n> --delete-branch`. El script espera a que GitHub confirme que el PR
+   se puede mergear, reintenta un 405 transitorio, confirma el merge por
+   lectura y recién ahí borra la rama remota. Después, `git checkout main
+   && git pull` y borrar la rama local. **Nunca encadenar a mano el
+   borrado de ramas detrás del merge, ni pasar su salida por un pipe**
+   (`| tail`): el pipe se queda con el código de salida del último comando
+   y un merge fallido sigue como si nada. Caso real #123 (2026-09-28): 405
+   recién pusheado, la rama se borró igual, el PR quedó cerrado sin
+   mergear y hubo que restaurar la rama y abrir el #124.
 6. **PR apilado:** cuando se mergea su base, re-apuntarlo a `main` con
    `--action update --pr <n> --base main`. Si el PR cambia después de
    creado, actualizar su descripción (`--action view` para leerla,
