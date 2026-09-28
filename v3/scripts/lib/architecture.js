@@ -101,4 +101,53 @@ function formatViolations(violations, rules = RULES) {
   }).join('\n');
 }
 
-module.exports = { RULES, stripComments, checkArchitecture, formatViolations };
+// ─── Orden por aplicación ────────────────────────────────────────────────────
+//
+// Toda carpeta de app en cypress/e2e/ tiene que estar declarada acá. Las
+// activas (trabajo nuevo, trazabilidad a Xray) tienen todas sus piezas en
+// su lugar; las de legado no se tocan (decisión del 2026-09-24, README).
+// Nace del 2026-09-28: 14 selectores de Automation Test Store estaban
+// sueltos en la raíz de fixtures/selectors/ y nada lo detectaba.
+const APPS = {
+  active: ['automation-test-store', 'commitquality', 'practicesoftwaretesting'],
+  legacy: ['argentinagobar', 'automation-exercise', 'blazedemo', 'disco', 'orangehrm', 'rentascordoba', 'saucedemo']
+};
+
+// Piezas obligatorias de una app activa (las recetas de datos por API son
+// opcionales: no toda app tiene una API para preparar datos).
+const ACTIVE_APP_PARTS = [
+  { label: 'specs', has: (s, app) => s.e2eApps.includes(app), where: app => `cypress/e2e/${app}/` },
+  { label: 'Page Objects', has: (s, app) => s.pagesApps.includes(app), where: app => `cypress/pages/${app}/` },
+  { label: 'selectores relevados', has: (s, app) => s.selectorApps.includes(app), where: app => `cypress/fixtures/selectors/${app}/` },
+  { label: 'comandos propios', has: (s, app) => s.commandFiles.includes(`${app}.js`), where: app => `cypress/support/commands/${app}.js` },
+  { label: 'discovery', has: (s, app) => s.discoveryDocs.includes(`${app}.md`), where: app => `docs/discovery/${app}.md` },
+  { label: 'script npm', has: (s, app) => s.npmScripts.includes(`test:${app}`), where: app => `"test:${app}" en package.json` }
+];
+
+/**
+ * snapshot: { e2eApps, pagesApps, selectorApps, looseSelectorFiles,
+ *   commandFiles, commandImports, discoveryDocs, npmScripts } (listados del
+ * repo). Devuelve la lista de problemas encontrados.
+ */
+function checkAppLayout(snapshot, apps = APPS) {
+  const problems = [];
+  const declared = [...apps.active, ...apps.legacy];
+
+  snapshot.e2eApps.filter(app => !declared.includes(app)).forEach(app =>
+    problems.push(`cypress/e2e/${app}/: app no declarada -- agregarla a APPS.active en lib/architecture.js (y a la tabla "Estado de las apps" del README).`));
+
+  for (const app of apps.active) {
+    ACTIVE_APP_PARTS.filter(part => !part.has(snapshot, app)).forEach(part =>
+      problems.push(`${app}: faltan ${part.label} en ${part.where(app)}.`));
+  }
+
+  snapshot.looseSelectorFiles.forEach(file =>
+    problems.push(`cypress/fixtures/selectors/${file}: selector suelto -- va en cypress/fixtures/selectors/<app>/.`));
+
+  snapshot.commandFiles.filter(file => !snapshot.commandImports.includes(file.replace(/\.js$/, ''))).forEach(file =>
+    problems.push(`cypress/support/commands/${file}: no está importado en cypress/support/commands.js (sus comandos no existen en los tests).`));
+
+  return problems;
+}
+
+module.exports = { RULES, stripComments, checkArchitecture, formatViolations, APPS, checkAppLayout };

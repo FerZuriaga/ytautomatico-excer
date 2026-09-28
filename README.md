@@ -9,6 +9,7 @@ fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
 |---|---|---|
 | `automation-test-store` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `commitquality` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| `practicesoftwaretesting` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `saucedemo`, `orangehrm`, `argentinagobar`, `rentascordoba`, `disco` | Legado | Tags `[SCRUM-Txx]` de Zephyr (discontinuado) |
 | `automation-exercise`, `blazedemo` | Legado | Sin tags o con keys de la etapa experimental (SCRUM-1 a 42, archivados) |
 
@@ -18,6 +19,14 @@ reportan resultados y no se les corre `check-traceability` (sus keys no
 existen en Xray). Sus Historias y Test Cases son anteriores a las reglas
 de calidad actuales. Una app nueva siempre sigue el pipeline de
 `CLAUDE.md` con trazabilidad a Xray.
+
+Cada app activa tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
+`cypress/pages/<app>/`, `cypress/fixtures/selectors/<app>/`,
+`cypress/support/commands/<app>.js`, `docs/discovery/<app>.md` y el script
+`test:<app>` (más `v3/data-recipes/<app>.json` si tiene API para preparar
+datos). `npm run test:unit` lo verifica: una carpeta de app sin declarar,
+una pieza faltante o un selector suelto hacen fallar la suite. Al sumar una
+app, declararla en `APPS` de `v3/scripts/lib/architecture.js`.
 
 ## Configuración de entorno (URLs por sitio)
 

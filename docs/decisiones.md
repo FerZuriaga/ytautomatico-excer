@@ -259,6 +259,17 @@ agrega una contradictoria.
   pocos archivos conocidos (2026-09-28).
 - **Dónde:** `lib/architecture.js` + su test.
 
+### D-28 · Cada app en sus carpetas, verificado por test
+- **Decisión:** toda carpeta de app se declara como activa o legado en
+  `APPS` (`lib/architecture.js`). Una app activa tiene specs, Page Objects,
+  selectores, comandos, discovery y script `test:<app>` en carpetas propias.
+  No hay selectores sueltos, y cada archivo de comandos está importado.
+  `cy.reconPage`, `cy.reconSubmit` y `twoRandomNum` se borraron del código.
+- **Por qué:** 14 selectores de Automation Test Store estaban sueltos en la
+  raíz de `fixtures/selectors/`, y los comandos "eliminados" seguían
+  definidos. Nada lo detectaba (2026-09-28).
+- **Dónde:** `checkAppLayout` + test en `npm run test:unit`.
+
 ### D-27 · Cypress no se aísla detrás de un adaptador (por ahora)
 - **Decisión:** no se abstrae Cypress. Los specs y los Page Objects lo usan
   directamente.

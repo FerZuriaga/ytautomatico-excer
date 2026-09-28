@@ -3,8 +3,8 @@
 // Ticket Jira: SCRUM-188 (CA-01/CA-02, Test Cycle SCRUM-189)
 // HU separada de "Editar cantidad" por ser una accion destructiva sobre el
 // carrito (regla HU & CA GRANULARITY de CLAUDE.md).
-// Selectores relevados en PASO 1 (cy.reconPage) y persistidos en
-// cypress/fixtures/selectors/carrito.json.
+// Selectores relevados en el PASO 1 y persistidos en
+// cypress/fixtures/selectors/automation-test-store/carrito.json.
 
 import AutomationTestStoreCartPage from '../../pages/automation-test-store/AutomationTestStoreCartPage'
 import AutomationTestStoreProductPage from '../../pages/automation-test-store/AutomationTestStoreProductPage'

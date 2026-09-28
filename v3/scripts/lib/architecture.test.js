@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { RULES, stripComments, checkArchitecture, formatViolations } = require('./architecture');
+const { RULES, stripComments, checkArchitecture, formatViolations, APPS, checkAppLayout } = require('./architecture');
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 
@@ -77,4 +77,56 @@ test('un glob con "**/*" en un string no esconde el código que sigue', () => {
     'v3/scripts/lib/nueva.js': "const specs = 'cypress/e2e/**/*.cy.js';\nconst t = process.env.JIRA_URL;\n/* fin */"
   });
   assert.deepEqual(violations.map(v => `${v.line} ${v.rule}`), ['2 credenciales-jira-xray', '2 libs-sin-entorno']);
+});
+
+// ─── Orden por aplicación ────────────────────────────────────────────────────
+
+function repoSnapshot() {
+  const dirs = rel => fs.readdirSync(path.join(REPO_ROOT, rel), { withFileTypes: true });
+  const selectors = dirs('cypress/fixtures/selectors');
+  const commandsJs = fs.readFileSync(path.join(REPO_ROOT, 'cypress/support/commands.js'), 'utf8');
+  return {
+    e2eApps: dirs('cypress/e2e').filter(d => d.isDirectory()).map(d => d.name),
+    pagesApps: dirs('cypress/pages').filter(d => d.isDirectory()).map(d => d.name),
+    selectorApps: selectors.filter(d => d.isDirectory()).map(d => d.name),
+    looseSelectorFiles: selectors.filter(d => d.isFile()).map(d => d.name),
+    commandFiles: dirs('cypress/support/commands').filter(d => d.isFile() && d.name.endsWith('.js')).map(d => d.name),
+    commandImports: [...commandsJs.matchAll(/import\s+['"]\.\/commands\/([^'"]+)['"]/g)].map(m => m[1].replace(/\.js$/, '')),
+    discoveryDocs: dirs('docs/discovery').map(d => d.name),
+    npmScripts: Object.keys(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')).scripts || {})
+  };
+}
+
+test('cada app está declarada y las activas tienen todas sus piezas en su carpeta', () => {
+  const problems = checkAppLayout(repoSnapshot());
+  assert.deepEqual(problems, [], `Orden por app:\n  ${problems.join('\n  ')}`);
+});
+
+test('las apps declaradas activas no se repiten como legado', () => {
+  assert.deepEqual(APPS.active.filter(app => APPS.legacy.includes(app)), []);
+});
+
+test('detecta app no declarada, piezas faltantes, selector suelto y comandos sin importar', () => {
+  const complete = app => ({
+    e2eApps: [app], pagesApps: [app], selectorApps: [app], looseSelectorFiles: [],
+    commandFiles: [`${app}.js`], commandImports: [app], discoveryDocs: [`${app}.md`], npmScripts: [`test:${app}`]
+  });
+  const apps = { active: ['tienda'], legacy: ['vieja'] };
+  assert.deepEqual(checkAppLayout(complete('tienda'), apps), []);
+
+  const snapshot = {
+    ...complete('tienda'),
+    e2eApps: ['tienda', 'vieja', 'nueva'],
+    selectorApps: [],
+    looseSelectorFiles: ['carrito.json'],
+    commandFiles: ['tienda.js', 'nueva.js'],
+    discoveryDocs: []
+  };
+  assert.deepEqual(checkAppLayout(snapshot, apps), [
+    'cypress/e2e/nueva/: app no declarada -- agregarla a APPS.active en lib/architecture.js (y a la tabla "Estado de las apps" del README).',
+    'tienda: faltan selectores relevados en cypress/fixtures/selectors/tienda/.',
+    'tienda: faltan discovery en docs/discovery/tienda.md.',
+    'cypress/fixtures/selectors/carrito.json: selector suelto -- va en cypress/fixtures/selectors/<app>/.',
+    'cypress/support/commands/nueva.js: no está importado en cypress/support/commands.js (sus comandos no existen en los tests).'
+  ]);
 });
