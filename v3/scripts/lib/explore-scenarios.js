@@ -21,7 +21,7 @@
  */
 const { fillTemplate } = require('./data-recipe');
 
-const ACTIONS = ['click', 'type', 'clear', 'select', 'visit', 'waitFor'];
+const ACTIONS = ['click', 'type', 'clear', 'select', 'attach', 'visit', 'waitFor'];
 const NAME_REGEX = /^[a-z0-9][a-z0-9_-]*$/i;
 
 // Una acción desconocida se ignoraba en silencio y el informe quedaba como
@@ -30,6 +30,9 @@ function checkActions(actions, where) {
   if (!Array.isArray(actions)) throw new Error(`${where}: "actions" tiene que ser una lista.`);
   const unknown = actions.filter(a => !ACTIONS.includes(a && a.action)).map(a => a && a.action);
   if (unknown.length) throw new Error(`${where}: acciones desconocidas ${unknown.join(', ')} (válidas: ${ACTIONS.join(', ')})`);
+  // attach genera el archivo en memoria: sin archivos de prueba sueltos.
+  const badAttach = actions.filter(a => a.action === 'attach' && (!a.selector || !a.fileName || typeof a.content !== 'string'));
+  if (badAttach.length) throw new Error(`${where}: "attach" necesita selector, fileName y content (texto, "" para un archivo vacío); mimeType es opcional.`);
   return actions;
 }
 

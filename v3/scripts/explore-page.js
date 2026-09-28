@@ -35,6 +35,9 @@
  *                { "action": "type", "selector": "...", "value": "..." },
  *                { "action": "clear", "selector": "..." } (vacía un campo),
  *                { "action": "select", "selector": "...", "value": "..." },
+ *                { "action": "attach", "selector": "...", "fileName": "a.txt",
+ *                  "content": "", "mimeType": "text/plain" } (archivo generado
+ *                en memoria; content "" = archivo vacío),
  *                { "action": "visit", "value": "/ruta" },
  *                { "action": "waitFor", "selector": "..." }]
  *   --wait-for   (opcional) selector que indica que la pantalla terminó de
@@ -330,10 +333,12 @@ describe('explore', () => {
           else if (a.action === 'type') cy.get(a.selector, { timeout: 15000 }).first().clear().type(a.value);
           else if (a.action === 'clear') cy.get(a.selector, { timeout: 15000 }).first().clear();
           else if (a.action === 'select') cy.get(a.selector, { timeout: 15000 }).first().select(a.value);
+          else if (a.action === 'attach') cy.get(a.selector, { timeout: 15000 }).first().selectFile(
+            { contents: Cypress.Buffer.from(a.content), fileName: a.fileName, mimeType: a.mimeType || undefined });
           else if (a.action === 'visit') cy.visit(new URL(a.value, resolved.url).href, { failOnStatusCode: false });
           else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
           settle();
-          snapshot(i + 1, a.action + ' ' + (a.selector || a.value || ''));
+          snapshot(i + 1, a.action + ' ' + (a.selector || a.value || '') + (a.fileName ? ' ' + a.fileName : ''));
         });
       });
     });
