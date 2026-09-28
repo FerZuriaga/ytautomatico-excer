@@ -347,3 +347,37 @@ actual y cambio correcto) y la API. Selectores en
   queda rechazada (401) y la nueva entra. El token anterior sigue válido.
 - **Posible defecto:** guardar el perfil borra el número de casa
   (`house_number: null`): el formulario no tiene ese campo y el PUT lo pisa.
+
+## Facturas del cliente (2026-09-27)
+
+Explorado con `explore-page.js` con sesión inyectada y facturas creadas por
+API (listado, detalle de una factura pagada con tarjeta, cliente sin
+facturas y factura de otro cliente por dirección). Selectores en
+`cypress/fixtures/selectors/practicesoftwaretesting/facturas.json`.
+
+- **Crear un pedido por API** (evita el Bug SCRUM-525 del doble Confirm):
+  `POST /carts`, `POST /carts/{id}` por producto y `POST /invoices` con el
+  token del cliente, `cart_id`, `payment_method` (`cash-on-delivery`,
+  `credit-card`, ...), `payment_details` y la dirección `billing_*`. **La
+  dirección tiene que coincidir con el servicio de código postal** (AR 5000
+  → Eduardo Points / North Gudrun / Illinois); si no, 422 `The
+  billing_country does not match the entered address...`.
+- **Listado `/account/invoices`** (título `Invoices`): columnas Invoice
+  Number, Billing Address, Invoice Date, Total y botón `Details`; ordenado
+  de la más nueva a la más vieja, 15 por página. Las filas no tienen
+  `data-test` (se ubican por el número de factura). Sin facturas muestra
+  solo los encabezados, sin mensaje.
+- **Detalle `/account/invoices/{id}`:** número, fecha, subtotal y
+  descuentos (solo si hay), total, dirección de facturación, medio de pago
+  con sus datos y líneas de productos. **El subtotal y el total comparten
+  `data-test="total"`**: el total es el último. Descuento ecológico con
+  `eco-discount` y la etiqueta `Eco-Friendly Discount (5%)`.
+- **Factura de otro cliente o id inexistente:** la API responde 404 y la
+  pantalla muestra `This invoice doesn't exist.`
+- **PDF:** `Download PDF` queda deshabilitado hasta que
+  `GET /invoices/{número}/download-pdf-status` devuelve `COMPLETED` (la
+  pantalla consulta cada 20 s). La generación es asíncrona y lenta: pasó de
+  `NOT_INITIATED` a `INITIATED` en ~40 s y seguía sin terminar a los
+  2,5 min; no entra en un test con esperas de 15 s.
+- **Defecto:** el detalle de una factura pagada con tarjeta muestra el
+  número completo y el CVV.

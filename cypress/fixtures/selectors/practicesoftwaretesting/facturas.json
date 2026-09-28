@@ -1,0 +1,36 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "invoicesPath": "/invoices",
+    "cartsPath": "/carts",
+    "postcodeLookupPath": "/postcode-lookup"
+  },
+  "path": "/account/invoices",
+  "pageTitle": "[data-test=\"page-title\"]",
+  "navMenu": "[data-test=\"nav-menu\"]",
+  "navMyInvoices": "[data-test=\"nav-my-invoices\"]",
+  "list": {
+    "rows": "table tbody tr",
+    "detailsLink": "a.btn-primary"
+  },
+  "detail": {
+    "downloadPdf": "[data-test=\"download-invoice\"]",
+    "invoiceNumber": "[data-test=\"invoice-number\"]",
+    "invoiceDate": "[data-test=\"invoice-date\"]",
+    "total": "[data-test=\"total\"]",
+    "ecoDiscount": "[data-test=\"eco-discount\"]",
+    "street": "[data-test=\"street\"]",
+    "postalCode": "[data-test=\"postal_code\"]",
+    "city": "[data-test=\"city\"]",
+    "state": "[data-test=\"state\"]",
+    "country": "[data-test=\"country\"]",
+    "paymentMethod": "[data-test=\"payment-method\"]",
+    "productRows": "table tbody tr"
+  },
+  "texts": {
+    "title": "Invoices",
+    "notExist": "This invoice doesn't exist.",
+    "detailsButton": "Details",
+    "ecoLabel": "Eco-Friendly Discount (5%)"
+  }
+}
