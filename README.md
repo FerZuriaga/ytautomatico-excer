@@ -9,6 +9,7 @@ fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
 |---|---|---|
 | `automation-test-store` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `commitquality` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| `expandtesting-notes` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `practicesoftwaretesting` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `saucedemo`, `orangehrm`, `argentinagobar`, `rentascordoba`, `disco` | Legado | Tags `[SCRUM-Txx]` de Zephyr (discontinuado) |
 | `automation-exercise`, `blazedemo` | Legado | Sin tags o con keys de la etapa experimental (SCRUM-1 a 42, archivados) |
@@ -40,6 +41,7 @@ desde los comandos custom (`cypress/support/commands/*.js`) con
 | `automationExerciseUrl` | AutomationExercise  | `https://automationexercise.com`          |
 | `blazedemoUrl`          | BlazeDemo           | `https://blazedemo.com`                   |
 | `discoUrl`              | Disco Online        | `https://www.disco.com.ar`                |
+| `expandtestingNotesUrl` | Expand Testing Notes | `https://practice.expandtesting.com`     |
 | `orangehrmUrl`          | OrangeHRM           | `https://opensource-demo.orangehrmlive.com` |
 | `rentascordobaUrl`      | Rentas Córdoba      | `https://www.rentascordoba.gob.ar`        |
 | `saucedemoUrl`          | SauceDemo           | `https://www.saucedemo.com`               |

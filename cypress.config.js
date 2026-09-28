@@ -12,6 +12,7 @@ module.exports = defineConfig({
     blazedemoUrl: "https://blazedemo.com",
     commitqualityUrl: "https://commitquality.com",
     discoUrl: "https://www.disco.com.ar",
+    expandtestingNotesUrl: "https://practice.expandtesting.com",
     orangehrmUrl: "https://opensource-demo.orangehrmlive.com",
     practicesoftwaretestingUrl: "https://practicesoftwaretesting.com",
     rentascordobaUrl: "https://www.rentascordoba.gob.ar",
