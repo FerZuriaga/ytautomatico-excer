@@ -1,10 +1,12 @@
 // Modulo: Perfil - Cambiar mi contraseña
 // Sitio bajo prueba: https://practicesoftwaretesting.com (Toolshop v5)
-// Ticket Jira: SCRUM-574 (CA-04..CA-07, Test Cycle SCRUM-575)
+// Ticket Jira: SCRUM-574 (CA-04..CA-08, Test Cycle SCRUM-575)
 //
 // Cada test registra su propio cliente por API (contraseña Qa!Sesion2026#);
 // la sesion se inyecta en la primera carga de pagina. Las validaciones de la
-// contraseña las hace el servicio: cada negativo espera su respuesta.
+// contraseña las hace el servicio: cada negativo espera su respuesta y
+// comprueba que la contraseña actual sigue entrando (sin copiar la
+// redaccion del mensaje del servicio).
 
 import PSTProfilePage from '../../pages/practicesoftwaretesting/PSTProfilePage'
 
@@ -48,36 +50,44 @@ describe('Perfil: cambiar mi contraseña [SCRUM-574]', () => {
 
     it('[CA-05][TC-05.1][SCRUM-578] Debe rechazar el cambio con una contraseña actual incorrecta', () => {
         change({ current: 'Mala!Clave2026', next: NEW, confirm: NEW })
-        profile.verifyPasswordRejected('currentPasswordWrong', 400)
+        profile.verifyPasswordRejected(customer, 400)
     })
 
     it('[CA-05][TC-05.2][SCRUM-579] Debe rechazar el cambio sin la contraseña actual', () => {
         change({ next: NEW, confirm: NEW })
-        profile.verifyPasswordRejected('currentPasswordWrong', 400)
+        profile.verifyPasswordRejected(customer, 400)
     })
 
     it('[CA-06][TC-06.1][SCRUM-580] Debe rechazar una contraseña nueva corta y sin combinacion de caracteres', () => {
         change({ current: CURRENT, next: 'abc', confirm: 'abc' })
-        profile.verifyPasswordRejected('passwordWeak', 422)
+        profile.verifyPasswordRejected(customer, 422)
     })
 
     it('[CA-06][TC-06.2][SCRUM-581] Debe rechazar una contraseña nueva sin simbolos', () => {
         change({ current: CURRENT, next: 'NuevaClave2026x', confirm: 'NuevaClave2026x' })
-        profile.verifyPasswordRejected('passwordNoSymbol', 422)
+        profile.verifyPasswordRejected(customer, 422)
     })
 
-    it('[CA-06][TC-06.3][SCRUM-582] Debe rechazar repetir la contraseña actual como nueva', () => {
+    it('[CA-08][TC-08.1][SCRUM-582] Debe rechazar repetir la contraseña actual como nueva', () => {
         change({ current: CURRENT, next: CURRENT, confirm: CURRENT })
-        profile.verifyPasswordRejected('passwordSameAsCurrent', 400)
+        profile.verifyPasswordRejected(customer, 400)
     })
 
     it('[CA-07][TC-07.1][SCRUM-583] Debe rechazar una confirmacion distinta de la contraseña nueva', () => {
         change({ current: CURRENT, next: NEW, confirm: 'Otra!Clave2026x' })
-        profile.verifyPasswordRejected('passwordMismatch', 422)
+        profile.verifyPasswordRejected(customer, 422)
     })
 
     it('[CA-07][TC-07.2][SCRUM-584] Debe rechazar el cambio sin confirmar la contraseña nueva', () => {
         change({ current: CURRENT, next: NEW })
-        profile.verifyPasswordRejected('passwordMismatch', 422)
+        profile.verifyPasswordRejected(customer, 422)
+    })
+
+    it('[CA-08][TC-08.2][SCRUM-598] Debe aceptar una contraseña nueva que difiere de la actual en un solo caracter', () => {
+        change({ current: CURRENT, next: 'Qa!Sesion2026$', confirm: 'Qa!Sesion2026$' })
+        profile.verifyPasswordChanged()
+
+        cy.then(() => profile.loginAfterChange(customer, 'Qa!Sesion2026$'))
+        cy.then(() => profile.login.verifyLoggedIn(customer))
     })
 })
