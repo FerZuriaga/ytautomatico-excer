@@ -35,11 +35,6 @@
     "profileUpdated": "Your profile is successfully updated!",
     "profileInvalid": "Please correct the highlighted fields before saving.",
     "phoneInvalid": "Please enter a valid phone number (digits, spaces and ( ) + - only).",
-    "passwordUpdated": "Your password is successfully updated!",
-    "currentPasswordWrong": "Your current password does not matches with the password.",
-    "passwordMismatch": "The new password field confirmation does not match.",
-    "passwordWeak": "The new password field must be at least 8 characters. (and 3 more errors)",
-    "passwordNoSymbol": "The new password field must contain at least one symbol.",
-    "passwordSameAsCurrent": "New Password cannot be same as your current password."
+    "passwordUpdated": "Your password is successfully updated!"
   }
 }

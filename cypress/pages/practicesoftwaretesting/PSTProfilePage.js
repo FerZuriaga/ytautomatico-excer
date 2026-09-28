@@ -141,17 +141,25 @@ class PSTProfilePage {
         })
     }
 
-    // El servicio rechaza el cambio: aviso con su mensaje y sesión intacta.
-    verifyPasswordRejected(textKey, status) {
-        cy.wait('@changePassword', T).its('response.statusCode').should('eq', status)
-        cy.fixture(FIXTURE).then(sel => {
-            cy.get(sel.passwordForm).find(sel.errorAlert, T).should('be.visible').and('contain.text', sel.texts[textKey])
-            cy.location('pathname').should('eq', sel.path)
+    // El servicio rechaza el cambio. Aserción funcional, sin copiar su
+    // redacción: el status del rechazo, el aviso con el motivo que dio el
+    // servicio, la sesión intacta y la regla del CA (la contraseña no
+    // cambia: la actual sigue entrando).
+    verifyPasswordRejected(customer, status) {
+        cy.wait('@changePassword', T).then(({ response }) => {
+            expect(response.statusCode, 'rechazo del servicio').to.eq(status)
+            const reason = response.body.message
+            expect(reason, 'motivo del rechazo').to.be.a('string').and.not.be.empty
+            cy.fixture(FIXTURE).then(sel => {
+                cy.get(sel.passwordForm).find(sel.errorAlert, T).should('be.visible').and('contain.text', reason)
+                cy.location('pathname').should('eq', sel.path)
+            })
         })
         cy.fixture('selectors/practicesoftwaretesting/login.json').then(sel => {
             cy.get(sel.navMenu).should('be.visible')
             cy.window().its('localStorage').invoke('getItem', sel.tokenKey).should('not.be.null')
         })
+        this.login.apiLogin(customer.email, customer.password, 200)
     }
 
     // Login posterior al cambio, sobre la pantalla Login a la que volvió la app.
