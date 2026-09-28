@@ -3,7 +3,9 @@
 // Ticket Jira: SCRUM-586 (CA-01..CA-04, Test Cycle SCRUM-587)
 //
 // Cada test registra su propio cliente y sus compras por API (en el orden
-// de compra); la sesion se inyecta en la primera carga de pagina.
+// de compra); la sesion se inyecta en la primera carga de pagina. Cada
+// test afirma solo lo que promete su Test Case: el contenido completo de
+// una fila es regla del CA-01 y el detalle completo, del CA-02.
 
 import PSTInvoicesPage, { CASH, CARD } from '../../pages/practicesoftwaretesting/PSTInvoicesPage'
 
@@ -11,6 +13,7 @@ const invoices = new PSTInvoicesPage()
 
 const TOOLS = { items: [{ name: 'Combination Pliers', quantity: 2 }, { name: 'Wood Saw', quantity: 1 }], payment: CASH }
 const SAW = { items: [{ name: 'Wood Saw', quantity: 1 }], payment: CASH }
+const PLIERS = { items: [{ name: 'Combination Pliers', quantity: 1 }], payment: CASH }
 const SAW_CARD = { items: [{ name: 'Wood Saw', quantity: 1 }], payment: CARD }
 
 describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
@@ -23,10 +26,7 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
             invoices.verifyList([customer.invoices[1], customer.invoices[0]])
 
             invoices.openDetails(customer.invoices[1])
-            invoices.verifyDetail(customer.invoices[1], {
-                total: '11.57', subtotal: '12.18', eco: '0.61', paymentMethod: 'Cash on Delivery',
-                lines: [['1', 'Wood Saw', '$12.18', '$12.18']]
-            })
+            invoices.verifyInvoiceOpened(customer.invoices[1], '11.57')
         })
     })
 
@@ -43,7 +43,7 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
         invoices.prepareCustomer([TOOLS]).then(customer => {
             invoices.visitHome()
             invoices.openFromMenu()
-            invoices.verifyList(customer.invoices)
+            invoices.verifyListTotals(['$40.48'])
 
             invoices.openDetails(customer.invoices[0])
             invoices.verifyDetail(customer.invoices[0], {
@@ -57,7 +57,7 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
         invoices.prepareCustomer([SAW]).then(customer => {
             invoices.visitHome()
             invoices.openFromMenu()
-            invoices.verifyList(customer.invoices)
+            invoices.verifyListTotals(['$11.57'])
 
             invoices.openDetails(customer.invoices[0])
             invoices.verifyDetail(customer.invoices[0], {
@@ -65,6 +65,16 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
                 lines: [['1', 'Wood Saw', '$12.18', '$12.18']]
             })
         })
+    })
+
+    it('[CA-02][TC-02.3][SCRUM-593] Debe avisar que una factura inexistente no existe', () => {
+        invoices.prepareCustomer([SAW])
+        invoices.visitHome()
+        invoices.openFromMenu()
+        invoices.verifyListTotals(['$11.57'])
+
+        invoices.visitInvoice('01zzzzzzzzzzzzzzzzzzzzzzzz')
+        invoices.verifyNotExist()
     })
 
     it('[CA-03][TC-03.1][SCRUM-592] Debe impedir ver la factura de otro cliente', () => {
@@ -79,14 +89,18 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
         })
     })
 
-    it('[CA-03][TC-03.2][SCRUM-593] Debe avisar que una factura inexistente no existe', () => {
-        invoices.prepareCustomer([SAW]).then(customer => {
-            invoices.visitHome()
-            invoices.openFromMenu()
-            invoices.verifyList(customer.invoices)
+    it('[CA-03][TC-03.2][SCRUM-597] Debe listar solo las facturas del propio cliente', () => {
+        invoices.createForeignInvoice(PLIERS).then(foreign => {
+            invoices.prepareCustomer([SAW]).then(customer => {
+                invoices.visitHome()
+                invoices.openFromMenu()
+                invoices.verifyListTotals(['$11.57'])
+                invoices.verifyNotListed(foreign)
 
-            invoices.visitInvoice('01zzzzzzzzzzzzzzzzzzzzzzzz')
-            invoices.verifyNotExist()
+                invoices.openDetails(customer.invoices[0])
+                invoices.verifyInvoiceOpened(customer.invoices[0], '11.57')
+                invoices.verifyProducts(['Wood Saw'])
+            })
         })
     })
 
@@ -94,7 +108,7 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
         invoices.prepareCustomer([SAW_CARD]).then(customer => {
             invoices.visitHome()
             invoices.openFromMenu()
-            invoices.verifyList(customer.invoices)
+            invoices.verifyListTotals(['$11.57'])
 
             invoices.openDetails(customer.invoices[0])
             invoices.verifyCardNumberHidden()
@@ -105,7 +119,7 @@ describe('Facturas: consultar mis facturas [SCRUM-586]', () => {
         invoices.prepareCustomer([SAW_CARD]).then(customer => {
             invoices.visitHome()
             invoices.openFromMenu()
-            invoices.verifyList(customer.invoices)
+            invoices.verifyListTotals(['$11.57'])
 
             invoices.openDetails(customer.invoices[0])
             invoices.verifyCvvHidden()

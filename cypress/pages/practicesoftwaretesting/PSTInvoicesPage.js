@@ -126,6 +126,16 @@ class PSTInvoicesPage {
         })
     }
 
+    // Resumen del listado para los TC que no son del CA-01: cantidad de
+    // filas y total de cada una (el contenido completo de la fila es la
+    // regla del listado, no la suya).
+    verifyListTotals(totals) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.list.rows, T).should('have.length', totals.length)
+            totals.forEach((total, i) => cy.get(sel.list.rows).eq(i).find('td').eq(3).should('have.text', total))
+        })
+    }
+
     verifyEmptyList() {
         cy.fixture(FIXTURE).then(sel => {
             cy.contains('th', 'Invoice Number').should('be.visible')
@@ -143,6 +153,27 @@ class PSTInvoicesPage {
     }
 
     // ─── Detalle ──────────────────────────────────────────────────────────────
+
+    // Qué factura se abrió: número y total (sin el resto del detalle, que es
+    // la regla del CA-02).
+    verifyInvoiceOpened(invoice, total) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.detail.invoiceNumber, T).should('have.value', invoice.invoice_number)
+            cy.get(sel.detail.total).last().should('have.value', `$ ${total}`)
+        })
+    }
+
+    verifyProducts(names) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.detail.productRows, T).should($rows => {
+                expect([...$rows].map(row => normalize(row.cells[1].innerText))).to.deep.equal(names)
+            })
+        })
+    }
+
+    verifyNotListed(invoice) {
+        cy.contains(invoice.invoice_number).should('not.exist')
+    }
 
     // `subtotal` y `eco` solo si la compra tuvo descuento; `lines`:
     // [cantidad, producto, precio, total de la línea].
