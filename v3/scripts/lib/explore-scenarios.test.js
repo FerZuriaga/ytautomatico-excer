@@ -57,6 +57,9 @@ test('checkActions rechaza acciones desconocidas (antes se ignoraban en silencio
   assert.deepEqual(checkActions([{ action: 'clear', selector: '#a' }], '--actions'), [{ action: 'clear', selector: '#a' }]);
   assert.throws(() => checkActions([{ action: 'scroll' }], '--actions'), /--actions: acciones desconocidas scroll/);
   assert.throws(() => checkActions({}, '--actions'), /tiene que ser una lista/);
+  const attach = { action: 'attach', selector: '#file', fileName: 'vacio.txt', content: '' };
+  assert.deepEqual(checkActions([attach], '--actions'), [attach], 'content "" (archivo vacío) es válido');
+  assert.throws(() => checkActions([{ action: 'attach', selector: '#file', fileName: 'a.txt' }], '--actions'), /"attach" necesita selector, fileName y content/);
 });
 
 test('resolveScenario completa la URL, las plantillas y pone la sesión de las recetas debajo de la propia', () => {

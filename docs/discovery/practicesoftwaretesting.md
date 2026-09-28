@@ -381,3 +381,43 @@ facturas y factura de otro cliente por dirección). Selectores en
   2,5 min; no entra en un test con esperas de 15 s.
 - **Defecto:** el detalle de una factura pagada con tarjeta muestra el
   número completo y el CVV.
+
+## Contacto (2026-09-28, primer lote con `explore-page.js --scenarios`)
+
+Relevado del chunk del componente (`pages.contact.*`) y de la API, y
+explorado en una sola corrida (12 escenarios, 99 s: anónimo y con sesión,
+vacíos, email inválido, mensaje de 49/50 caracteres, adjuntos). Sesión con
+la receta `cliente` de `v3/data-recipes/practicesoftwaretesting.json`.
+Selectores en `cypress/fixtures/selectors/practicesoftwaretesting/contacto.json`.
+
+- **Sin sesión** (`GET /users/me` → 401, queda un `ERROR Unauthorized` en
+  consola, esperado): se piden nombre, apellido y email, obligatorios
+  **solo en el front** (los validadores se agregan cuando falla
+  `/users/me`). Email con formato válido.
+- **Con sesión:** no se muestran nombre, apellido ni email; aparece
+  `Hello <nombre> <apellido>, please fill out this form to submit your
+  message.` y el mensaje se envía con el nombre de la cuenta. Queda en
+  `/account/messages` (asunto mostrado con el valor interno en minúscula,
+  ej. `payments`).
+- **Asunto y mensaje obligatorios; mensaje de 50 caracteres como mínimo**
+  (el largo se valida solo en el front; la API acepta menos). Los errores
+  aparecen al enviar, sin request.
+- **Adjunto opcional, solo `.txt` y vacío (0 bytes):** lo dice el texto de
+  ayuda y lo exige también el servidor (`Currently we only allow empty
+  files.`). Tipo distinto de `text/plain` → `File should have a txt
+  extension.`; con contenido → `File should be empty.`. Con error no se
+  envía nada.
+- **Envío:** `POST /messages` (JSON) y, si hay adjunto, `POST
+  /messages/{id}/attach-file` (multipart). Éxito: el formulario se
+  reemplaza por `Thanks for your message! We will contact you shortly.`
+  (`.alert-success`, sin `data-test`).
+- La API acepta cualquier texto como asunto (el front solo ofrece 6
+  opciones): no se prueba por la UI.
+- **Carrera al abrir el formulario sin sesión:** la pantalla consulta la
+  cuenta varias veces y nombre/apellido/email pasan a ser obligatorios
+  recién cuando el formulario recibe su 401. Si se envía antes (visto en la
+  1ra corrida del PASO 3), la consulta sale sin nombre ni email y la API la
+  acepta (`POST /messages` con `name: " "` y sin `email` → 200): Bug
+  SCRUM-620. Los tests
+  esperan a que el nombre vacío figure inválido (`ng-invalid`) antes de
+  tocar el formulario.
