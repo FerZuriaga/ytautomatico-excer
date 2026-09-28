@@ -1,0 +1,260 @@
+# Registro de decisiones
+
+Decisiones de trabajo acordadas con el usuario a lo largo del proyecto,
+versionadas con el código. Antes vivían solo en la memoria local del
+asistente (fuera del repo), y se habrían perdido al cambiar de PC o de
+herramienta.
+
+Cada decisión dice **qué** se decidió, **por qué** (el caso real que la
+originó) y **dónde se hace cumplir**. Siempre que se puede, el control es
+código (validador o CLI con test): una regla escrita sola se olvida. Las
+reglas de ejecución obligatorias están en `CLAUDE.md`; acá está el
+porqué. Cuando una decisión cambia, se edita su entrada (con fecha), no se
+agrega una contradictoria.
+
+---
+
+## Proceso y gobernanza
+
+### D-01 · Todo en el hilo principal: roles como skills, sin subagentes
+- **Decisión:** Manager, ProductAgent y QaAutomation1 son skills
+  (`v3/.claude/skills/`) que carga el hilo principal. No se delega en
+  subagentes. Desde PR #106 hay 7 skills de fase: discovery, especificacion,
+  plan-automatizacion, git, ejecucion, automation-review y bug-reporting.
+- **Por qué:** la cadena de agentes tardaba más de 40 minutos por
+  mensajería y perdía contexto en cada traspaso (2026-07-29).
+- **Dónde:** `CLAUDE.md` §2, skill `manager`.
+
+### D-02 · Prevención en código, sin scripts sueltos
+- **Decisión:** cada error de proceso acordado se previene en código
+  (validador o chequeo en un CLI oficial, con test del caso real). Si no se
+  puede, va en la skill que corresponde. Siempre se extiende la
+  implementación oficial.
+- **Por qué:** las lecciones escritas se repetían. "Explorar el camino del
+  test" falló dos veces, en Carrito y en Login (2026-09-26).
+- **Dónde:** `CLAUDE.md` §2, `npm run test:unit`.
+
+### D-03 · Sin archivos temporales en el repo
+- **Decisión:** los informes de exploración, los payloads de prueba y los
+  scripts de validación viven fuera del repo (carpeta temporal). El working
+  tree queda limpio.
+- **Por qué:** apareció un `_tmp-open-pr.js` a punto de commitearse.
+- **Dónde:** `explore-page.js` se niega a escribir el informe dentro del repo.
+
+### D-04 · Merge a `main` solo con confirmación explícita
+- **Decisión:** todo lo demás es automático (commit, push, PR, reporte),
+  pero el merge espera el OK del usuario. Las HU quedan en "In Review" hasta
+  el merge y recién ahí pasan a "Listo".
+- **Por qué:** cerrar el ticket antes del merge da una foto falsa: dice
+  "terminado" y el código no está en `main` (SCRUM-65, 2026-07-29).
+- **Dónde:** `CLAUDE.md` §2, skills `manager` y `product-agent`.
+
+### D-05 · Máximo 2 PRs abiertos antes de un lote nuevo
+- **Decisión:** `create-pull-request.js --action wip-check` antes de
+  arrancar. Con más de 2 PRs abiertos, primero se mergea o se cierra.
+- **Por qué:** los lotes apilados chocan entre sí.
+- **Dónde:** `create-pull-request.js`.
+
+### D-06 · Sin CI; validación local
+- **Decisión:** no hay workflow de GitHub Actions. La evidencia es la
+  corrida local con `run-and-report.js`.
+- **Por qué:** con un CI de la suite completa como requisito de merge, el
+  check falló 3 veces seguidas por demos públicas inestables (datos sucios,
+  timeouts, un 500 del servidor), ajenas al código (2026-07-29). Retomar CI
+  queda para más adelante, excluyendo las demos compartidas del gate.
+- **Dónde:** no hay `.github/workflows`.
+
+### D-07 · GitHub por API REST, sin `gh`
+- **Decisión:** los PRs, el merge y el borrado de ramas se hacen con
+  `create-pull-request.js` (token + API REST). No se instala `gh`.
+- **Por qué:** era una dependencia innecesaria. Los bodies se pasan por
+  archivo, porque los backticks inline se perdían en Bash (PR #53).
+- **Dónde:** `create-pull-request.js` (`--body-file`).
+
+### D-08 · Velocidad sin perder calidad
+- **Decisión:** los tiempos bajan solo quitando overhead mecánico
+  (arranques repetidos de Cypress, scripts rehechos, esperas evitables).
+  Nunca se quitan controles: evidencia de negativos, validadores,
+  diagnóstico entre iteraciones y revisión de alcance. Cada mejora se mide
+  antes y después con `run-and-report.js --timing-report`. El número de
+  minutos no es una meta a cumplir: la meta es el camino directo, sin
+  desvíos no pedidos.
+- **Por qué:** pedido explícito del usuario (2026-09-11 y 2026-09-27). El
+  valor del proyecto es el criterio de QA.
+- **Dónde:** skills `ejecucion` y `discovery`.
+
+### D-09 · Solo 2 apps activas; el resto es legado intocable
+- **Decisión:** el trabajo nuevo va solo en apps con trazabilidad a Xray.
+  SauceDemo, OrangeHRM, Argentina.gob.ar, Rentas Córdoba, Disco, Automation
+  Exercise y BlazeDemo (etapa Zephyr o experimental) corren como regresión
+  con `npm run test:<app>`, pero no se modifican, no se migran y no se
+  reportan.
+- **Por qué:** Xray es la única fuente de verdad. Migrar unos 120 `it()`
+  de Zephyr no compensa el costo (2026-09-24).
+- **Dónde:** README, sección "Estado de las apps".
+
+### D-10 · Jira: no hay estado "Cancelada"
+- **Decisión:** un ticket descartado se pasa a "Finalizada" con un
+  comentario aclaratorio. Solo se borra si el usuario lo pide
+  explícitamente (caso SCRUM-52).
+- **Por qué:** el workflow del proyecto no tiene otro estado terminal
+  (limpieza del 2026-07-21, SCRUM-1 a 42).
+
+---
+
+## Discovery (PASO 1)
+
+### D-11 · Navegador real solo con `explore-page.js`
+- **Decisión:** la exploración con navegador se hace únicamente con
+  `explore-page.js` en el PASO 1. El informe queda fuera del repo y no hay
+  aserciones. `cy.reconPage` y `cy.reconSubmit` están eliminados, y los
+  specs no se usan para explorar.
+- **Por qué:** leer código minificado no mostró el método HTTP `QUERY` ni el
+  idioma automático de PST, y costó 4 corridas (2026-09-25, PR #106).
+- **Dónde:** skill `discovery`, `CLAUDE.md` §1.
+
+### D-12 · Explorar el mismo camino que usará el test
+- **Decisión:** si el test prepara el estado por API (sesión, carrito,
+  compras), la exploración se hace con ese mismo estado, no solo por la UI.
+- **Por qué:** en Carrito y en Login el camino de la UI andaba y el del
+  test no.
+- **Dónde:** skill `discovery`.
+
+### D-13 · Cada negativo se prueba antes de especificarlo
+- **Decisión:** todo Test Case negativo lleva `evidencia: { reporte,
+  observado }` con el `report.json` de la exploración donde se probó. Sin
+  eso no se publica.
+- **Por qué:** los Bugs SCRUM-527 y SCRUM-528 aparecieron recién en el
+  PASO 3 y costaron 2 iteraciones (Checkout, 2026-09-26).
+- **Dónde:** `lib/negative-evidence.js`, llamado por `create-jira-task.js`.
+
+### D-14 · Discovery en lote y datos por receta
+- **Decisión:** todas las exploraciones de un lote van en un archivo
+  `--scenarios` (una sola corrida de Cypress). Los datos que necesitan
+  (cliente, sesión, compras) salen de recetas JSON por app
+  (`v3/data-recipes/<app>.json`) con un motor general, nunca de scripts
+  sueltos.
+- **Por qué:** eran unos 20 arranques de 40 segundos por lote, y un script
+  de sesión rehecho a mano en cada uno. Medido: 6 escenarios en 87 s contra
+  unos 66 s cada uno por separado (2026-09-28, PR #121). El motor es
+  general a pedido del usuario: una app nueva es un JSON, no código.
+- **Dónde:** `explore-page.js`, `lib/data-recipe.js`, skill `discovery`.
+
+### D-15 · Leer el precedente antes de relevar
+- **Decisión:** antes de relevar una funcionalidad, leer
+  `docs/discovery/<app>.md` y los specs de la misma familia (recuperar
+  credencial, checkout...) para precargar los gotchas ya conocidos.
+- **Por qué:** en SCRUM-194 se redescubrió por un fallo un gotcha ya
+  documentado en SCRUM-158. Leerlo cuesta unos 20 segundos.
+- **Dónde:** `CLAUDE.md` §1 PASO 1, skill `discovery`.
+
+### D-16 · Seguridad en entornos ajenos
+- **Decisión:** en producción real (Rentas Córdoba, sitios `.gob.ar`) solo
+  se automatizan flujos públicos, de solo lectura y sin login. En demos
+  compartidas nunca se ejecuta una acción irreversible sobre datos de otros:
+  "Cancel Leave" de OrangeHRM no pide confirmación y canceló una solicitud
+  ajena (2026-07-18).
+- **Por qué:** los datos son de terceros y no se pueden restaurar.
+
+---
+
+## Especificación (HU, CA, Test Cases)
+
+### D-17 · Una HU = una capacidad de negocio
+- **Decisión:** las variantes del mismo comportamiento van en una HU. Las
+  capacidades independientes o destructivas (eliminar, editar) van en HUs
+  separadas.
+- **Por qué:** una HU por escenario fragmentaba la funcionalidad (PIM,
+  2026-07-22).
+- **Dónde:** `CLAUDE.md` §2, skill `especificacion`.
+
+### D-18 · Los CA salen de las reglas relevadas
+- **Decisión:** una regla de negocio es un CA, en una oración. El mínimo es
+  2 y no es un molde: con menos de 2 es error y con más de 4 hay que evaluar
+  un split. Cada TC declara `criterio` y `tipo`.
+- **Por qué:** 19 HU salieron con exactamente 2 CA por inercia
+  (2026-09-23).
+- **Dónde:** `lib/testcase-validator.js` (PR #94).
+
+### D-19 · HU en lenguaje de negocio
+- **Decisión:** "Como" lleva un rol concreto y "Para" un beneficio real. El
+  Objetivo es un resultado de negocio (no "Verificar…") y no se mencionan
+  rutas. Un comportamiento relevado que contradice el "Para" es un posible
+  defecto, nunca un CA.
+- **Por qué:** SCRUM-338 exigía como CA que los datos guardados se
+  perdieran al recargar: el test pasaba cuando la función fallaba
+  (2026-09-24).
+- **Dónde:** `validateStoryText` (PR #102).
+
+### D-20 · Un paso por acción verificable; verificar solo en el resultado
+- **Decisión:** cada acción con resultado verificable es un paso, sin
+  relleno. La columna Acción no dice "verificar…". El Paso 1 es entrar a la
+  pantalla probada. La sesión y los datos semilla van en `precondition`.
+- **Por qué:** todos los TC salían con 2 pasos y acciones encadenadas
+  (2026-09-23), y había verificaciones dentro de la acción (SCRUM-477).
+- **Dónde:** `lib/testcase-validator.js` (PR #93, #108).
+
+### D-21 · Alcance: cada artefacto cumple su función sin pisar al vecino
+- **Decisión:** cada TC va en la regla que se rompe si falla, y cada `it()`
+  afirma solo lo de su TC. Los mensajes que redacta el servidor se verifican
+  por significado y consecuencia. La HU no lista lo que queda fuera de
+  alcance.
+- **Por qué:** auditoría del 2026-09-27 (PR #120): un test tiene que señalar
+  el CA correcto y no romperse por un cambio de redacción.
+- **Dónde:** skills `especificacion`, `qa-automation1` y `automation-review`.
+
+### D-22 · Estándar de Bugs
+- **Decisión:** secciones fijas (Resumen, Precondiciones, Pasos, Resultado
+  actual y esperado, Evidencia, Entorno), sin sección de Observaciones y sin
+  keys de TC en el texto (se relacionan con `linkTo`). Los pasos son
+  funcionales, sin selectores ni código. No se especula sobre el código de
+  la app. La captura `.png` de `explore-page.js` es obligatoria.
+- **Por qué:** los Bugs mezclaban trazabilidad y especulación sobre código
+  interno (SCRUM-528, SCRUM-559), 2026-09-27.
+- **Dónde:** `lib/bug-validator.js` (PR #119).
+
+---
+
+## Automatización y ejecución (PASO 3)
+
+### D-23 · Tags de trazabilidad en cada `it()`
+- **Decisión:** `it('[CA-01][TC-01.1][SCRUM-307] …')`. La key de Xray va al
+  final. Antes de correr se verifica que exista, que esté vinculada a la HU
+  y que tenga el label del CA.
+- **Por qué:** es lo que usa el reporte a Xray. Una key mal copiada
+  reportaba a otro Test Case.
+- **Dónde:** `lib/test-runner.js`, `lib/traceability.js`,
+  `check-traceability.js`.
+
+### D-24 · Una corrida por iteración, con diagnóstico, máximo 3
+- **Decisión:** si una corrida falla, se diagnostica con evidencia antes de
+  volver a correr. Nunca se re-corre "a ver si pasa". A las 3 iteraciones
+  fallidas se consulta al usuario. Solo se reporta a Xray si pasa el 100%.
+- **Dónde:** `run-and-report.js`, skill `ejecucion`.
+
+### D-25 · Estándares de código Cypress
+- **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
+  selectores relevados (nunca adivinados) en fixtures JSON. Al extraer un
+  helper compartido, no se toca el spec dedicado a validar ese flujo paso a
+  paso. Antes de borrar un spec "duplicado" se leen todos sus `it()`.
+- **Por qué:** casos reales de OrangeHRM (PR #38) y del saneamiento
+  (se hubieran perdido 2 escenarios únicos).
+- **Dónde:** `CLAUDE.md` §2, skill `automation-review`.
+
+---
+
+## Arquitectura y portabilidad
+
+### D-26 · Fronteras de herramientas verificadas por test
+- **Decisión:** Jira/Xray, GitHub y el arranque de Cypress viven en archivos
+  fijos, y `npm run test:unit` falla si aparecen en otro lado. El mapa está
+  en `docs/architecture/herramientas.md`.
+- **Por qué:** portabilidad. Cambiar una herramienta tiene que ser tocar
+  pocos archivos conocidos (2026-09-28).
+- **Dónde:** `lib/architecture.js` + su test.
+
+### D-27 · Cypress no se aísla detrás de un adaptador (por ahora)
+- **Decisión:** no se abstrae Cypress. Los specs y los Page Objects lo usan
+  directamente.
+- **Por qué:** es un costo alto sin un cambio de runner a la vista. Si
+  llega, el mapa de herramientas dice qué tocar (2026-09-28).

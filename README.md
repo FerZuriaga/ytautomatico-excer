@@ -63,13 +63,17 @@ este framework contra una aplicación propia con staging real.
 
 | Paso | Script | Qué hace |
 |---|---|---|
-| 1. Discovery | `node v3/scripts/explore-page.js --url <url>` | Explora una pantalla con navegador real: requests de red (método y status), `data-test` visibles/ocultos, idioma, almacenamiento y errores de consola. Informe fuera del repo. |
+| 1. Discovery | `node v3/scripts/explore-page.js --scenarios <archivo.json>` (o `--url <url>`) | Explora las pantallas del lote con navegador real en una sola corrida: requests de red (método y status), `data-test` visibles/ocultos, idioma, almacenamiento y errores de consola. Los datos que necesita cada escenario se preparan por API con las recetas de `v3/data-recipes/<app>.json`. Informe fuera del repo. |
 | 2. Jira/Xray | `node v3/scripts/create-jira-task.js --data <lote.json> --dry-run` | Valida HU, criterios y Test Cases; sin `--dry-run` publica el lote (Historias, Test Cases, Test Cycles). |
 | 3. Ejecución | `node v3/scripts/run-and-report.js --spec <specs> --test-cycle <ciclos>` | Verifica la trazabilidad, corre Cypress y reporta a Xray solo si pasa el 100%. |
 | 3. Trazabilidad | `node v3/scripts/check-traceability.js --spec <carpeta>` | Cruza los tags `[CA-XX][TC-XX.Y][SCRUM-NNN]` de los specs contra Jira/Xray. |
 | 3. PR | `node v3/scripts/create-pull-request.js --action create --head <rama> --title "<t>"` | Abre el Pull Request por la API de GitHub. |
 
-Tests unitarios de la lógica del pipeline: `npm run test:unit`.
+Tests unitarios de la lógica del pipeline: `npm run test:unit`. Incluyen el
+chequeo de fronteras de arquitectura: qué archivo puede hablar con Jira/Xray,
+GitHub o Cypress (mapa en `docs/architecture/herramientas.md`).
+
+Decisiones del proyecto y su porqué: `docs/decisiones.md`.
 
 ## Scripts disponibles
 
