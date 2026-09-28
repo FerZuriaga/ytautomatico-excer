@@ -313,3 +313,37 @@ filtrada y 86 años) y la API. Selectores en
   no tiene mayúscula/número/símbolo `Password can not include invalid
   characters.`; el formulario vacío muestra dos mensajes en la fecha y tres
   en la contraseña.
+
+## Perfil del cliente (2026-09-27)
+
+Explorado con `explore-page.js` con sesión inyectada (8 recorridos: carga,
+edición correcta + recarga, nombre vacío, teléfono inválido, contraseña
+actual incorrecta, confirmación distinta, contraseña débil, igual a la
+actual y cambio correcto) y la API. Selectores en
+`cypress/fixtures/selectors/practicesoftwaretesting/perfil.json`.
+
+- **Pantalla `/account/profile`:** dos formularios (datos y contraseña) más
+  la sección de 2FA (TOTP, fuera de alcance). El email es de solo lectura
+  en la pantalla, pero la API (`PUT /users/{id}`) sí lo cambia.
+- **Datos:** todos obligatorios; teléfono `^\+?[0-9\s().-]{7,24}$`. Con el
+  formulario inválido no sale la request y se muestra un único aviso
+  (`alert-danger`): `Please correct the highlighted fields before saving.`
+  o, si el teléfono tiene formato inválido, `Please enter a valid phone
+  number (digits, spaces and ( ) + - only).` Éxito: `Your profile is
+  successfully updated!` y persiste al recargar.
+- **Los avisos se ocultan a los 5 segundos** (`fadeOutMessage`): verificar
+  el mensaje apenas aparece.
+- **Contraseña:** el front NO valida antes de enviar (aunque muestra las
+  reglas): todo lo rechaza el backend y el aviso muestra su `message` tal
+  cual: actual incorrecta (400) `Your current password does not matches
+  with the password.`; confirmación distinta (422) `The new password field
+  confirmation does not match.`; débil (422) `The new password field must
+  be at least 8 characters. (and 3 more errors)`; igual a la actual (400)
+  `New Password cannot be same as your current password.` El texto propio
+  del front `Passwords do not match.` nunca aparece (el validador está en
+  el campo y la plantilla lo busca en el formulario).
+- **Cambio correcto:** `Your password is successfully updated!`, a los 5
+  segundos cierra la sesión y recarga (termina en Login); la clave vieja
+  queda rechazada (401) y la nueva entra. El token anterior sigue válido.
+- **Posible defecto:** guardar el perfil borra el número de casa
+  (`house_number: null`): el formulario no tiene ese campo y el PUT lo pisa.

@@ -1,0 +1,45 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "mePath": "/users/me",
+    "updatePathPrefix": "/users/",
+    "changePasswordPath": "/users/change-password"
+  },
+  "path": "/account/profile",
+  "pageTitle": "[data-test=\"page-title\"]",
+  "fields": {
+    "firstName": "[data-test=\"first-name\"]",
+    "lastName": "[data-test=\"last-name\"]",
+    "email": "[data-test=\"email\"]",
+    "phone": "[data-test=\"phone\"]",
+    "street": "[data-test=\"street\"]",
+    "postalCode": "[data-test=\"postal_code\"]",
+    "city": "[data-test=\"city\"]",
+    "state": "[data-test=\"state\"]",
+    "country": "[data-test=\"country\"]"
+  },
+  "updateProfileSubmit": "[data-test=\"update-profile-submit\"]",
+  "password": {
+    "current": "[data-test=\"current-password\"]",
+    "new": "[data-test=\"new-password\"]",
+    "confirm": "[data-test=\"new-password-confirm\"]",
+    "submit": "[data-test=\"change-password-submit\"]"
+  },
+  "profileForm": "form:has([data-test=\"update-profile-submit\"])",
+  "passwordForm": "form:has([data-test=\"change-password-submit\"])",
+  "successAlert": ".alert-success",
+  "errorAlert": ".alert-danger",
+  "invalidField": ".is-invalid",
+  "texts": {
+    "title": "Profile",
+    "profileUpdated": "Your profile is successfully updated!",
+    "profileInvalid": "Please correct the highlighted fields before saving.",
+    "phoneInvalid": "Please enter a valid phone number (digits, spaces and ( ) + - only).",
+    "passwordUpdated": "Your password is successfully updated!",
+    "currentPasswordWrong": "Your current password does not matches with the password.",
+    "passwordMismatch": "The new password field confirmation does not match.",
+    "passwordWeak": "The new password field must be at least 8 characters. (and 3 more errors)",
+    "passwordNoSymbol": "The new password field must contain at least one symbol.",
+    "passwordSameAsCurrent": "New Password cannot be same as your current password."
+  }
+}

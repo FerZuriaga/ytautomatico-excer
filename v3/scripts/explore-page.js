@@ -18,6 +18,7 @@
  *   --actions    (opcional) JSON con acciones para llegar a una pantalla
  *                interna: [{ "action": "click", "selector": "..." },
  *                { "action": "type", "selector": "...", "value": "..." },
+ *                { "action": "clear", "selector": "..." } (vacía un campo),
  *                { "action": "select", "selector": "...", "value": "..." },
  *                { "action": "visit", "value": "/ruta" },
  *                { "action": "waitFor", "selector": "..." }]
@@ -65,13 +66,24 @@ function parseArgs(argv) {
     if (argv[i] === '--url') args.url = argv[++i];
     else if (argv[i] === '--storage') args.storage = JSON.parse(argv[++i]);
     else if (argv[i] === '--session-storage') args.sessionStorage = JSON.parse(argv[++i]);
-    else if (argv[i] === '--actions') args.actions = JSON.parse(fs.readFileSync(argv[++i], 'utf8'));
+    else if (argv[i] === '--actions') args.actions = parseActions(fs.readFileSync(argv[++i], 'utf8'));
     else if (argv[i] === '--wait-for') args.waitFor = argv[++i];
     else if (argv[i] === '--init-script') args.initScript = path.resolve(argv[++i]);
     else if (argv[i] === '--viewport') args.viewport = argv[++i];
     else if (argv[i] === '--out') args.out = path.resolve(argv[++i]);
   }
   return args;
+}
+
+const ACTIONS = ['click', 'type', 'clear', 'select', 'visit', 'waitFor'];
+
+// Una acción desconocida se ignoraba en silencio y el informe quedaba como
+// evidencia de un paso que nunca se ejecutó.
+function parseActions(text) {
+  const actions = JSON.parse(text);
+  const unknown = actions.filter(a => !ACTIONS.includes(a.action)).map(a => a.action);
+  if (unknown.length) throw new Error(`Acciones desconocidas en --actions: ${unknown.join(', ')} (válidas: ${ACTIONS.join(', ')})`);
+  return actions;
 }
 
 // Spec generado en una carpeta temporal: nunca vive en el repo.
@@ -230,6 +242,7 @@ describe('explore', () => {
     P.actions.forEach((a, i) => {
       if (a.action === 'click') cy.get(a.selector, { timeout: 15000 }).first().click();
       else if (a.action === 'type') cy.get(a.selector, { timeout: 15000 }).first().clear().type(a.value);
+      else if (a.action === 'clear') cy.get(a.selector, { timeout: 15000 }).first().clear();
       else if (a.action === 'select') cy.get(a.selector, { timeout: 15000 }).first().select(a.value);
       else if (a.action === 'visit') cy.visit(new URL(a.value, P.url).href, { failOnStatusCode: false });
       else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
