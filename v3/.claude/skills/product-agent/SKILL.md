@@ -353,7 +353,10 @@ keys de issues en el texto (las relaciones van en `linkTo`, que acepta
 un enlace o una lista), o una evidencia que especula sobre el código
 interno de la app en vez de citar hechos observables (consola, HTTP,
 informe de explore-page, entorno; nombres del código solo desde un stack
-trace real).
+trace real). `captura` también es obligatoria: ruta (o lista) al `.png`
+que tomó `explore-page.js` en el navegador real durante el discovery;
+sin ella el validador frena. El script la adjunta al Bug y verifica el
+adjunto por lectura.
 
 **Pasos para reproducir:** solo acciones funcionales del usuario — nunca
 selectores, aliases, variables ni código (eso va en Evidencia). Si el Bug

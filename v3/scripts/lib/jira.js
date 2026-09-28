@@ -9,6 +9,8 @@
  * formato ADF que hay acá dentro.
  */
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const https = require('https');
 const { withRetry, logRetry } = require('./http-retry');
 
@@ -237,6 +239,10 @@ function buildDescription(steps) {
  * (opcional) que clasifican el ticket. Sin secciones libres: los Test
  * Cases viven en Xray y las relaciones van como enlaces de Jira.
  */
+function capturesOf(bug) {
+  return (Array.isArray(bug.captura) ? bug.captura : [bug.captura]).filter(c => typeof c === 'string' && c.trim());
+}
+
 function buildBugDescription(bug) {
   const content = [
     h(2, 'Resumen del problema'), p(bug.resumen),
@@ -245,6 +251,7 @@ function buildBugDescription(bug) {
     h(2, 'Resultado actual'), p(bug.resultadoActual),
     h(2, 'Resultado esperado'), p(bug.resultadoEsperado),
     h(2, 'Evidencia'), p(bug.evidencia),
+    ...capturesOf(bug).map(c => p(`Captura del navegador adjunta: ${captureFileName(c)}`)),
     h(2, 'Entorno'), p(bug.entorno),
     h(2, 'Severidad'), p(bug.severidad)
   ];
@@ -314,6 +321,68 @@ function buildTareaDescription(tarea) {
   };
 }
 
+/**
+ * Nombre con el que se adjunta una captura de explore-page.js: la carpeta
+ * del informe + el archivo ("pw-vieja-explore.png"), porque todas las
+ * capturas finales se llaman explore.png. Si no se encuentra el informe,
+ * el nombre del archivo tal cual.
+ */
+function captureFileName(filePath, { exists = fs.existsSync } = {}) {
+  let dir = path.dirname(filePath);
+  for (let i = 0; i < 3; i++) {
+    if (exists(path.join(dir, 'report.json'))) return `${path.basename(dir)}-${path.basename(filePath)}`;
+    dir = path.dirname(dir);
+  }
+  return path.basename(filePath);
+}
+
+// Cuerpo multipart/form-data con un único archivo en el campo "file" (el
+// que espera POST /issue/{key}/attachments).
+function buildMultipartBody(boundary, fileName, content, contentType = 'image/png') {
+  return Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${fileName}"\r\nContent-Type: ${contentType}\r\n\r\n`),
+    content,
+    Buffer.from(`\r\n--${boundary}--\r\n`)
+  ]);
+}
+
+/**
+ * Adjunta un archivo a un issue. No se reintenta (no es idempotente: un
+ * reintento duplicaría el adjunto); quien llama verifica por lectura.
+ */
+function attachFile(key, filePath, fileName = path.basename(filePath)) {
+  const boundary = `----qa${Date.now().toString(16)}`;
+  const body = buildMultipartBody(boundary, fileName, fs.readFileSync(filePath));
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: HOSTNAME, path: `/rest/api/3/issue/${key}/attachments`, method: 'POST',
+      headers: {
+        'Authorization': AUTH,
+        'X-Atlassian-Token': 'no-check',
+        'Accept': 'application/json',
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': body.length
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+async function getAttachmentNames(key) {
+  const res = await jiraRequest('GET', `/rest/api/3/issue/${key}?fields=attachment`);
+  if (res.status !== 200) throw new Error(`No se pudieron leer los adjuntos de ${key} (HTTP ${res.status}).`);
+  return (res.body.fields.attachment || []).map(a => a.filename);
+}
+
 module.exports = {
   isIdempotent,
   HOSTNAME,
@@ -327,8 +396,13 @@ module.exports = {
   linkIssue,
   transitionIssue,
   addComment,
+  captureFileName,
+  buildMultipartBody,
+  attachFile,
+  getAttachmentNames,
   buildDescription,
   buildBugDescription,
+  capturesOf,
   buildHistoriaDescription,
   buildTareaDescription
 };

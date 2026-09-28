@@ -16,10 +16,66 @@
  *     (nombres de funciones, componentes, condiciones) salvo que aparezcan
  *     en un stack trace real. Caso real: la evidencia del Bug SCRUM-528
  *     explicaba "la condición usa cusAddress.street.errors".
+ *   - Captura de pantalla obligatoria (`bug.captura`: ruta o lista de
+ *     rutas): un .png real (firma PNG) tomado por explore-page.js durante
+ *     el discovery, es decir con el report.json de explore-page en la
+ *     carpeta del informe. create-jira-task.js la adjunta al ticket.
  */
+const fs = require('fs');
+const path = require('path');
 
 const REQUIRED_TEXT = ['resumen', 'precondiciones', 'resultadoActual', 'resultadoEsperado', 'severidad', 'evidencia', 'entorno'];
-const ALLOWED = new Set([...REQUIRED_TEXT, 'pasos', 'prioridad']);
+const ALLOWED = new Set([...REQUIRED_TEXT, 'pasos', 'prioridad', 'captura']);
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+// Lectura real de la captura (se inyecta otra en los tests): si es un PNG
+// y el report.json de explore-page que la acompaña (hasta 3 carpetas
+// arriba: <out>/screenshots/explore.cy.js/explore.png).
+function inspectCaptureOnDisk(filePath) {
+  const header = Buffer.alloc(PNG_SIGNATURE.length);
+  const fd = fs.openSync(filePath, 'r');
+  try { fs.readSync(fd, header, 0, header.length, 0); } finally { fs.closeSync(fd); }
+  let report = null;
+  let dir = path.dirname(filePath);
+  for (let i = 0; i < 3 && !report; i++) {
+    const candidate = path.join(dir, 'report.json');
+    if (fs.existsSync(candidate)) report = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+    dir = path.dirname(dir);
+  }
+  return { png: header.equals(PNG_SIGNATURE), report };
+}
+
+function capturesOf(bug) {
+  const value = bug.captura;
+  return (Array.isArray(value) ? value : [value]).filter(v => typeof v === 'string' && v.trim());
+}
+
+function validateCaptures(bug, label, inspectCapture) {
+  const captures = capturesOf(bug);
+  if (!captures.length) {
+    return [`${label}: falta la captura de pantalla -- agregar "captura": "<.png de explore-page.js>" tomada en el navegador real durante el discovery. Sin evidencia gráfica no se publica.`];
+  }
+  const errors = [];
+  for (const capture of captures) {
+    if (path.extname(capture).toLowerCase() !== '.png') {
+      errors.push(`${label}: la captura "${capture}" no es un archivo .png.`);
+      continue;
+    }
+    let info;
+    try {
+      info = inspectCapture(capture);
+    } catch (err) {
+      errors.push(`${label}: no se pudo leer la captura "${capture}" (${err.code || err.message}).`);
+      continue;
+    }
+    if (!info.png) errors.push(`${label}: "${capture}" no es una imagen PNG válida.`);
+    if (!info.report || info.report.generator !== 'explore-page') {
+      errors.push(`${label}: "${capture}" no la tomó explore-page.js (falta su report.json en la carpeta del informe); la captura tiene que salir del navegador real durante el discovery.`);
+    }
+  }
+  return errors;
+}
 
 const TEST_CASE_PATTERNS = [
   /\bTC-\d+(\.\d+)?\b/,
@@ -54,7 +110,7 @@ function isBlank(value) {
   return typeof value !== 'string' || !value.trim();
 }
 
-function validateBug(issue, { projectKey = 'SCRUM' } = {}) {
+function validateBug(issue, { projectKey = 'SCRUM', inspectCapture = inspectCaptureOnDisk } = {}) {
   const label = `Bug "${issue.summary || '(sin summary)'}"`;
   const errors = [];
   const bug = issue.bug;
@@ -68,6 +124,8 @@ function validateBug(issue, { projectKey = 'SCRUM' } = {}) {
   const steps = Array.isArray(bug.pasos) ? bug.pasos.filter(s => !isBlank(s)) : [];
   if (!steps.length) errors.push(`${label}: falta "pasos" (lista de pasos para reproducir).`);
 
+  errors.push(...validateCaptures(bug, label, inspectCapture));
+
   for (const field of Object.keys(bug)) {
     if (!ALLOWED.has(field)) {
       errors.push(`${label}: la sección "${field}" no es parte del estándar del Bug (Resumen, Precondiciones, Pasos, Resultado actual, Resultado esperado, Evidencia, Entorno, Severidad, Prioridad).`);
@@ -75,7 +133,7 @@ function validateBug(issue, { projectKey = 'SCRUM' } = {}) {
   }
 
   const issueKey = new RegExp(`\\b${projectKey}-\\d+\\b`);
-  const texts = Object.entries(bug).flatMap(([field, value]) =>
+  const texts = Object.entries(bug).filter(([field]) => field !== 'captura').flatMap(([field, value]) =>
     (Array.isArray(value) ? value : [value]).filter(v => typeof v === 'string').map(v => [field, v]));
   for (const [field, text] of texts) {
     if (TEST_CASE_PATTERNS.some(re => re.test(text))) {

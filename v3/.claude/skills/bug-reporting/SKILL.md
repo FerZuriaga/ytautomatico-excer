@@ -157,6 +157,14 @@ ENTORNO:
   "probablemente…"): un nombre del código solo se cita si aparece en un
   stack trace real. Caso real: SCRUM-528 explicaba "la condición usa
   cusAddress.street.errors".
+- **Captura de pantalla obligatoria:** `captura` con el `.png` que deja
+  `explore-page.js` (`<out>/screenshots/explore.cy.js/explore.png`) al
+  reproducir el defecto en el navegador real durante el discovery. Sin
+  captura, con un archivo que no es PNG o con una imagen que no salió de
+  una exploración (sin su `report.json`) el Bug no se publica.
+  `create-jira-task.js` la adjunta al ticket y lo verifica por lectura.
+  Reproducir el defecto con `explore-page.js --actions` hasta el estado
+  que lo muestra, así la captura final es la evidencia.
 
 ## REGLAS ESPECIALES
 

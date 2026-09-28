@@ -8,7 +8,19 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { validateBug, validateBugs } = require('./bug-validator');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { validateBug: validateBugRaw, validateBugs: validateBugsRaw } = require('./bug-validator');
+
+const CAPTURE = 'exp/perfil-casa/screenshots/explore.cy.js/explore.png';
+const EXPLORE_REPORT = { generator: 'explore-page', generatedAt: '2026-09-27T22:40:00Z' };
+const okInspect = () => ({ png: true, report: EXPLORE_REPORT });
+
+// La captura se lee de disco; en los tests se inyecta salvo el caso que
+// prueba la lectura real.
+const validateBug = (issue, opts = {}) => validateBugRaw(issue, { inspectCapture: okInspect, ...opts });
+const validateBugs = (payload, opts = {}) => validateBugsRaw(payload, { inspectCapture: okInspect, ...opts });
 
 // Bug SCRUM-585 tal como quedaría con el estándar nuevo.
 const validBug = (overrides = {}) => ({
@@ -24,6 +36,7 @@ const validBug = (overrides = {}) => ({
     severidad: 'Media',
     evidencia: 'PUT /users/{id} responde 200 {"success":true}; GET /users/me devuelve address.house_number null (antes "42"). El request enviado no incluye house_number. Informe de explore-page del 2026-09-27.',
     entorno: 'https://practicesoftwaretesting.com (Toolshop v5), Chrome headless, 2026-09-27.',
+    captura: CAPTURE,
     ...overrides
   }
 });
@@ -121,4 +134,74 @@ test('validateBugs: payload de un solo Bug (sin issues)', () => {
 test('Bug sin objeto "bug": error explícito', () => {
   const { errors } = validateBug({ issuetype: 'Bug', summary: 'X' });
   assert.match(errors[0], /falta el objeto "bug"/);
+});
+
+// ─── Captura de pantalla obligatoria (2026-09-27) ─────────────────────────────
+
+test('Bug sin captura: error (sin evidencia gráfica no se publica)', () => {
+  for (const captura of [undefined, '', []]) {
+    const { errors } = validateBug(validBug({ captura }));
+    assert.equal(errors.length, 1, String(captura));
+    assert.match(errors[0], /falta la captura de pantalla/);
+  }
+});
+
+test('captura que no es .png: error', () => {
+  const { errors } = validateBug(validBug({ captura: 'exp/perfil-casa/screenshots/explore.jpg' }));
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /no es un archivo \.png/);
+});
+
+test('captura inexistente o ilegible: error', () => {
+  const inspectCapture = () => { const e = new Error('no existe'); e.code = 'ENOENT'; throw e; };
+  const { errors } = validateBug(validBug(), { inspectCapture });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /no se pudo leer la captura .*ENOENT/);
+});
+
+test('.png que no es una imagen PNG real: error', () => {
+  const { errors } = validateBug(validBug(), { inspectCapture: () => ({ png: false, report: EXPLORE_REPORT }) });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /no es una imagen PNG válida/);
+});
+
+test('captura que no salió de explore-page (sin informe u otro generador): error', () => {
+  for (const report of [null, { generator: 'cypress' }]) {
+    const { errors } = validateBug(validBug(), { inspectCapture: () => ({ png: true, report }) });
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /no la tomó explore-page\.js/);
+  }
+});
+
+test('varias capturas: se valida cada una', () => {
+  const inspectCapture = p => ({ png: !p.includes('rota'), report: EXPLORE_REPORT });
+  const { errors } = validateBug(validBug({ captura: [CAPTURE, 'exp/rota/screenshots/explore.cy.js/explore.png'] }), { inspectCapture });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /rota/);
+});
+
+test('la ruta de la captura no se revisa como texto del ticket', () => {
+  assert.deepEqual(validateBug(validBug({ captura: 'exp/SCRUM-585-TC-01.1/screenshots/explore.png' })).errors, []);
+});
+
+test('lectura real de disco: PNG de explore-page válido y archivo sin firma PNG', () => {
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'bug-validator-'));
+  try {
+    const shots = path.join(out, 'screenshots', 'explore.cy.js');
+    fs.mkdirSync(shots, { recursive: true });
+    fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(EXPLORE_REPORT));
+    const good = path.join(shots, 'explore.png');
+    fs.writeFileSync(good, Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('datos')]));
+    const fake = path.join(shots, 'falsa.png');
+    fs.writeFileSync(fake, 'no soy una imagen');
+    const loose = path.join(os.tmpdir(), `suelta-${process.pid}.png`);
+    fs.copyFileSync(good, loose);
+
+    assert.deepEqual(validateBugRaw(validBug({ captura: good })).errors, []);
+    assert.match(validateBugRaw(validBug({ captura: fake })).errors.join(' | '), /no es una imagen PNG válida/);
+    assert.match(validateBugRaw(validBug({ captura: loose })).errors.join(' | '), /no la tomó explore-page\.js/);
+    fs.rmSync(loose);
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
 });
