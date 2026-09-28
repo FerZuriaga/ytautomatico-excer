@@ -82,7 +82,7 @@ pedidos ni pagos reales). Todas las páginas usan `index.php?rt=<ruta>`.
 ## Índice de fixtures ya publicados (selectores + hallazgos completos por módulo)
 
 Antes de re-descubrir un módulo ya cubierto, leer directamente su JSON
-en `cypress/fixtures/selectors/`: `busqueda-productos.json`,
+en `cypress/fixtures/selectors/automation-test-store/`: `busqueda-productos.json`,
 `ordenar-listado.json`, `paginacion.json`, `detalle-producto.json`,
 `escribir-resena.json`, `ofertas-especiales.json`, `carrito.json`,
 `cambiar-moneda.json`, `contenido-estatico.json`, `newsletter.json`,

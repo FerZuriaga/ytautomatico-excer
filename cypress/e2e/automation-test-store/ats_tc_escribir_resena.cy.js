@@ -11,7 +11,7 @@ const HUMAN_VERIFICATION_ERROR = 'Human verification has failed! Please try agai
 // eso esta suite cubre la estructura del formulario y el bloqueo por
 // captcha invalido/vacio, no el envio exitoso ni los mensajes de validacion
 // de campo (inalcanzables sin resolver el captcha real en tiempo de
-// ejecucion) -- ver cypress/fixtures/selectors/escribir-resena.json.
+// ejecucion) -- ver cypress/fixtures/selectors/automation-test-store/escribir-resena.json.
 describe('Automation Test Store - Escribir una reseña de producto [SCRUM-235]', () => {
     beforeEach(() => {
         productPage.visit(PRODUCT_ID)

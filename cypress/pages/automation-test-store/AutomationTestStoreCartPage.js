@@ -51,10 +51,10 @@ class AutomationTestStoreCartPage {
             .should('contain.text', expectedTotal)
     }
 
-    // ─── Editar cantidad / Quitar producto (consumen cypress/fixtures/selectors/carrito.json) ──
+    // ─── Editar cantidad / Quitar producto (consumen cypress/fixtures/selectors/automation-test-store/carrito.json) ──
 
     updateQuantity(productId, quantity) {
-        cy.fixture('selectors/carrito.json').then(sel => {
+        cy.fixture('selectors/automation-test-store/carrito.json').then(sel => {
             cy.get(`input[name="quantity[${productId}]"]`).clear().type(String(quantity))
             cy.get(sel.updateButton).click()
         })
@@ -69,7 +69,7 @@ class AutomationTestStoreCartPage {
     }
 
     verifySubTotal(expectedSubTotal) {
-        cy.fixture('selectors/carrito.json').then(sel => {
+        cy.fixture('selectors/automation-test-store/carrito.json').then(sel => {
             cy.contains(`${sel.totalsTable} td`, 'Sub-Total:').next().should('contain.text', expectedSubTotal)
         })
     }

@@ -6,9 +6,9 @@ class AutomationTestStoreContentPage {
 
     // CA-01 de SCRUM-261 exige navegar DESDE EL FOOTER: el link se busca
     // dentro de <footer> (unico en la home, verificado con curl) con los
-    // selectores relevados en cypress/fixtures/selectors/contenido-estatico.json.
+    // selectores relevados en cypress/fixtures/selectors/automation-test-store/contenido-estatico.json.
     clickFooterLink(linkName) {
-        cy.fixture('selectors/contenido-estatico.json').then(sel => {
+        cy.fixture('selectors/automation-test-store/contenido-estatico.json').then(sel => {
             cy.get('footer').find(sel.footerLinks[linkName]).click()
         })
     }
