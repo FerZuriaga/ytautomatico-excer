@@ -17,7 +17,11 @@
 Acciones soportadas actualmente:
 
 - create
-- merge
+- merge --pr <n> [--delete-branch]: espera a que GitHub confirme que el PR
+  se puede mergear, reintenta un 405 transitorio, confirma el merge por
+  lectura y recién ahí (con --delete-branch) borra la rama origen. Nunca
+  encadenar a mano el borrado de la rama detrás del merge (caso real #123:
+  405 recién pusheado, la rama se borró igual y el PR quedó cerrado).
 - view --pr <n>: muestra estado, ramas, título y descripción de un PR.
 - close --pr <n>[,<n>...]: cierra PRs abiertos SIN mergear (la rama queda
   en el remoto). Solo con confirmación explícita del usuario.
@@ -68,6 +72,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { safeMerge } = require('./lib/pr-merge');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const API_HOSTNAME = 'api.github.com';
@@ -114,6 +119,8 @@ function parseArgs(argv) {
     } else if (argv[i] === '--max') {
       args.max = Number(argv[i + 1]);
       i++;
+    } else if (argv[i] === '--delete-branch') {
+      args.deleteBranch = true;
     } else if (argv[i] === '--pr') {
       args.pullRequestNumber = argv[i + 1];
       i++;
@@ -223,31 +230,6 @@ async function createPullRequest(owner, name, { head, base, title, body }) {
 }
 
 /**
- * Mergea un Pull Request existente.
- *
- * Utiliza el endpoint oficial de GitHub:
- * PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge
- */
-async function mergePullRequest(owner, name, pullRequestNumber) {
-
-  const res = await githubRequest(
-    'PUT',
-    `/repos/${owner}/${name}/pulls/${pullRequestNumber}/merge`
-  );
-
-  if (res.status === 200) {
-    return res.body;
-  }
-
-  console.error(
-    'Error al mergear el Pull Request:',
-    JSON.stringify(res.body, null, 2)
-  );
-  process.exit(1);
-}
-
-
-/**
  * La autenticación siempre se realiza utilizando GITHUB_TOKEN
  * definido en .env.
  *
@@ -259,7 +241,7 @@ async function main() {
     process.exit(1);
   }
 
-  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max } = parseArgs(process.argv.slice(2));
+  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max, deleteBranch } = parseArgs(process.argv.slice(2));
 
   if ((action === 'view' || action === 'close') && !pullRequestNumber) {
     console.error('Debe indicar --pr <numero>.');
@@ -359,14 +341,28 @@ async function main() {
 
       console.log(`Mergeando Pull Request #${pullRequestNumber}...`);
 
-      const result = await mergePullRequest(
-        owner,
-        name,
-        pullRequestNumber
-      );
+      const prPath = `/repos/${owner}/${name}/pulls/${pullRequestNumber}`;
+      let result;
+      try {
+        result = await safeMerge({
+          getPr: async () => {
+            const res = await githubRequest('GET', prPath);
+            if (res.status !== 200) throw new Error(`Error al leer el Pull Request (HTTP ${res.status}): ${JSON.stringify(res.body)}`);
+            return res.body;
+          },
+          merge: () => githubRequest('PUT', `${prPath}/merge`),
+          deleteBranch: ref => githubRequest('DELETE', `/repos/${owner}/${name}/git/refs/heads/${ref.split('/').map(encodeURIComponent).join('/')}`),
+          deleteHeadBranch: Boolean(deleteBranch),
+          log: message => console.log(message)
+        });
+      } catch (e) {
+        console.error(e.message);
+        process.exit(1);
+      }
 
-      console.log(`Merge realizado correctamente.`);
+      console.log(`Merge realizado y confirmado por lectura.`);
       console.log(`SHA: ${result.sha}`);
+      if (result.branchDeleted) console.log(`Rama remota borrada: ${result.branch}`);
 
       break;
     }
