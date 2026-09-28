@@ -1,0 +1,60 @@
+{
+  "api": {
+    "host": "api.practicesoftwaretesting.com",
+    "messagesPath": "/messages",
+    "attachFileSuffix": "/attach-file"
+  },
+  "path": "/contact",
+  "messagesPath": "/account/messages",
+  "navContact": "[data-test=\"nav-contact\"]",
+  "navMenu": "[data-test=\"nav-menu\"]",
+  "navMyMessages": "[data-test=\"nav-my-messages\"]",
+  "pageTitle": "[data-test=\"page-title\"]",
+  "form": {
+    "firstName": "[data-test=\"first-name\"]",
+    "lastName": "[data-test=\"last-name\"]",
+    "email": "[data-test=\"email\"]",
+    "subject": "[data-test=\"subject\"]",
+    "message": "[data-test=\"message\"]",
+    "attachment": "[data-test=\"attachment\"]",
+    "submit": "[data-test=\"contact-submit\"]"
+  },
+  "errors": {
+    "firstName": "[data-test=\"first-name-error\"]",
+    "lastName": "[data-test=\"last-name-error\"]",
+    "email": "[data-test=\"email-error\"]",
+    "subject": "[data-test=\"subject-error\"]",
+    "message": "[data-test=\"message-error\"]",
+    "attachment": "[data-test=\"attachment-error\"]"
+  },
+  "confirmation": ".alert-success[role=\"alert\"]",
+  "messagesRows": "table tbody tr",
+  "subjects": {
+    "customer-service": "Customer service",
+    "webmaster": "Webmaster",
+    "return": "Return",
+    "payments": "Payments",
+    "warranty": "Warranty",
+    "status-of-order": "Status of my order"
+  },
+  "data": {
+    "messageMinLength": 50
+  },
+  "texts": {
+    "title": "Contact",
+    "greeting": "Hello {name}, please fill out this form to submit your message.",
+    "confirm": "Thanks for your message! We will contact you shortly.",
+    "attachmentHelp": "Only files with the txt extension are allowed, and files must be 0kb.",
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "emailRequired": "Email is required",
+    "emailFormat": "Email format is invalid",
+    "subjectRequired": "Subject is required",
+    "messageRequired": "Message is required",
+    "messageMinLength": "Message must be minimal 50 characters",
+    "attachmentType": "File should have a txt extension.",
+    "attachmentSize": "File should be empty.",
+    "messagesTitle": "Messages",
+    "noMessages": "There are no messages yet."
+  }
+}
