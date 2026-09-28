@@ -70,11 +70,35 @@ Combinar dos fuentes, cada una para lo suyo:
 |---|---|
 | Reglas de negocio (validaciones, límites, textos exactos) | Código publicado (sourcemap o bundle), documentación |
 | Datos de prueba y conteos | API/HTML directo (`curl`) con los mismos parámetros que usa el front |
-| Comportamiento real en navegador | `node v3/scripts/explore-page.js --url <url>` |
+| Comportamiento real en navegador | `node v3/scripts/explore-page.js --scenarios <archivo.json>` (o `--url <url>` para una sola pantalla) |
 
 `explore-page.js` se corre **una vez por pantalla objetivo** (con
 `--actions` para pantallas internas y `--init-script` si la app necesita un
-adaptador dentro de Cypress). Del informe, revisar siempre:
+adaptador dentro de Cypress).
+
+**Todas las exploraciones del lote en UN archivo de escenarios**
+(`--scenarios`, formato en `v3/scripts/lib/explore-scenarios.js`): carga,
+camino del test y cada caso negativo como escenarios con nombre, en una
+sola corrida de Cypress. Cada arranque cuesta ~40s y un lote llevaba ~20
+exploraciones sueltas (medido el 2026-09-28: 6 escenarios en 87s contra
+~66s cada uno por separado). Cada escenario corre aislado y deja
+`<out>/<nombre>/report.json` + captura; uno que se corta no frena a los
+demás. Si algo falla, corregir el escenario y volver a correr solo lo que
+haga falta (otro archivo), no el lote entero.
+
+**Datos por receta, nunca scripts sueltos.** Clientes, sesiones, carritos
+o compras que la pantalla necesita se preparan con las recetas de
+`v3/data-recipes/<app>.json` (`"data": ["cliente", "compra"]` en el
+escenario, o `--app <app> --data cliente,compra`): corren por API justo
+antes de cada escenario, así un token de vida corta no vence, y sus
+variables se usan en la URL o las acciones (`/account/invoices/{{invoiceId}}`;
+datos de otro usuario con `"as": "otro"` → `{{otro.invoiceId}}`). Si la
+app no tiene receta o le falta una, se agrega al JSON de la app (solo
+datos, formato en `v3/scripts/lib/data-recipe.js`) y se commitea con el
+lote: es un artefacto permanente, como los selectores. Una app nueva es un
+JSON nuevo, no código.
+
+Del informe, revisar siempre:
 
 - **Método HTTP real** de cada request (no asumir GET porque `curl` GET
   funcione) y requests sin respuesta.
@@ -119,8 +143,9 @@ Es obligatorio: cada Test Case negativo lleva `evidencia: { reporte,
 observado }` con el `report.json` de esa exploración, y sin eso
 `create-jira-task.js` no publica. El informe guarda el texto visible
 después de cada acción, así queda el aviso aunque desaparezca después.
-Usar `--out` con una carpeta del scratchpad por caso, para no pisar
-informes.
+En modo lote cada caso es un escenario con nombre propio (su informe
+queda en `<out>/<nombre>/report.json`); con `--url`, usar `--out` con una
+carpeta del scratchpad por caso, para no pisar informes.
 
 **Preguntas al usuario: una sola vez, al final del discovery.** Las dudas
 que surjan (alcance, datos, posibles defectos) se juntan en un único

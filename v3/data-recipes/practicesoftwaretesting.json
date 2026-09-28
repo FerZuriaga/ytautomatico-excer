@@ -1,0 +1,77 @@
+{
+  "description": "Practice Software Testing (Toolshop v5). Datos para el discovery por la API publica. Formato y uso en v3/scripts/lib/data-recipe.js.",
+  "api": "https://api.practicesoftwaretesting.com",
+  "headers": { "Accept": "application/json" },
+  "browser": { "localStorage": { "language": "en" } },
+  "recipes": {
+    "cliente": {
+      "description": "Cliente nuevo registrado y con sesion iniciada (token en localStorage auth-token, vence a los 5 minutos). Direccion del perfil AR 5000.",
+      "vars": {
+        "firstName": "Qa",
+        "lastName": "Discovery",
+        "email": "qa.discovery.{{unique}}@example.com",
+        "password": "Qa!Sesion2026#"
+      },
+      "steps": [
+        {
+          "method": "POST", "path": "/users/register", "expect": 201,
+          "body": {
+            "first_name": "{{firstName}}", "last_name": "{{lastName}}", "dob": "1990-01-01", "phone": "123456789",
+            "email": "{{email}}", "password": "{{password}}",
+            "address": { "street": "Calle 1", "house_number": "42", "city": "Cordoba", "state": "Cordoba", "country": "AR", "postal_code": "5000" }
+          },
+          "save": { "userId": "id" }
+        },
+        {
+          "method": "POST", "path": "/users/login", "expect": 200,
+          "body": { "email": "{{email}}", "password": "{{password}}" },
+          "save": { "token": "access_token" }
+        }
+      ],
+      "browser": { "localStorage": { "auth-token": "{{token}}" } }
+    },
+    "carrito": {
+      "description": "Carrito con un producto semilla (por nombre exacto: los ids cambian en cada re-siembra), cargado en el navegador (sessionStorage cart_id).",
+      "params": { "producto": "Combination Pliers", "cantidad": 1 },
+      "steps": [
+        { "method": "POST", "path": "/carts", "expect": 201, "save": { "cartId": "id" } },
+        { "method": "GET", "path": "/products/search", "query": { "q": "{{producto}}" }, "expect": 200, "save": { "productId": "data[name={{producto}}].id" } },
+        { "method": "POST", "path": "/carts/{{cartId}}", "body": { "product_id": "{{productId}}", "quantity": "{{cantidad}}" } }
+      ],
+      "browser": { "sessionStorage": { "cart_id": "{{cartId}}", "cart_quantity": "{{cantidad}}" } }
+    },
+    "agregar": {
+      "description": "Agrega otro producto al carrito de la receta carrito (cart_quantity del navegador no se actualiza: la app lo recalcula al abrir el carrito).",
+      "requires": ["cartId"],
+      "params": { "producto": "Wood Saw", "cantidad": 1 },
+      "steps": [
+        { "method": "GET", "path": "/products/search", "query": { "q": "{{producto}}" }, "expect": 200, "save": { "productId": "data[name={{producto}}].id" } },
+        { "method": "POST", "path": "/carts/{{cartId}}", "body": { "product_id": "{{productId}}", "quantity": "{{cantidad}}" } }
+      ]
+    },
+    "compra": {
+      "description": "Compra ya facturada del cliente (evita el Bug SCRUM-525 del checkout). La direccion de facturacion tiene que coincidir con el servicio de codigo postal (AR 5000). pago: { method: cash-on-delivery | credit-card | ..., details }.",
+      "requires": ["token"],
+      "params": {
+        "producto": "Wood Saw",
+        "cantidad": 1,
+        "pago": { "method": "cash-on-delivery", "details": {} }
+      },
+      "steps": [
+        { "method": "POST", "path": "/carts", "expect": 201, "save": { "cartId": "id" } },
+        { "method": "GET", "path": "/products/search", "query": { "q": "{{producto}}" }, "expect": 200, "save": { "productId": "data[name={{producto}}].id" } },
+        { "method": "POST", "path": "/carts/{{cartId}}", "body": { "product_id": "{{productId}}", "quantity": "{{cantidad}}" } },
+        {
+          "method": "POST", "path": "/invoices", "expect": 201,
+          "headers": { "Authorization": "Bearer {{token}}" },
+          "body": {
+            "billing_street": "Eduardo Points", "billing_city": "North Gudrun", "billing_state": "Illinois",
+            "billing_country": "AR", "billing_postal_code": "5000",
+            "payment_method": "{{pago.method}}", "payment_details": "{{pago.details}}", "cart_id": "{{cartId}}"
+          },
+          "save": { "invoiceId": "id", "invoiceNumber": "invoice_number" }
+        }
+      ]
+    }
+  }
+}

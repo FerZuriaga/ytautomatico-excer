@@ -158,7 +158,8 @@ ENTORNO:
   stack trace real. Caso real: SCRUM-528 explicaba "la condición usa
   cusAddress.street.errors".
 - **Captura de pantalla obligatoria:** `captura` con el `.png` que deja
-  `explore-page.js` (`<out>/screenshots/explore.cy.js/explore.png`) al
+  `explore-page.js` (`<out>/screenshots/explore.cy.js/explore.png`, o
+  `<out>/<escenario>/screenshots/<escenario>.png` en modo lote) al
   reproducir el defecto en el navegador real durante el discovery. Sin
   captura, con un archivo que no es PNG o con una imagen que no salió de
   una exploración (sin su `report.json`) el Bug no se publica.
