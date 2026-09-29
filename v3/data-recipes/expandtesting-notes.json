@@ -1,0 +1,41 @@
+{
+  "description": "Expand Testing - Notes App. Datos para el discovery por la API publica (Swagger en /notes/api/api-docs). Formato y uso en v3/scripts/lib/data-recipe.js.",
+  "api": "https://practice.expandtesting.com/notes/api",
+  "headers": { "Accept": "application/json" },
+  "recipes": {
+    "usuario": {
+      "description": "Usuario nuevo registrado y con sesion iniciada (token en localStorage \"token\"). Cada usuario ve solo sus notas.",
+      "vars": {
+        "name": "Qa Notes",
+        "email": "qa.notes.{{unique}}@example.com",
+        "password": "Qa!Notes2026"
+      },
+      "steps": [
+        {
+          "method": "POST", "path": "/users/register", "expect": 201,
+          "body": { "name": "{{name}}", "email": "{{email}}", "password": "{{password}}" },
+          "save": { "userId": "data.id" }
+        },
+        {
+          "method": "POST", "path": "/users/login", "expect": 200,
+          "body": { "email": "{{email}}", "password": "{{password}}" },
+          "save": { "token": "data.token" }
+        }
+      ],
+      "browser": { "localStorage": { "token": "{{token}}" } }
+    },
+    "nota": {
+      "description": "Nota del usuario de la receta usuario. category: Home | Work | Personal.",
+      "requires": ["token"],
+      "params": { "title": "Comprar materiales", "description": "Pintura, rodillos y cinta de enmascarar", "category": "Home" },
+      "steps": [
+        {
+          "method": "POST", "path": "/notes", "expect": 200,
+          "headers": { "x-auth-token": "{{token}}" },
+          "body": { "title": "{{title}}", "description": "{{description}}", "category": "{{category}}" },
+          "save": { "noteId": "data.id" }
+        }
+      ]
+    }
+  }
+}
