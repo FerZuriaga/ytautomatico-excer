@@ -36,6 +36,17 @@
           "save": { "noteId": "data.id" }
         }
       ]
+    },
+    "completar": {
+      "description": "Marca como completada la ultima nota creada con la receta nota (noteId).",
+      "requires": ["token", "noteId"],
+      "steps": [
+        {
+          "method": "PATCH", "path": "/notes/{{noteId}}", "expect": 200,
+          "headers": { "x-auth-token": "{{token}}" },
+          "body": { "completed": true }
+        }
+      ]
     }
   }
 }

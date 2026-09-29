@@ -63,3 +63,35 @@ categorías y recarga). Selectores en
   y el resumen dice `You have completed all notes`.
 - **Cancel** cierra el formulario sin crear nada. La nota creada **persiste
   al recargar** la página.
+
+## Filtrar por categoría (2026-09-28)
+
+Explorado con `explore-page.js --scenarios` (10 escenarios: cada pestaña,
+volver a All, categoría vacía, recarga con filtro, categoría toda
+completada). Datos con las recetas `usuario`, `nota` y `completar`.
+
+- **Pestañas** `category-all`, `category-home`, `category-work`,
+  `category-personal`. El filtro es **del lado del cliente**: no dispara
+  requests (la lista se pide una sola vez, `GET /notes`).
+- **Pestaña activa:** fondo con el color de su categoría y sin el punto
+  "•" que muestran las demás (All nunca muestra el punto). El resto queda
+  con fondo transparente.
+- **Resultado:** solo las notas de la categoría; en All, todas. Orden:
+  pendientes primero y completadas al final; dentro de cada grupo, la más
+  reciente arriba.
+- **Resumen** (`progress-info`) de la categoría elegida:
+  `You have 1/2 notes completed in the work category`; si todas están
+  completadas, `You have completed all notes in the home category`. Las
+  completadas de otras categorías no cuentan.
+- **Categoría sin notas:** solo `You don't have any notes in the personal
+  category`, sin resumen visible. Ojo: `progress-info` sigue en el DOM,
+  oculto, con el texto `You have completed all notes in the personal
+  category` (0 de 0 cuenta como "todas"); en el test se afirma que no se
+  ve, no que no existe.
+- **La categoría elegida se guarda** en `localStorage["activeCategory"]`:
+  al recargar la página sigue filtrada. Un test que empieza limpio arranca
+  en All.
+- El formulario "Add new note" **no** toma la pestaña activa: propone la
+  última categoría usada al crear (`localStorage["latestCategory"]`) o
+  Home. Una nota creada con otra categoría no aparece en la pestaña
+  filtrada.

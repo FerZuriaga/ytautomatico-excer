@@ -33,6 +33,25 @@ class NotesPage {
         })
     }
 
+    // Notas del usuario creadas por API, en este orden. `completed: true` la
+    // marca completada después de crearla (PATCH), como el interruptor de la
+    // tarjeta: el alta por API no acepta ese campo.
+    seedNotes(user, notes) {
+        cy.fixture(FIXTURE).then(sel => {
+            const url = `https://${sel.api.host}${sel.api.notesPath}`
+            const headers = { ...JSON_HEADERS, 'x-auth-token': user.token }
+            notes.forEach(({ title, description, category, completed }) => {
+                cy.request({ method: 'POST', url, headers, body: { title, description, category } }).then(({ status, body }) => {
+                    expect(status, `nota "${title}" creada por API`).to.eq(200)
+                    if (completed) {
+                        cy.request({ method: 'PATCH', url: `${url}/${body.data.id}`, headers, body: { completed: true } })
+                            .its('status').should('eq', 200)
+                    }
+                })
+            })
+        })
+    }
+
     registerAliases() {
         cy.fixture(FIXTURE).then(sel => {
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.notesPath }).as('notesList')
@@ -48,6 +67,18 @@ class NotesPage {
             cy.wait('@notesList', T)
             cy.get(sel.list.addNote, T).should('be.visible')
             cy.contains(sel.texts.noNotesAll, T).should('be.visible')
+        })
+    }
+
+    // "My Notes" con la sesión del usuario y sus notas ya creadas: pestaña
+    // All activa y una tarjeta por cada título.
+    visitNotesWith(user, titles) {
+        this.registerAliases()
+        cy.fixture(FIXTURE).then(sel => {
+            cy.gotoNotesUrl(sel.path, { token: user.token })
+            cy.wait('@notesList', T)
+            this.verifyCardTitles(titles)
+            this.verifyActiveCategory('All')
         })
     }
 
@@ -169,6 +200,35 @@ class NotesPage {
 
     clickCategory(category) {
         cy.fixture(FIXTURE).then(sel => cy.get(fill(sel.list.categoryTab, { category: category.toLowerCase() })).click())
+    }
+
+    // Exactamente estas tarjetas (el orden de la lista es otra regla).
+    verifyCardTitles(titles) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.card.title, T).should($titles => {
+                expect([...$titles].map(t => t.innerText.trim())).to.have.members(titles)
+            })
+        })
+    }
+
+    // La pestaña activa se pinta con el color de su categoría y no muestra el
+    // punto "•" que tienen las demás (All nunca lo muestra).
+    verifyActiveCategory(category) {
+        cy.fixture(FIXTURE).then(sel => {
+            const tab = name => fill(sel.list.categoryTab, { category: name.toLowerCase() })
+            cy.get(tab(category), T).should('have.text', category)
+                .and('not.have.css', 'background-color', 'rgba(0, 0, 0, 0)')
+            sel.categories.filter(name => name !== category).forEach(name => {
+                cy.get(tab(name)).should('have.text', `${name}•`)
+                    .and('have.css', 'background-color', 'rgba(0, 0, 0, 0)')
+            })
+        })
+    }
+
+    // En una categoría vacía el resumen queda oculto (en el DOM trae un texto
+    // que no corresponde, ver docs/discovery): lo que cuenta es que no se ve.
+    verifyProgressHidden() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.list.progress).should('not.be.visible'))
     }
 }
 
