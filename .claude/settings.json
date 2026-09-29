@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(node v3/scripts/create-pull-request.js *)",
+      "PowerShell(node v3/scripts/create-pull-request.js *)"
+    ]
+  },
   "mcpServers": {
     "jira": {
       "command": "node",

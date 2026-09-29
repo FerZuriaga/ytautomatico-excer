@@ -56,6 +56,8 @@ class NotesPage {
         cy.fixture(FIXTURE).then(sel => {
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.notesPath }).as('notesList')
             cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/?$`) }).as('createNote')
+            // La búsqueda pide "/notes/?search=<texto>" (con barra final).
+            cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: `${sel.api.notesPath}/` }).as('searchNotes')
         })
     }
 
@@ -223,6 +225,69 @@ class NotesPage {
                     .and('have.css', 'background-color', 'rgba(0, 0, 0, 0)')
             })
         })
+    }
+
+    // ─── Búsqueda ─────────────────────────────────────────────────────────────
+    // Confirmar la búsqueda (Search o Enter) recarga la página completa en
+    // ".../search?keyword=<texto>", o en la lista completa si el campo está
+    // vacío (ver docs/discovery).
+
+    typeSearch(text) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.list.searchInput).type(text, { delay: 0 })
+            cy.get(sel.list.searchInput).should('have.value', text)
+        })
+    }
+
+    verifySearchValue(text) {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.list.searchInput, T).should('be.visible').and('have.value', text))
+    }
+
+    clearSearch() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.list.searchInput).clear()
+            cy.get(sel.list.searchInput).should('have.value', '')
+        })
+    }
+
+    // Con texto espera la respuesta de la búsqueda; con el campo vacío, la
+    // lista completa.
+    clickSearch({ empty = false } = {}) {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.list.searchButton).click())
+        this.waitSearchResult(empty)
+    }
+
+    pressEnterInSearch({ empty = false } = {}) {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.list.searchInput).type('{enter}'))
+        this.waitSearchResult(empty)
+    }
+
+    waitSearchResult(empty) {
+        cy.wait(empty ? '@notesList' : '@searchNotes', T).its('response.statusCode').should('eq', 200)
+    }
+
+    verifySearchHeader(keyword) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.list.searchHeader, sel.texts.searchHeaderPrefix, T)
+                .should('have.text', fill(sel.texts.searchHeader, { keyword }))
+        })
+    }
+
+    verifyNoSearchHeader() {
+        cy.fixture(FIXTURE).then(sel => cy.contains(sel.list.searchHeader, sel.texts.searchHeaderPrefix).should('not.exist'))
+    }
+
+    // Sin coincidencias: el aviso de la búsqueda y ninguna tarjeta.
+    verifyNoResults(category) {
+        cy.fixture(FIXTURE).then(sel => {
+            const text = category ? fill(sel.texts.noResultsInCategory, { category: category.toLowerCase() }) : sel.texts.noResultsAll
+            cy.get(sel.list.noNotes, T).should('be.visible').and('have.text', text)
+            cy.get(sel.card.root).should('not.exist')
+        })
+    }
+
+    verifyNoSearchRequest() {
+        cy.get('@searchNotes.all').should('have.length', 0)
     }
 
     // En una categoría vacía el resumen queda oculto (en el DOM trae un texto

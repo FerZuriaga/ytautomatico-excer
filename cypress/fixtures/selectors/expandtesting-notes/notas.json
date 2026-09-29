@@ -12,7 +12,10 @@
     "notesList": "[data-testid=\"notes-list\"]",
     "progress": "[data-testid=\"progress-info\"]",
     "noNotes": "[data-testid=\"no-notes-message\"]",
-    "categoryTab": "[data-testid=\"category-{category}\"]"
+    "categoryTab": "[data-testid=\"category-{category}\"]",
+    "searchInput": "[data-testid=\"search-input\"]",
+    "searchButton": "[data-testid=\"search-btn\"]",
+    "searchHeader": "p"
   },
   "form": {
     "category": "[data-testid=\"note-category\"]",
@@ -56,6 +59,10 @@
     "titleRequired": "Title is required",
     "titleLength": "Title should be between 4 and 100 characters",
     "descriptionRequired": "Description is required",
-    "descriptionLength": "Description should be between 4 and 1000 characters"
+    "descriptionLength": "Description should be between 4 and 1000 characters",
+    "searchHeader": "Search Results for \"{keyword}\":",
+    "searchHeaderPrefix": "Search Results for",
+    "noResultsAll": "Couldn't find any notes in all categories",
+    "noResultsInCategory": "Couldn't find any notes in the {category} category"
   }
 }
