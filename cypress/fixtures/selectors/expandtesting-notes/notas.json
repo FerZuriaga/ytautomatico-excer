@@ -52,6 +52,7 @@
     "progressAll": "You have {done}/{total} notes completed in the all categories",
     "progressCategory": "You have {done}/{total} notes completed in the {category} category",
     "allCompleted": "You have completed all notes",
+    "allCompletedCategory": "You have completed all notes in the {category} category",
     "titleRequired": "Title is required",
     "titleLength": "Title should be between 4 and 100 characters",
     "descriptionRequired": "Description is required",
