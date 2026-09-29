@@ -34,7 +34,7 @@ const validBug = (overrides = {}) => ({
     resultadoActual: 'Se muestra "Your profile is successfully updated!" y la dirección queda sin número de casa.',
     resultadoEsperado: 'La dirección conserva el número de casa 42 y solo cambia la calle.',
     severidad: 'Media',
-    evidencia: 'PUT /users/{id} responde 200 {"success":true}; GET /users/me devuelve address.house_number null (antes "42"). El request enviado no incluye house_number. Informe de explore-page del 2026-09-27.',
+    evidencia: 'PUT /users/{id} responde 200 {"success":true}; GET /users/me devuelve address.house_number null (antes "42"). El request enviado no incluye house_number. Inspección de red de DevTools del 2026-09-27.',
     entorno: 'https://practicesoftwaretesting.com (Toolshop v5), Chrome headless, 2026-09-27.',
     captura: CAPTURE,
     ...overrides
@@ -112,7 +112,7 @@ test('con stack trace real se pueden citar nombres de funciones', () => {
 });
 
 test('hechos observables con paréntesis y campos de la respuesta no son código', () => {
-  const evidencia = 'GET /users/me responde 200 con house_number vacío (null). Consola: "Cannot read properties of undefined (reading \'cart_items\')" x250. Captura en el informe de explore-page.';
+  const evidencia = 'GET /users/me responde 200 con house_number vacío (null). Consola: "Cannot read properties of undefined (reading \'cart_items\')" x250. Captura de la pantalla adjunta.';
   assert.deepEqual(validateBug(validBug({ evidencia })).errors, []);
 });
 
@@ -204,4 +204,13 @@ test('lectura real de disco: PNG de explore-page válido y archivo sin firma PNG
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }
+});
+
+test('regresion D-31: la evidencia que nombra un script interno de la suite es error; Cypress en el entorno no', () => {
+  const original = 'En la exploración con explore-page.js la pantalla pidió GET /notes/api/notes/?search=Pan%20&%20queso (status 200).';
+  const errors = validateBug(validBug({ evidencia: original })).errors;
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /"evidencia" nombra una herramienta interna de la suite \("explore-page\.js"\)/);
+  assert.deepEqual(validateBug(validBug({ entorno: 'https://practicesoftwaretesting.com (Toolshop v5), Chrome headless vía Cypress 14.' })).errors, []);
+  assert.match(validateBug(validBug({ pasos: ['Correr notes_tc_buscar_notas.cy.js'] })).errors.join(' | '), /"pasos" nombra una herramienta interna/);
 });

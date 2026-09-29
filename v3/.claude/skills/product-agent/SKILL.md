@@ -316,6 +316,14 @@ Nombres de archivos, Page Objects, métodos, comandos de Git o del
 framework de pruebas, rutas del proyecto, scripts, carpetas, detalles
 técnicos de implementación. Eso pertenece al Pull Request.
 
+**Herramientas internas de la suite (D-31), en HU, Test Cases y Bugs:**
+nunca `explore-page.js`, `v3/scripts/...`, specs `.cy.js`, `sess.sh`,
+`report.json`, recetas ni otros scripts del framework. La evidencia y los
+textos van en términos funcionales, de la pantalla, de DevTools y de las
+requests de red/API. Cypress, Chrome y DevTools sí se pueden nombrar. Es
+ERROR de `create-jira-task.js` (`lib/internal-tools.js`), también en
+`--dry-run`: se corrige el payload, no se acepta.
+
 Tampoco rutas o URLs de la aplicación (`/account`) ni términos de
 implementación de la app (iframe, almacenamiento local, backend, alert
 nativo): van en la precondición de los Test Cases o en
@@ -360,8 +368,9 @@ Ningún otro campo: `lib/bug-validator.js` frena el payload (también en
 keys de issues en el texto (las relaciones van en `linkTo`, que acepta
 un enlace o una lista), o una evidencia que especula sobre el código
 interno de la app en vez de citar hechos observables (consola, HTTP,
-informe de explore-page, entorno; nombres del código solo desde un stack
-trace real). `captura` también es obligatoria: ruta (o lista) al `.png`
+inspección de red de DevTools, entorno; nombres del código solo desde un
+stack trace real), o un texto que nombra herramientas internas de la
+suite (D-31). `captura` también es obligatoria: ruta (o lista) al `.png`
 que tomó `explore-page.js` en el navegador real durante el discovery;
 sin ella el validador frena. El script la adjunta al Bug y verifica el
 adjunto por lectura.

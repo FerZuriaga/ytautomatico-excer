@@ -151,12 +151,22 @@ ENTORNO:
   Bugs van como enlaces de Jira (`linkTo`, acepta varios), nunca citadas
   en el texto.
 - **Evidencia = hechos observables y medibles:** error de consola exacto,
-  respuestas HTTP (método, ruta, status, cuerpo relevante), captura o
-  informe de `explore-page.js` y entorno. Prohibido especular sobre el
+  respuestas HTTP (método, ruta, status, cuerpo relevante), inspección de
+  red de DevTools, captura de pantalla y entorno. Prohibido especular sobre el
   código interno de la app (funciones, componentes, condiciones,
   "probablemente…"): un nombre del código solo se cita si aparece en un
   stack trace real. Caso real: SCRUM-528 explicaba "la condición usa
   cusAddress.street.errors".
+- **Sin herramientas internas de la suite en el texto (D-31):** nunca
+  `explore-page.js`, `v3/scripts/...`, specs `.cy.js`, `sess.sh`,
+  `report.json`, recetas ni otros scripts del framework. Lo que se vio con
+  la exploración se redacta como lo vería cualquier persona: "En la
+  inspección de red del navegador (DevTools) la pantalla pidió GET …",
+  "la pantalla muestra …", "por la API: …". Cypress, Chrome y DevTools sí
+  se pueden nombrar (herramientas de ejecución y del navegador). Caso
+  real: SCRUM-585, 596, 620 y 658 decían "tomada con explore-page.js" y
+  hubo que corregirlos. Lo controla `lib/internal-tools.js` desde el
+  validador (error).
 - **Captura de pantalla obligatoria:** `captura` con el `.png` que deja
   `explore-page.js` (`<out>/screenshots/explore.cy.js/explore.png`, o
   `<out>/<escenario>/screenshots/<escenario>.png` en modo lote) al

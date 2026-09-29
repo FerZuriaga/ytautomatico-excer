@@ -260,6 +260,21 @@ agrega una contradictoria.
   interno (SCRUM-528, SCRUM-559), 2026-09-27.
 - **Dónde:** `lib/bug-validator.js` (PR #119).
 
+### D-31 · Jira/Xray sin herramientas internas de la suite
+- **Decisión:** las HU, los Test Cases y los Bugs no nombran scripts ni
+  archivos internos de la automatización (`explore-page.js`,
+  `v3/scripts/...`, specs `.cy.js`, `sess.sh`, `report.json`, recetas). La
+  evidencia se redacta en términos funcionales, de la pantalla, de DevTools
+  y de las requests de red/API. Cypress, Chrome y DevTools sí se pueden
+  nombrar (herramientas de ejecución y del navegador).
+- **Por qué:** es documentación pública del producto, no del framework.
+  Los Bugs SCRUM-585, 596, 620 y 658 decían "tomada con explore-page.js" y
+  se corrigieron (2026-09-29). Los Bugs viejos (482, 483, 525, 526) y las
+  Tareas 222 y 225 quedan como están, por decisión del usuario.
+- **Dónde:** `lib/internal-tools.js`, usado como error por
+  `lib/bug-validator.js` y `lib/testcase-validator.js` (TC y texto de la
+  HU); skills `bug-reporting`, `especificacion` y `product-agent`.
+
 ---
 
 ## Automatización y ejecución (PASO 3)

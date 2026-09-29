@@ -11,8 +11,9 @@
  *   - Los Test Cases viven en Xray y las relaciones con otros issues van
  *     como enlaces de Jira (`linkTo`), nunca listados en el texto.
  *   - La Evidencia son hechos observables y medibles (errores de consola
- *     exactos, respuestas HTTP, capturas o informe de explore-page,
- *     entorno), sin especular sobre el código interno de la aplicación
+ *     exactos, respuestas HTTP, capturas, inspección de red de DevTools,
+ *     entorno), sin nombrar herramientas internas de la suite (D-31, ver
+ *     lib/internal-tools.js) y sin especular sobre el código interno de la aplicación
  *     (nombres de funciones, componentes, condiciones) salvo que aparezcan
  *     en un stack trace real. Caso real: la evidencia del Bug SCRUM-528
  *     explicaba "la condición usa cusAddress.street.errors".
@@ -22,6 +23,7 @@
  *     carpeta del informe. create-jira-task.js la adjunta al ticket.
  */
 const fs = require('fs');
+const { findInternalTool, internalToolMessage } = require('./internal-tools');
 const path = require('path');
 
 const REQUIRED_TEXT = ['resumen', 'precondiciones', 'resultadoActual', 'resultadoEsperado', 'severidad', 'evidencia', 'entorno'];
@@ -139,6 +141,8 @@ function validateBug(issue, { projectKey = 'SCRUM', inspectCapture = inspectCapt
     if (TEST_CASE_PATTERNS.some(re => re.test(text))) {
       errors.push(`${label}: "${field}" menciona Test Cases o ciclos; viven en Xray, no en la descripción del Bug.`);
     }
+    const tool = findInternalTool(text);
+    if (tool) errors.push(internalToolMessage(`${label}: "${field}"`, tool));
     const key = text.match(issueKey);
     if (key) {
       errors.push(`${label}: "${field}" cita ${key[0]}; las relaciones con otros issues van como enlace de Jira (linkTo), no en el texto.`);

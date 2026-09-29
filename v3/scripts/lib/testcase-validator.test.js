@@ -723,3 +723,31 @@ test('update-steps: criterio opcional -- valido si es CA-XX, error si no', () =>
   assert.deepEqual(validateStepUpdates({ testcases: [tc('5')] }).errors,
     ['--update-steps: SCRUM-549 tiene un "criterio" invalido ("5"); el formato es CA-XX (ej. "CA-05").']);
 });
+
+test('regresion D-31: un Test Case o una HU que nombra un script interno de la suite es error', () => {
+  const tc = {
+    name: 'Buscar una nota por su título',
+    objective: 'Verificar la búsqueda.',
+    precondition: 'Usuario con notas creadas con la receta nota de v3/data-recipes/expandtesting-notes.json.',
+    steps: [step('Abrir la pantalla "My Notes"'), step('Hacer clic en "Search"', 'Se ve lo mismo que en el report.json de explore-page.')]
+  };
+  const tcErrors = validateTestCaseModel(tc).errors;
+  assert.equal(tcErrors.length, 2);
+  assert.match(tcErrors[0], /la precondicion nombra una herramienta interna/);
+  assert.match(tcErrors[1], /el resultado del paso 2 nombra una herramienta interna/);
+
+  const issue = {
+    summary: 'Notes App - Buscar notas',
+    historia: {
+      como: 'persona que organiza sus tareas', quiero: 'buscar mis notas', para: 'encontrar rápido un pendiente',
+      contexto: 'Relevado con explore-page.js.', objetivo: 'Encontrar las notas.',
+      criterios: ['CA-01: La búsqueda muestra las coincidencias.', 'CA-02: Sin coincidencias no se muestran notas.'],
+      sinNegativo: { 'CA-01': 'Probado con run-and-report.' }
+    }
+  };
+  const storyErrors = validateStoryText(issue).errors;
+  assert.equal(storyErrors.length, 2);
+  assert.match(storyErrors.join(' | '), /Contexto nombra una herramienta interna.*explore-page\.js/);
+  assert.match(storyErrors.join(' | '), /sinNegativo CA-01 nombra una herramienta interna/);
+  assert.deepEqual(validateStoryText({ ...issue, historia: { ...issue.historia, contexto: 'Se busca desde "My Notes".', sinNegativo: {} } }).errors, []);
+});
