@@ -125,3 +125,26 @@ pestaña después de buscar y texto con `&`).
   y el encabezado se mantiene.
 - **Defecto SCRUM-658:** el texto viaja sin codificar a la API; con `&`
   el servidor recibe solo lo anterior ("Pan & queso" busca "Pan ").
+
+## Completar / pendiente desde la tarjeta (2026-09-29)
+
+Explorado con 8 escenarios en dos corridas: completar, volver a pendiente,
+cada uno con recarga, orden de la lista, dentro de Work y dentro de una
+búsqueda. Datos con las recetas `usuario`, `nota` y `completar`.
+
+- **Interruptor** `toggle-note-switch` (checkbox) en cada tarjeta. Un clic
+  manda `PATCH /notes/<id>` con `{ completed: <contrario> }`; mientras
+  espera, la tarjeta muestra un spinner "Loading..." en lugar del
+  interruptor. Sin confirmación ni aviso. En el test, esperar la respuesta
+  del PATCH antes de afirmar.
+- **Ubicar la tarjeta por su título** (`cy.contains(card.root, título)`):
+  la lista se reordena después de cada cambio, así que una posición fija
+  apunta a otra nota.
+- **Resumen** (`progress-info`) al día: cuenta la categoría activa;
+  todas completadas → `You have completed all notes`.
+- **Orden:** pendientes primero y completadas al final; dentro de cada
+  grupo, el cambio más reciente arriba. Cambiar el estado actualiza la
+  fecha de la tarjeta, así que la nota vuelta a pendiente pasa al
+  principio y la completada al final de su grupo.
+- **Persiste** al recargar, en los dos sentidos. Funciona igual dentro de
+  una búsqueda y de una pestaña de categoría.
