@@ -95,3 +95,33 @@ completada). Datos con las recetas `usuario`, `nota` y `completar`.
   última categoría usada al crear (`localStorage["latestCategory"]`) o
   Home. Una nota creada con otra categoría no aparece en la pestaña
   filtrada.
+
+## Buscar notas (2026-09-29)
+
+Explorado con `explore-page.js --scenarios` (11 escenarios en una corrida:
+título, descripción en mayúsculas con Enter, sin coincidencias, escribir
+sin confirmar, campo vacío, dirección directa, con categoría, cambiar de
+pestaña después de buscar y texto con `&`).
+
+- **Campo** `search-input` ("Search notes...") y botón `search-btn`
+  ("Search"). Escribir no filtra: la búsqueda se confirma con **Search o
+  Enter**.
+- **Confirmar recarga la página completa** en
+  `/notes/app/search?keyword=<texto>` (con el campo vacío, en
+  `/notes/app/`). La sesión y la pestaña activa sobreviven porque viven en
+  localStorage; en el test, esperar la respuesta de la búsqueda, no el
+  clic.
+- **La búsqueda es del servidor:** `GET /notes/?search=<texto>` (con barra
+  final: no entra en un intercept de `/notes` exacto). Encuentra parte de
+  una palabra en el título o la descripción, sin distinguir mayúsculas.
+- **Encabezado** `<p>Search Results for <strong>"texto"</strong>:</p>`
+  sin atributo de test: ubicarlo por el texto "Search Results for". El
+  resumen cuenta solo las notas encontradas.
+- **Sin coincidencias:** `Couldn't find any notes in all categories` o
+  `Couldn't find any notes in the <categoría> category`, en el mismo
+  `no-notes-message` de la lista vacía.
+- **Con categoría:** los resultados del servidor se filtran por la pestaña
+  activa; cambiar de pestaña después de buscar sigue sobre los resultados
+  y el encabezado se mantiene.
+- **Defecto SCRUM-658:** el texto viaja sin codificar a la API; con `&`
+  el servidor recibe solo lo anterior ("Pan & queso" busca "Pan ").
