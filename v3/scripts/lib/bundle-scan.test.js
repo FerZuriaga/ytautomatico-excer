@@ -45,7 +45,7 @@ test('literales: escapes, comillas simples y una comilla suelta de una regex no 
 test('mensajes de validación: se quedan las reglas de la app, sin código, clases ni ruido de librerías', () => {
   const source = REACT + ANGULAR
     + ';a="card-footer d-flex justify-content-between";b="useNotes must be used within NotesProvider";'
-    + 'c="Invalid attempt to spread non-iterable instance";h="xhr poll error";i="websocket error";d="function(){return 1}";e="search-input";f="Hello world";'
+    + 'c="Invalid attempt to spread non-iterable instance";h="xhr poll error";i="websocket error";j="probe error";k="transport error";l="invalid payload";m="parse error";d="function(){return 1}";e="search-input";f="Hello world";'
     + 'g="Your session has expired. Please login again to continue."';
   assert.deepEqual(extractValidationMessages(source), [
     'Title should be between 4 and 100 characters',

@@ -28,8 +28,9 @@ const VALIDATION_WORDS = /\b(required|invalid|must|should|at least|at most|betwe
 // Lo que delata código o marcado, no un mensaje para el usuario.
 const CODE_LIKE = /[{};<>]|=>|\bfunction\b|\breturn\b|^\s*[\w.$-]+\s*$|^[a-z]+(-[a-z]+)+$|https?:\/\//;
 // Mensajes para desarrolladores que traen las librerías (React, Router,
-// Angular, gráficos, QR...): se ven en cualquier bundle y tapan los de la app.
-const LIBRARY_NOISE = /\b(react|router|route path|zone\.js|zone|must be used within|provider|iterable|symbol|instance|generator|listener|callback|canvas|chart|font|production mode|sanitize|fallback language|config|header name|bitmatrix|qr code|sjis|atob|toastcomponent|\[object|readonly|read-only method|frame rates?|destructure|spread|minified|scheduled action|analytics|docker|mock server|wiremock|mockoon|websocket|xhr (post|poll)|parser error)\b/i;
+// Angular, gráficos, QR, socket.io...): se ven en cualquier bundle y tapan los
+// de la app.
+const LIBRARY_NOISE = /\b(react|router|route path|zone\.js|zone|must be used within|provider|iterable|symbol|instance|generator|listener|callback|canvas|chart|font|production mode|sanitize|fallback language|config|header name|bitmatrix|qr code|sjis|atob|toastcomponent|\[object|readonly|read-only method|frame rates?|destructure|spread|minified|scheduled action|analytics|docker|mock server|wiremock|mockoon|websocket|xhr (post|poll)|parser? error|probe error|transport error|invalid payload)\b/i;
 // Lista de clases CSS ("card-footer d-flex ..."): todas las palabras en
 // minúscula y al menos una con guion.
 const isClassList = text => text.split(' ').every(w => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(w)) && text.includes('-');
