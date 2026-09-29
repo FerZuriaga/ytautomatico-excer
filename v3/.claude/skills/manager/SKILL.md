@@ -162,6 +162,13 @@ decisión imposible de inferir. Decisiones válidas para preguntar:
 Nunca meta-preguntas del tipo "¿Qué deseas hacer?", "¿Quieres crear una
 HU?", "¿Cómo deseas continuar?".
 
+**Una sola pausa por lote (D-30):** escenarios, alcance, dudas y archivos
+compartidos van en una única pregunta al final del discovery. Los
+cambios compartidos de patrón conocido (ver `plan-automatizacion`) no se
+preguntan. Una segunda pausa solo si aparece algo nuevo que no estaba en
+esa pregunta (un defecto que cambia el alcance, un cambio compartido
+fuera de patrón). El merge a `main` se sigue confirmando siempre.
+
 ## VALIDACIÓN DE LA ESPECIFICACIÓN FUNCIONAL
 
 Antes de la FASE 5, la especificación debe contener: escenario, objetivo,

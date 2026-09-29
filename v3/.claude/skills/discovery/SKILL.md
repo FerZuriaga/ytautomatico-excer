@@ -68,7 +68,7 @@ Combinar dos fuentes, cada una para lo suyo:
 
 | Qué relevar | Cómo |
 |---|---|
-| Reglas de negocio (validaciones, límites, textos exactos) | Código publicado (sourcemap o bundle), documentación |
+| Reglas de negocio (validaciones, límites, textos exactos) | `bundle-scan.json` que deja `explore-page.js` en `--out` (atributos de test y mensajes de validación del código, y qué atributos no se vieron en ninguna exploración); sourcemap o documentación si hace falta más. No leer el bundle minificado a mano. |
 | Datos de prueba y conteos | API/HTML directo (`curl`) con los mismos parámetros que usa el front |
 | Comportamiento real en navegador | `node v3/scripts/explore-page.js --scenarios <archivo.json>` (o `--url <url>` para una sola pantalla) |
 
@@ -147,10 +147,13 @@ En modo lote cada caso es un escenario con nombre propio (su informe
 queda en `<out>/<nombre>/report.json`); con `--url`, usar `--out` con una
 carpeta del scratchpad por caso, para no pisar informes.
 
-**Preguntas al usuario: una sola vez, al final del discovery.** Las dudas
-que surjan (alcance, datos, posibles defectos) se juntan en un único
-mensaje junto con la lista de escenarios; no se corta el trabajo por cada
-una. Un defecto confirmado no se pregunta: sigue `bug-reporting`.
+**Preguntas al usuario: una sola pausa por lote (D-30), al final del
+discovery.** En un único mensaje van: la lista de escenarios
+(`especificacion` Fase 1), las dudas de alcance y datos, los posibles
+defectos y los archivos compartidos que el lote va a tocar. No se corta
+el trabajo por cada una. Un defecto confirmado no se pregunta: sigue
+`bug-reporting`. Los cambios compartidos de patrón conocido (D-30) no se
+preguntan: se listan como informados.
 
 ### Artefactos (se commitean, nunca se borran)
 

@@ -57,6 +57,12 @@
  *
  * --dry-run: con --data, valida y termina sin publicar ni modificar nada.
  *
+ * --data también acepta un archivo de lote ("formato": "lote",
+ * lib/payload-builder.js): pasos con nombre, datos reutilizables, TC
+ * numerados por CA, evidencia por escenario de explore-page y ciclo por
+ * defecto. Se arma el payload y se valida igual que siempre.
+ * --expand-to <archivo.json> guarda el payload armado (para revisarlo).
+ *
  * --update-steps --data <archivo.json>: reescribe precondición y pasos de
  * Test Cases YA publicados ({ "testcases": [ { key, precondition, steps, criterio? } ] }),
  * validados con las mismas reglas (todo o nada), conservando el vínculo
@@ -82,11 +88,13 @@ const bugValidator = require('./lib/bug-validator');
 const testcaseDescription = require('./lib/testcase-description');
 const negativeEvidence = require('./lib/negative-evidence');
 const traceability = require('./lib/traceability');
+const payloadBuilder = require('./lib/payload-builder');
+const { mapWithLimit } = require('./lib/concurrency');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
 
 function parseArgs(argv) {
-  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false, dryRun: false, updateSteps: false };
+  const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false, dryRun: false, updateSteps: false, expandTo: null };
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--data') {
@@ -118,6 +126,9 @@ function parseArgs(argv) {
       args.dryRun = true;
     } else if (argv[i] === '--update-steps') {
       args.updateSteps = true;
+    } else if (argv[i] === '--expand-to') {
+      args.expandTo = argv[i + 1];
+      i++;
     } else if (argv[i] === '--test-cycle') {
       args.testCycleKeyArg = argv[i + 1];
       i++;
@@ -129,7 +140,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
 if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath) {
@@ -139,6 +150,7 @@ if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase &
   console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
   console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>[,<TestCycleKey2>,...]');
   console.error('     node scripts/create-jira-task.js --data <archivo.json> --dry-run   (solo valida, no publica)');
+  console.error('     node scripts/create-jira-task.js --data <lote.json> [--expand-to <payload.json>] [--dry-run]   (archivo de lote, lib/payload-builder.js)');
   console.error('     node scripts/create-jira-task.js --update-steps --data <archivo.json> [--dry-run] [--accept-warnings]');
   process.exit(1);
 }
@@ -165,6 +177,32 @@ if (dataPath) {
     ISSUE = JSON.parse(fs.readFileSync(path.resolve(dataPath), 'utf8'));
   } catch (e) {
     console.error(`No se pudo leer o parsear "${dataPath}": ${e.message}`);
+    process.exit(1);
+  }
+  if (payloadBuilder.isBuildSpec(ISSUE)) {
+    if (updateSteps) {
+      console.error('--update-steps no acepta un archivo de lote: usa { "testcases": [ { key, precondition, steps } ] }.');
+      process.exit(1);
+    }
+    try {
+      ISSUE = payloadBuilder.buildPayload(ISSUE, { baseDir: path.dirname(path.resolve(dataPath)) });
+    } catch (e) {
+      console.error(e.message);
+      process.exit(1);
+    }
+    const built = Array.isArray(ISSUE.issues) ? ISSUE.issues : [ISSUE];
+    console.log(`Lote armado: ${built.length} Historia(s), ${built.reduce((n, i) => n + i.testcaseModels.length, 0)} Test Case(s).`);
+    if (expandTo) {
+      fs.writeFileSync(path.resolve(expandTo), JSON.stringify(ISSUE, null, 2));
+      console.log(`Payload armado guardado en ${path.resolve(expandTo)}.`);
+    }
+  } else if (expandTo) {
+    console.error('--expand-to solo aplica a un archivo de lote ("formato": "lote").');
+    process.exit(1);
+  }
+  const shapeError = payloadBuilder.unknownShapeError(ISSUE, { updateSteps });
+  if (shapeError) {
+    console.error(shapeError);
     process.exit(1);
   }
 }
@@ -258,53 +296,74 @@ async function validateData() {
  * encontrado el 2026-09-17 al intentar reportar 2 HU en una sola
  * corrida).
  */
+//
+// Desde el 2026-09-28 el reporte lee los Test Runs de cada ciclo una sola
+// vez, arma el plan completo antes de escribir (lib/test-runner.js,
+// planReport: un key sin ejecución frena sin haber tocado Xray) y cambia
+// los estados de a REPORT_CONCURRENCY a la vez (lib/concurrency.js). Antes
+// eran 4 llamadas en serie por test (~40 s por lote). La verificación por
+// lectura de run-and-report.js no cambia.
+const REPORT_CONCURRENCY = 4;
+const XRAY_RUNS_PAGE = 100; // límite de getTestRuns en xray.getTestExecutions
+
 async function reportResults(resultsPath, testCycleKeys, projectKey) {
   const results = testRunner.parseResultsFile(resultsPath);
   const taggedTests = testRunner.collectTaggedTests(results);
+  const knownBugSkips = testRunner.collectKnownBugSkips(results);
 
   if (!taggedTests.length) {
     console.log('No se encontraron tests taggeados con un Test Case key en el titulo.');
     return;
   }
 
-  for (const test of taggedTests) {
-    const statusName = testRunner.mapMochaStateToXray(test.state);
-    if (!statusName) {
-      console.error(`Estado no reconocido ("${test.state}") para ${test.testCaseKey} ("${test.fullTitle}"). Se frena sin reportar.`);
-      process.exit(1);
-    }
+  const cycles = await Promise.all(testCycleKeys.map(async cycleKey => ({
+    cycleKey,
+    executions: await xray.getTestExecutions(projectKey, cycleKey)
+  })));
+  let plan = testRunner.planReport(taggedTests, knownBugSkips, cycles);
 
-    let execution = null;
-    let matchedCycleKey = null;
-    for (const cycleKey of testCycleKeys) {
-      execution = await xray.findTestExecution(projectKey, cycleKey, test.testCaseKey);
-      if (execution) {
-        matchedCycleKey = cycleKey;
-        break;
+  // Un ciclo con la página llena puede tener más Test Runs: lo que no
+  // apareció se busca de a uno, como antes.
+  if (plan.missing.length && cycles.some(c => c.executions.length >= XRAY_RUNS_PAGE)) {
+    for (const key of plan.missing) {
+      for (const cycle of cycles) {
+        const run = await xray.findTestExecution(projectKey, cycle.cycleKey, key);
+        if (run) {
+          cycle.executions.push({ id: run.id, status: { name: run.status }, test: { jira: { key } } });
+          break;
+        }
       }
     }
-
-    if (!execution) {
-      console.error(`No existe una Test Execution para ${test.testCaseKey} en ninguno de los ciclos indicados (${testCycleKeys.join(', ')}). Se frena sin inventar nada.`);
-      process.exit(1);
-    }
-
-    await xray.updateTestExecutionStatus(execution.id, statusName);
-    console.log(`${test.testCaseKey} -> ${statusName} (ejecucion ${execution.key || execution.id} en ${matchedCycleKey}).`);
+    plan = testRunner.planReport(taggedTests, knownBugSkips, cycles);
   }
 
-  // Los salteados por bug conocido no se reportan, pero su ejecución vuelve
-  // a TO DO si quedó con un resultado de antes (ver collectKnownBugSkips).
-  for (const skip of testRunner.collectKnownBugSkips(results)) {
-    for (const cycleKey of testCycleKeys) {
-      const execution = await xray.findTestExecution(projectKey, cycleKey, skip.testCaseKey);
-      if (!execution) continue;
-      if (execution.status && execution.status !== 'TO DO') {
-        await xray.updateTestExecutionStatus(execution.id, 'TO DO');
-        console.log(`${skip.testCaseKey} -> TO DO (estaba en ${execution.status}; en espera del bug ${skip.bug}, en ${cycleKey}).`);
-      }
-      break;
+  if (plan.unknownStates.length) {
+    plan.unknownStates.forEach(t => console.error(`Estado no reconocido ("${t.state}") para ${t.testCaseKey} ("${t.fullTitle}").`));
+    console.error('Se frena sin reportar nada.');
+    process.exit(1);
+  }
+  if (plan.missing.length) {
+    console.error(`No existe una Test Execution para ${plan.missing.join(', ')} en ninguno de los ciclos indicados (${testCycleKeys.join(', ')}). Se frena sin reportar nada y sin inventar.`);
+    process.exit(1);
+  }
+
+  const outcomes = await mapWithLimit(plan.updates, REPORT_CONCURRENCY, u => xray.updateTestExecutionStatus(u.runId, u.status));
+  const failed = [];
+  plan.updates.forEach((u, i) => {
+    if (!outcomes[i].ok) {
+      failed.push(u.testCaseKey);
+      console.error(`${u.testCaseKey}: no se pudo pasar a ${u.status} (${outcomes[i].error.message}).`);
+    } else if (u.bug) {
+      // Los salteados por bug conocido no se reportan, pero su ejecución
+      // vuelve a TO DO si quedó con un resultado de antes.
+      console.log(`${u.testCaseKey} -> TO DO (estaba en ${u.previous}; en espera del bug ${u.bug}, en ${u.cycleKey}).`);
+    } else {
+      console.log(`${u.testCaseKey} -> ${u.status} (ejecucion ${u.runId} en ${u.cycleKey}).`);
     }
+  });
+  if (failed.length) {
+    console.error(`Fallaron ${failed.length} de ${plan.updates.length} cambios de estado (${failed.join(', ')}). El reporte es idempotente: se puede reintentar con el mismo JSON.`);
+    process.exit(1);
   }
 }
 

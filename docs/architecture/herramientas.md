@@ -39,6 +39,9 @@ otro gestor u otro runner. Las reglas `libs-sin-procesos` y
 | `lib/run-timing.js` | Tiempos por fase de cada corrida |
 | `lib/explore-scenarios.js` | Formato de los escenarios del discovery |
 | `lib/http-retry.js` | Reintentos ante fallas transitorias de red |
+| `lib/payload-builder.js` | Archivo de lote → payload de publicación (PASO 2) |
+| `lib/bundle-scan.js` | Atributos de test y mensajes de validación del código de la app (discovery) |
+| `lib/concurrency.js` | Llamadas en paralelo con límite (reporte a Xray) |
 
 ## Artefactos por aplicación (datos, no código)
 

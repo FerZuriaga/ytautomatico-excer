@@ -234,3 +234,35 @@ test('regresion Checkout 2026-09-26: la pista distingue elemento no encontrado, 
   const summary = summarizeResults({ passes: [], pending: [], failures: [{ fullTitle: 't', err: { message: "expected '<button>' to be 'disabled'" } }] });
   assert.match(summary.failed[0].hint, /no cumple lo esperado/);
 });
+
+// Reporte en paralelo (2026-09-28): el plan se arma entero antes de
+// escribir en Xray. Antes, un key sin ejecución cortaba el reporte con
+// parte de los estados ya escritos.
+test('planReport: cada test al primer ciclo que lo tiene, skips a TO DO y faltantes sin escribir nada', () => {
+  const { planReport } = require('./test-runner');
+  const run = (id, key, status) => ({ id, status: { name: status }, test: { jira: { key } } });
+  const cycles = [
+    { cycleKey: 'SCRUM-600', executions: [run('r1', 'SCRUM-601', 'TO DO'), run('r2', 'SCRUM-602', 'FAILED'), run('r5', 'SCRUM-605', 'PASSED')] },
+    { cycleKey: 'SCRUM-613', executions: [run('r3', 'SCRUM-614', 'TO DO'), run('r1b', 'SCRUM-601', 'TO DO'), run('r6', 'SCRUM-606', 'TO DO')] }
+  ];
+  const tagged = [
+    { testCaseKey: 'SCRUM-601', state: 'passed', fullTitle: 'a' },
+    { testCaseKey: 'SCRUM-614', state: 'passed', fullTitle: 'b' },
+    { testCaseKey: 'SCRUM-602', state: 'failed', fullTitle: 'c' }
+  ];
+  const skips = [{ testCaseKey: 'SCRUM-605', bug: 'SCRUM-596' }, { testCaseKey: 'SCRUM-606', bug: 'SCRUM-596' }];
+
+  const plan = planReport(tagged, skips, cycles);
+  assert.deepEqual(plan.missing, []);
+  assert.deepEqual(plan.unknownStates, []);
+  assert.deepEqual(plan.updates, [
+    { testCaseKey: 'SCRUM-601', runId: 'r1', cycleKey: 'SCRUM-600', status: 'PASSED', previous: 'TO DO' },
+    { testCaseKey: 'SCRUM-614', runId: 'r3', cycleKey: 'SCRUM-613', status: 'PASSED', previous: 'TO DO' },
+    { testCaseKey: 'SCRUM-602', runId: 'r2', cycleKey: 'SCRUM-600', status: 'FAILED', previous: 'FAILED' },
+    { testCaseKey: 'SCRUM-605', runId: 'r5', cycleKey: 'SCRUM-600', status: 'TO DO', previous: 'PASSED', bug: 'SCRUM-596' }
+  ]);
+
+  const broken = planReport([...tagged, { testCaseKey: 'SCRUM-999', state: 'passed' }, { testCaseKey: 'SCRUM-601', state: 'pending', fullTitle: 'p' }], [], cycles);
+  assert.deepEqual(broken.missing, ['SCRUM-999']);
+  assert.equal(broken.unknownStates.length, 1);
+});
