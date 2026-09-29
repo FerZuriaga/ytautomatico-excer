@@ -63,6 +63,7 @@ const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
 const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
+const architecture = require('./lib/architecture');
 const runTiming = require('./lib/run-timing');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
@@ -115,9 +116,12 @@ function resolveAffected(base) {
     ...git(['diff', '--name-only', 'HEAD']),
     ...git(['ls-files', '--others', '--exclude-standard'])
   ];
-  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed);
+  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed, { activeApps: architecture.APPS.active });
   console.log(`Regresion por impacto (respecto de ${base}): ${new Set(changed).size} archivo(s) cambiado(s), ${result.specs.length} spec(s) afectado(s).`);
-  if (result.global) console.warn('  Cambio global: se corre la suite completa.');
+  if (result.global) {
+    console.warn(`  Cambio global: se corre la suite de las apps activas (${architecture.APPS.active.join(', ')}).`);
+    if (result.skipped.length) console.warn(`  Legado sin correr: ${result.skipped.length} spec(s) (D-33).`);
+  }
   else result.reasons.forEach((reason, spec) => console.log(`  - ${spec} (${reason})`));
   return result.specs;
 }

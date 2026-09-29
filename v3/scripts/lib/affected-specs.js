@@ -11,7 +11,11 @@
  *   - llama a un comando custom definido en un archivo de soporte
  *     modificado (cy.<comando>).
  * Cambios globales (cypress.config.js, cypress/support/e2e.js o
- * commands.js, package.json) afectan a todos los specs.
+ * commands.js, package.json) afectan a todos los specs de las apps
+ * activas (`activeApps`, ver APPS en lib/architecture.js); los de legado
+ * quedan afuera (D-33, 2026-09-29: la suite completa de 89 specs llevaba
+ * más de 35 minutos, casi todo en apps de legado rotas contra sitios reales
+ * que nadie mantiene). Sin `activeApps`, todos los specs.
  *
  * Funciones puras: el acceso a git y al disco queda en run-and-report.js.
  * Todas las rutas son relativas a la raíz del repo, con "/".
@@ -64,15 +68,21 @@ function callsCommand(source, name) {
 /**
  * `sources`: Map ruta -> contenido de todos los .js de cypress/ (specs,
  * page objects, soporte). `changed`: rutas modificadas en la rama.
- * Devuelve { specs, global, reasons } con los specs afectados ordenados y,
- * por spec, el primer motivo encontrado (para mostrarlo en consola).
+ * Devuelve { specs, global, reasons, skipped } con los specs afectados
+ * ordenados, por spec el primer motivo encontrado (para mostrarlo en
+ * consola) y, en un cambio global, los specs de legado que no se corren.
  */
-function findAffectedSpecs(sources, changed) {
+function findAffectedSpecs(sources, changed, { activeApps } = {}) {
   const changedFiles = [...new Set(changed.map(toPosix))];
   const allSpecs = [...sources.keys()].filter(isSpec).sort();
   const globalChange = changedFiles.find(f => GLOBAL_FILES.has(f));
   if (globalChange) {
-    return { specs: allSpecs, global: true, reasons: new Map(allSpecs.map(s => [s, `cambio global (${globalChange})`])) };
+    const isActive = spec => !activeApps || activeApps.some(app => spec.startsWith(`cypress/e2e/${app}/`));
+    const specs = allSpecs.filter(isActive);
+    return {
+      specs, global: true, skipped: allSpecs.filter(s => !isActive(s)),
+      reasons: new Map(specs.map(s => [s, `cambio global (${globalChange})`]))
+    };
   }
 
   const knownFiles = new Set(sources.keys());

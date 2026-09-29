@@ -325,6 +325,19 @@ agrega una contradictoria.
   fallidas se consulta al usuario. Solo se reporta a Xray si pasa el 100%.
 - **Dónde:** `run-and-report.js`, skill `ejecucion`.
 
+### D-33 · La regresión por cambio global corre solo las apps activas
+- **Decisión:** ante un cambio global (`cypress.config.js`,
+  `support/e2e.js`, `support/commands.js`, `package.json`),
+  `run-and-report.js --affected` corre los specs de las apps de
+  `APPS.active` y deja afuera el legado, informando cuántos specs quedaron
+  sin correr.
+- **Por qué:** al dar de alta Restful Booker Platform (2026-09-29) la suite
+  completa de 89 specs llevaba más de 35 minutos sin terminar, casi todo en
+  apps de legado rotas contra sitios reales que por decisión no se
+  mantienen (D-09). El legado no se toca, así que su regresión no aporta.
+- **Dónde:** `lib/affected-specs.js` (opción `activeApps`) + test;
+  `run-and-report.js`; skill `ejecucion`.
+
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
   selectores relevados (nunca adivinados) en fixtures JSON. Al extraer un

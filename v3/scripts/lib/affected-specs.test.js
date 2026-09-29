@@ -68,6 +68,16 @@ test('cambios globales (config, e2e.js, commands.js) afectan a todos los specs',
   assert.equal(specs.length, 5);
 });
 
+test('regresion D-33: un cambio global corre solo las apps activas y deja afuera el legado', () => {
+  const sources = new Map([...SOURCES, ['cypress/e2e/disco/d_tc_busqueda.cy.js', "describe('x', () => {})"]]);
+  const { specs, global, skipped } = findAffectedSpecs(sources, ['cypress/support/commands.js'], { activeApps: ['practicesoftwaretesting', 'commitquality'] });
+
+  assert.equal(global, true);
+  assert.equal(specs.length, 5);
+  assert.deepEqual(skipped, ['cypress/e2e/disco/d_tc_busqueda.cy.js']);
+  assert.equal(findAffectedSpecs(sources, ['cypress.config.js']).specs.length, 6);
+});
+
 test('cambios fuera de cypress/ (scripts, docs) no afectan a ningun spec', () => {
   const { specs } = findAffectedSpecs(SOURCES, ['v3/scripts/run-and-report.js', 'docs/discovery/practicesoftwaretesting.md']);
 

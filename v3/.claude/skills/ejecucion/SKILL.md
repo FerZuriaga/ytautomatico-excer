@@ -86,9 +86,10 @@ node v3/scripts/run-and-report.js --affected
 Calcula los specs afectados por la rama respecto de `main` (commits,
 cambios sin commitear y archivos nuevos): los que importan en cadena un
 page object modificado, usan un fixture modificado o llaman a un comando
-custom de un archivo de soporte modificado. La suite completa solo ante
-un cambio global (`cypress.config.js`, `support/e2e.js`,
-`support/commands.js`). `--list` muestra los specs y el motivo sin correr
+custom de un archivo de soporte modificado. Ante un cambio global
+(`cypress.config.js`, `support/e2e.js`, `support/commands.js`,
+`package.json`) corre la suite de las apps activas (`APPS.active`), no el
+legado (D-33: la suite completa con legado pasaba los 35 minutos). `--list` muestra los specs y el motivo sin correr
 nada. Correrla en segundo plano y, mientras tanto, preparar el cuerpo del
 PR, el discovery y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
 regresión completa (108 tests) llevó 10,5 min de espera.
