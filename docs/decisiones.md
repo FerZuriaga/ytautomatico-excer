@@ -54,6 +54,11 @@ agrega una contradictoria.
   recién ahí borra la rama. Nació del #123: un 405 recién pusheado quedó
   oculto por un pipe, la rama se borró igual y el PR se cerró sin mergear.
   Controlado en `lib/pr-merge.js` con test.
+- **Permiso del asistente (2026-09-29):** `.claude/settings.json` permite
+  correr `node v3/scripts/create-pull-request.js` sin pedir permiso: el
+  clasificador del modo automático frenaba el merge ya confirmado por el
+  usuario. La regla no reemplaza la confirmación: el asistente sigue
+  mergeando solo cuando el usuario lo dice.
 
 ### D-05 · Máximo 2 PRs abiertos antes de un lote nuevo
 - **Decisión:** `create-pull-request.js --action wip-check` antes de
