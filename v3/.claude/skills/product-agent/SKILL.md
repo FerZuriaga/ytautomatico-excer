@@ -121,6 +121,14 @@ para tickets y Test Cases. Hoy soporta:
   tiene para la cobertura de cada CA;
 - `--dry-run`: valida el payload sin publicar ni modificar nada (usarlo
   siempre antes de publicar un lote);
+- **coherencia entre HU** (`lib/story-coherence.js`, D-32): al publicar o
+  actualizar una HU la compara con las HU publicadas de la misma app
+  (prefijo del summary; las HU salen del encabezado "Ticket Jira" de los
+  specs). WARNING si cita un mensaje de pantalla que una hermana escribe
+  distinto, si un CA cubre lo que una hermana dejó fuera de alcance (hay
+  que actualizar esa hermana para que apunte a esta) o si un CA repite el
+  de otra HU. Se revisa leyendo las dos HU: se corrige el texto o, si es
+  una superposición aceptada, se publica con `--accept-warnings`;
 - **archivo de lote** (`"formato": "lote"`, `lib/payload-builder.js`):
   `--data` lo arma y lo valida igual que un payload; `--expand-to
   <archivo>` guarda el payload armado para revisarlo. Es la forma de

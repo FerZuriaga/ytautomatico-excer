@@ -44,6 +44,15 @@ estructura aprobada cambia (cantidad de HU o de CA, escenarios que se
 suman o se caen), consultar al usuario ANTES de publicar, no avisar
 después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
 
+**Coherencia con las HU hermanas (D-32).** Antes de redactar la HU, leer
+las HU publicadas de la misma app: un mensaje de pantalla se cita igual en
+todas (con su contexto: pestaña All o categoría), una regla tiene un solo
+dueño y lo que otra HU dejó fuera de alcance se toma explícitamente
+(actualizando esa HU). `create-jira-task.js --dry-run` lo avisa, pero el
+chequeo es por palabras: no reemplaza leerlas. Caso real: SCRUM-659 citaba
+"You have completed all notes" donde SCRUM-635 (bien) decía "...in the
+<categoría> category".
+
 ## Fase 2 — Historia de Usuario
 
 - **Como:** rol concreto (nunca "usuario" a secas). **Quiero:** la

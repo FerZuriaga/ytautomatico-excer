@@ -77,9 +77,10 @@ async function getIssue(key) {
  * por consulta, paginando con nextPageToken). Devuelve un Map key ->
  * { issuetype, labels, linkedTests } donde linkedTests son las keys de
  * las issues de tipo "Test" vinculadas (en cualquier dirección). Una key
- * inexistente simplemente no aparece en el Map.
+ * inexistente simplemente no aparece en el Map. Con `withText` trae además
+ * summary y description (ADF): los usa el chequeo de coherencia entre HU.
  */
-async function getIssuesByKeys(keys) {
+async function getIssuesByKeys(keys, { withText = false } = {}) {
   const result = new Map();
   const unique = [...new Set(keys)];
   for (let i = 0; i < unique.length; i += 50) {
@@ -88,7 +89,7 @@ async function getIssuesByKeys(keys) {
     do {
       const res = await jiraRequest('POST', '/rest/api/3/search/jql', {
         jql: `key in (${chunk.join(',')})`,
-        fields: ['issuetype', 'labels', 'issuelinks'],
+        fields: withText ? ['issuetype', 'labels', 'issuelinks', 'summary', 'description'] : ['issuetype', 'labels', 'issuelinks'],
         maxResults: 100,
         nextPageToken
       });
@@ -96,7 +97,7 @@ async function getIssuesByKeys(keys) {
       // ... does not exist"): se reintenta de a una para aislarla.
       if (res.status === 400 && chunk.length > 1) {
         for (const key of chunk) {
-          (await getIssuesByKeys([key])).forEach((v, k) => result.set(k, v));
+          (await getIssuesByKeys([key], { withText })).forEach((v, k) => result.set(k, v));
         }
         break;
       }
@@ -107,7 +108,9 @@ async function getIssuesByKeys(keys) {
           .map(l => l.outwardIssue || l.inwardIssue)
           .filter(o => o && o.fields?.issuetype?.name === 'Test')
           .map(o => o.key);
-        result.set(issue.key, { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests });
+        const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
+        if (withText) Object.assign(entry, { summary: issue.fields.summary, description: issue.fields.description });
+        result.set(issue.key, entry);
       }
       nextPageToken = res.body.nextPageToken;
     } while (nextPageToken);
