@@ -58,6 +58,8 @@ class NotesPage {
             cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/?$`) }).as('createNote')
             // La búsqueda pide "/notes/?search=<texto>" (con barra final).
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: `${sel.api.notesPath}/` }).as('searchNotes')
+            // El interruptor de la tarjeta manda PATCH /notes/<id> con { completed }.
+            cy.intercept({ method: 'PATCH', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('toggleNote')
         })
     }
 
@@ -210,6 +212,34 @@ class NotesPage {
             cy.get(sel.card.title, T).should($titles => {
                 expect([...$titles].map(t => t.innerText.trim())).to.have.members(titles)
             })
+        })
+    }
+
+    // Exactamente estas tarjetas, en este orden.
+    verifyCardOrder(titles) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.card.title, T).should($titles => {
+                expect([...$titles].map(t => t.innerText.trim())).to.deep.equal(titles)
+            })
+        })
+    }
+
+    // ─── Estado desde la tarjeta ──────────────────────────────────────────────
+
+    // Clic en el interruptor de la tarjeta con este título; espera que el
+    // servidor confirme el cambio (mientras tanto la tarjeta muestra un spinner).
+    toggleCompleted(title) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.card.root, title, T).find(sel.card.completedSwitch).click()
+            cy.wait('@toggleNote', T).its('response.statusCode').should('eq', 200)
+        })
+    }
+
+    // Interruptor de la tarjeta con este título: encendido = completada.
+    verifyCardCompleted(title, completed) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.card.root, title, T).find(sel.card.completedSwitch, T)
+                .should(completed ? 'be.checked' : 'not.be.checked')
         })
     }
 
