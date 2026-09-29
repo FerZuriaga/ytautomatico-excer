@@ -3,8 +3,8 @@
  * la documentación pública de Jira/Xray (Historias, Test Cases y Bugs).
  *
  * Acordado con el usuario el 2026-09-29 (D-31): la evidencia y los textos
- * se redactan en términos funcionales, de la pantalla, de DevTools y de las
- * requests de red/API. Caso real: los Bugs SCRUM-585, 596, 620 y 658
+ * se redactan en términos funcionales y de lo que muestra la pantalla (en
+ * los Bugs, además, sin requests ni rutas: ver bug-validator). Caso real: los Bugs SCRUM-585, 596, 620 y 658
  * decían "captura tomada con explore-page.js" / "en la exploración con
  * explore-page.js".
  *
@@ -37,7 +37,7 @@ function findInternalTool(text) {
 }
 
 function internalToolMessage(where, hit) {
-  return `${where} nombra una herramienta interna de la suite ("${hit}") -- la documentación de Jira/Xray se redacta en términos funcionales, de la pantalla, de DevTools y de las requests de red/API (D-31).`;
+  return `${where} nombra una herramienta interna de la suite ("${hit}") -- la documentación de Jira/Xray se redacta en términos funcionales y de lo que muestra la pantalla (D-31).`;
 }
 
 module.exports = { findInternalTool, internalToolMessage, INTERNAL_TOOL_PATTERNS };

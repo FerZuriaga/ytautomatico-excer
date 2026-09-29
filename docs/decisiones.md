@@ -256,17 +256,25 @@ agrega una contradictoria.
   keys de TC en el texto (se relacionan con `linkTo`). Los pasos son
   funcionales, sin selectores ni código. No se especula sobre el código de
   la app. La captura `.png` de `explore-page.js` es obligatoria.
+- **Sin detalle de red (2026-09-29):** la Evidencia y el resto del Bug se
+  redactan como los vería una persona usando la app (pantalla, avisos,
+  consola, captura), sin requests HTTP, rutas, URLs ni parámetros. Solo el
+  Entorno lleva la URL del sitio. El detalle técnico queda en
+  `docs/discovery/<app>.md`. Nació de SCRUM-658, que citaba
+  "GET /notes/api/notes/?search=Pan%20&%20queso"; se reescribieron 585,
+  596, 620 y 658 (los viejos no se tocan). Solo aplica a Bugs: las HU ya
+  avisan por rutas y los TC las pueden llevar en la precondición.
 - **Por qué:** los Bugs mezclaban trazabilidad y especulación sobre código
   interno (SCRUM-528, SCRUM-559), 2026-09-27.
-- **Dónde:** `lib/bug-validator.js` (PR #119).
+- **Dónde:** `lib/bug-validator.js` (PR #119; detalle de red, PR #131).
 
 ### D-31 · Jira/Xray sin herramientas internas de la suite
 - **Decisión:** las HU, los Test Cases y los Bugs no nombran scripts ni
   archivos internos de la automatización (`explore-page.js`,
   `v3/scripts/...`, specs `.cy.js`, `sess.sh`, `report.json`, recetas). La
-  evidencia se redacta en términos funcionales, de la pantalla, de DevTools
-  y de las requests de red/API. Cypress, Chrome y DevTools sí se pueden
-  nombrar (herramientas de ejecución y del navegador).
+  evidencia se redacta en términos funcionales y de lo que muestra la
+  pantalla (en los Bugs, sin detalle de red: D-22). Cypress, Chrome y
+  DevTools sí se pueden nombrar (herramientas de ejecución y del navegador).
 - **Por qué:** es documentación pública del producto, no del framework.
   Los Bugs SCRUM-585, 596, 620 y 658 decían "tomada con explore-page.js" y
   se corrigieron (2026-09-29). Los Bugs viejos (482, 483, 525, 526) y las

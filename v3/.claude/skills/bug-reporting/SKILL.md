@@ -150,9 +150,14 @@ ENTORNO:
   "casos de prueba"): viven en Xray. Las relaciones con la HU u otros
   Bugs van como enlaces de Jira (`linkTo`, acepta varios), nunca citadas
   en el texto.
-- **Evidencia = hechos observables y medibles:** error de consola exacto,
-  respuestas HTTP (método, ruta, status, cuerpo relevante), inspección de
-  red de DevTools, captura de pantalla y entorno. Prohibido especular sobre el
+- **Evidencia = hechos observables y medibles, como los vería una persona
+  usando la app:** qué se hizo, qué mostró la pantalla (textos exactos),
+  avisos o errores de consola exactos y la captura. **Sin requests HTTP
+  (GET, POST…), rutas, URLs ni parámetros** en ninguna sección salvo
+  Entorno, que lleva la URL del sitio (D-22, 2026-09-29): ese detalle
+  técnico queda en `docs/discovery/<app>.md`. Caso real: SCRUM-658 citaba
+  "GET /notes/api/notes/?search=Pan%20&%20queso"; quedó "buscar "Pan &
+  queso" muestra las dos tarjetas…". Es error del validador. Prohibido especular sobre el
   código interno de la app (funciones, componentes, condiciones,
   "probablemente…"): un nombre del código solo se cita si aparece en un
   stack trace real. Caso real: SCRUM-528 explicaba "la condición usa
@@ -160,9 +165,8 @@ ENTORNO:
 - **Sin herramientas internas de la suite en el texto (D-31):** nunca
   `explore-page.js`, `v3/scripts/...`, specs `.cy.js`, `sess.sh`,
   `report.json`, recetas ni otros scripts del framework. Lo que se vio con
-  la exploración se redacta como lo vería cualquier persona: "En la
-  inspección de red del navegador (DevTools) la pantalla pidió GET …",
-  "la pantalla muestra …", "por la API: …". Cypress, Chrome y DevTools sí
+  la exploración se redacta como lo vería cualquier persona: "la pantalla
+  muestra …", "al hacer clic en … aparece …". Cypress, Chrome y DevTools sí
   se pueden nombrar (herramientas de ejecución y del navegador). Caso
   real: SCRUM-585, 596, 620 y 658 decían "tomada con explore-page.js" y
   hubo que corregirlos. Lo controla `lib/internal-tools.js` desde el

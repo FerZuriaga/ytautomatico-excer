@@ -10,9 +10,10 @@
  *     al TC SCRUM-559").
  *   - Los Test Cases viven en Xray y las relaciones con otros issues van
  *     como enlaces de Jira (`linkTo`), nunca listados en el texto.
- *   - La Evidencia son hechos observables y medibles (errores de consola
- *     exactos, respuestas HTTP, capturas, inspección de red de DevTools,
- *     entorno), sin nombrar herramientas internas de la suite (D-31, ver
+ *   - La Evidencia son hechos observables y medibles, como los vería una
+ *     persona usando la app (pantalla, errores de consola exactos,
+ *     capturas), sin requests HTTP, rutas ni URLs fuera del Entorno
+ *     (2026-09-29, NETWORK_DETAIL_PATTERNS), sin nombrar herramientas internas de la suite (D-31, ver
  *     lib/internal-tools.js) y sin especular sobre el código interno de la aplicación
  *     (nombres de funciones, componentes, condiciones) salvo que aparezcan
  *     en un stack trace real. Caso real: la evidencia del Bug SCRUM-528
@@ -103,6 +104,18 @@ const SPECULATION = /\b(probablemente|seguramente|posiblemente|parece que|pareci
 // funciones: es lo que la aplicación mostró, no una suposición.
 const STACK_TRACE = /\bat\s+\S+\s+\(?[^\s()]+:\d+:\d+\)?/;
 
+// Detalle de red en el texto del Bug (D-22, 2026-09-29): el Bug se redacta
+// como lo vería una persona usando la app (pantalla, avisos, captura). Los
+// requests, rutas y URLs quedan en docs/discovery; solo "entorno" lleva la
+// URL del sitio. Caso real: la evidencia de SCRUM-658 citaba
+// "GET /notes/api/notes/?search=Pan%20&%20queso".
+const NETWORK_DETAIL_PATTERNS = [
+  { re: /\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/\S*/, what: 'request HTTP' },
+  { re: /https?:\/\/\S+/i, what: 'URL' },
+  { re: /(^|[\s("'])\/[\w.{}-]+(\/[\w.{}%-]*)*(\?\S*)?/, what: 'ruta' }
+];
+const NETWORK_DETAIL_ALLOWED_FIELDS = new Set(['entorno']);
+
 function issuesOf(payload) {
   if (payload && Array.isArray(payload.issues)) return payload.issues;
   return payload ? [payload] : [];
@@ -140,6 +153,12 @@ function validateBug(issue, { projectKey = 'SCRUM', inspectCapture = inspectCapt
   for (const [field, text] of texts) {
     if (TEST_CASE_PATTERNS.some(re => re.test(text))) {
       errors.push(`${label}: "${field}" menciona Test Cases o ciclos; viven en Xray, no en la descripción del Bug.`);
+    }
+    if (!NETWORK_DETAIL_ALLOWED_FIELDS.has(field)) {
+      const network = NETWORK_DETAIL_PATTERNS.map(({ re, what }) => ({ hit: text.match(re), what })).find(({ hit }) => hit);
+      if (network) {
+        errors.push(`${label}: "${field}" trae detalle de red (${network.what}: "${network.hit[0].trim()}"); el Bug se redacta con lo que se ve en la pantalla y la captura, sin requests, rutas ni URLs (van en docs/discovery). Solo "entorno" lleva la URL del sitio.`);
+      }
     }
     const tool = findInternalTool(text);
     if (tool) errors.push(internalToolMessage(`${label}: "${field}"`, tool));

@@ -36,5 +36,5 @@ test('herramientas de ejecución y del navegador, requests y textos funcionales:
 test('el mensaje indica dónde está y qué usar en su lugar', () => {
   const message = internalToolMessage('Bug X: "evidencia"', 'explore-page.js');
   assert.match(message, /Bug X: "evidencia" nombra una herramienta interna de la suite \("explore-page\.js"\)/);
-  assert.match(message, /DevTools/);
+  assert.match(message, /términos funcionales/);
 });

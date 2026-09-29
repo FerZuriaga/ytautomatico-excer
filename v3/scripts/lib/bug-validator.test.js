@@ -34,7 +34,7 @@ const validBug = (overrides = {}) => ({
     resultadoActual: 'Se muestra "Your profile is successfully updated!" y la dirección queda sin número de casa.',
     resultadoEsperado: 'La dirección conserva el número de casa 42 y solo cambia la calle.',
     severidad: 'Media',
-    evidencia: 'PUT /users/{id} responde 200 {"success":true}; GET /users/me devuelve address.house_number null (antes "42"). El request enviado no incluye house_number. Inspección de red de DevTools del 2026-09-27.',
+    evidencia: 'Al hacer clic en "Update Profile" se muestra "Your profile is successfully updated!"; al volver a abrir "Profile" el número de casa aparece vacío (antes 42). Captura de la pantalla adjunta.',
     entorno: 'https://practicesoftwaretesting.com (Toolshop v5), Chrome headless, 2026-09-27.',
     captura: CAPTURE,
     ...overrides
@@ -101,18 +101,18 @@ test('evidencia con funciones, this. o vocabulario de implementación: error', (
 });
 
 test('evidencia especulativa: error', () => {
-  const { errors } = validateBug(validBug({ evidencia: 'PUT /users/{id} responde 200; probablemente el servicio pisa la dirección completa.' }));
+  const { errors } = validateBug(validBug({ evidencia: 'Tras "Update Profile" el número de casa queda vacío; probablemente el servicio pisa la dirección completa.' }));
   assert.equal(errors.length, 1);
   assert.match(errors[0], /especula \("probablemente"\)/);
 });
 
 test('con stack trace real se pueden citar nombres de funciones', () => {
-  const evidencia = 'Consola: TypeError: Cannot read properties of undefined (reading \'id\')\n    at ProfileComponent.updatePassword (main-SCJRSYE5.js:1:2345)\nPOST /users/change-password no se envía.';
+  const evidencia = 'Consola: TypeError: Cannot read properties of undefined (reading \'id\')\n    at ProfileComponent.updatePassword (main-SCJRSYE5.js:1:2345)\nLa contraseña no cambia.';
   assert.deepEqual(validateBug(validBug({ evidencia })).errors, []);
 });
 
 test('hechos observables con paréntesis y campos de la respuesta no son código', () => {
-  const evidencia = 'GET /users/me responde 200 con house_number vacío (null). Consola: "Cannot read properties of undefined (reading \'cart_items\')" x250. Captura de la pantalla adjunta.';
+  const evidencia = 'Al recargar, el número de casa aparece vacío (null). Consola: "Cannot read properties of undefined (reading \'cart_items\')" x250. Captura de la pantalla adjunta.';
   assert.deepEqual(validateBug(validBug({ evidencia })).errors, []);
 });
 
@@ -208,9 +208,18 @@ test('lectura real de disco: PNG de explore-page válido y archivo sin firma PNG
 
 test('regresion D-31: la evidencia que nombra un script interno de la suite es error; Cypress en el entorno no', () => {
   const original = 'En la exploración con explore-page.js la pantalla pidió GET /notes/api/notes/?search=Pan%20&%20queso (status 200).';
-  const errors = validateBug(validBug({ evidencia: original })).errors;
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /"evidencia" nombra una herramienta interna de la suite \("explore-page\.js"\)/);
+  const errors = validateBug(validBug({ evidencia: original })).errors.join(' | ');
+  assert.match(errors, /"evidencia" nombra una herramienta interna de la suite \("explore-page\.js"\)/);
   assert.deepEqual(validateBug(validBug({ entorno: 'https://practicesoftwaretesting.com (Toolshop v5), Chrome headless vía Cypress 14.' })).errors, []);
   assert.match(validateBug(validBug({ pasos: ['Correr notes_tc_buscar_notas.cy.js'] })).errors.join(' | '), /"pasos" nombra una herramienta interna/);
+});
+
+test('regresion SCRUM-658: requests, rutas y URLs en el texto del Bug son error; la URL del sitio en el entorno no', () => {
+  const evidencia = 'La pantalla pidió GET /notes/api/notes/?search=Pan%20&%20queso (status 200) y devolvió las dos notas.';
+  assert.match(validateBug(validBug({ evidencia })).errors.join(' | '), /"evidencia" trae detalle de red \(request HTTP: "GET \/notes\/api\/notes\/\?search=Pan%20&%20queso"\)/);
+  assert.match(validateBug(validBug({ evidencia: 'La dirección queda en /notes/app/search?keyword=Pan%20%26%20queso.' })).errors.join(' | '), /detalle de red \(ruta/);
+  assert.match(validateBug(validBug({ pasos: ['Abrir https://practice.expandtesting.com/notes/app'] })).errors.join(' | '), /"pasos" trae detalle de red \(URL/);
+  // Fechas, conteos y textos de la pantalla con "/" no son rutas.
+  const functional = 'Con las notas "Pan & queso" y "Pan dulce", buscar "Pan & queso" muestra las dos tarjetas y el resumen "You have 0/2 notes completed in the all categories"; vence el 12/2030 (captura adjunta).';
+  assert.deepEqual(validateBug(validBug({ evidencia: functional })).errors, []);
 });
