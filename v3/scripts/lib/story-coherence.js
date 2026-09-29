@@ -180,7 +180,7 @@ function checkStoryCoherence(story, siblings) {
       }
     }
   }
-  return { warnings, siblings: family.map(s => s.key) };
+  return { warnings, siblings: family.map(s => s.key || `"${s.summary}"`) };
 }
 
 module.exports = { checkStoryCoherence, storyFromDescription, storyKeysFromSpecs, appPrefix, contentWords };
