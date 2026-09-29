@@ -87,7 +87,48 @@ agrega una contradictoria.
   desvíos no pedidos.
 - **Por qué:** pedido explícito del usuario (2026-09-11 y 2026-09-27). El
   valor del proyecto es el criterio de QA.
-- **Dónde:** skills `ejecucion` y `discovery`.
+- **Dónde:** skills `ejecucion` y `discovery`. Mejoras aplicadas: D-14
+  (discovery en lote), D-29 (armador, bundle, reporte en paralelo) y D-30
+  (una sola pausa).
+
+### D-29 · Lote rápido: armador de payloads, lectura del bundle y reporte en paralelo
+- **Decisión:** (a) el payload del PASO 2 se escribe como archivo de lote
+  (`"formato": "lote"`), que arma `lib/payload-builder.js`: pasos con
+  nombre, datos reutilizables, TC numerados por CA, evidencia por escenario
+  de `explore-page` y ciclo por defecto. Nunca un `build-*.js` suelto.
+  (b) `explore-page.js` lee el código de la app y deja
+  `bundle-scan.json` con los atributos de test y los mensajes de
+  validación, marcando lo que no se vio en ninguna exploración. Es una
+  pista, no evidencia. (c) El reporte a Xray lee cada ciclo una vez, arma
+  el plan completo antes de escribir y cambia los estados de a 4 en
+  paralelo. La verificación por lectura no cambia.
+- **Por qué:** 2026-09-28. Cada lote rehacía el mismo script de ayudantes,
+  el bundle minificado se leía a mano (`grep` se colgaba) y el reporte
+  hacía 4 llamadas en serie por test. Medido: el reporte de SCRUM-621 bajó
+  de 58 s a 8 s y el de Contacto (2 ciclos, 17 tests) de 110 s a 8 s. El
+  lote de SCRUM-621 reescrito en el formato nuevo arma un payload idéntico
+  al publicado.
+- **Dónde:** `lib/payload-builder.js`, `lib/bundle-scan.js`,
+  `lib/concurrency.js`, `planReport` en `lib/test-runner.js` (todos con
+  test); `create-jira-task.js` (`--data` con lote, `--expand-to`) y
+  `explore-page.js` (`--no-bundle`). Un `--data` sin nada que publicar
+  frena: antes un lote sin `"formato"` pasaba el `--dry-run` con 0 TC
+  validados.
+
+### D-30 · Una sola pausa por lote; cambios compartidos de patrón conocido aprobados
+- **Decisión:** escenarios, alcance, dudas y archivos compartidos van en
+  una única pregunta al final del discovery. Agregar una línea igual a las
+  existentes para una app queda aprobado de antemano: se hace y se informa.
+  Esto vale para la URL `<app>Url` en `env` de `cypress.config.js`, el
+  `import './commands/<app>'`, `APPS.active`, el script `test:<app>` y las
+  filas del README. Cualquier otro cambio compartido se sigue aprobando
+  (en esa misma pausa si se conoce), y el merge a `main` se confirma
+  siempre (D-04).
+- **Por qué:** pedido del usuario (2026-09-28). Cada pausa extra es tiempo
+  de espera sin trabajo, y esos cambios de una línea se aprobaron igual en
+  todas las apps nuevas.
+- **Dónde:** skills `manager`, `discovery`, `especificacion`,
+  `plan-automatizacion` y `qa-automation1`.
 
 ### D-09 · Solo 2 apps activas; el resto es legado intocable
 - **Decisión:** el trabajo nuevo va solo en apps con trazabilidad a Xray.

@@ -45,7 +45,20 @@ o comando, no queda inline en el spec.
 
 **Arquitectura compartida** (`cypress/support/`, `cypress.config.js`,
 `package.json`, fixtures globales): explicar la decisión, justificar el
-patrón y **esperar aprobación del usuario** antes de tocarla.
+patrón y **esperar aprobación del usuario** antes de tocarla. Esa
+aprobación se pide en la única pausa del lote (D-30), no en una pausa
+aparte.
+
+**Patrón conocido, aprobado de antemano (D-30):** agregar una línea
+igual a las existentes para una app, sin cambiar las demás. Se hace y se
+informa en ARQUITECTURA_COMPARTIDA, sin preguntar:
+- la URL de la app en `env` de `cypress.config.js` (`<app>Url`);
+- el `import './commands/<app>'` en `cypress/support/commands.js`;
+- declarar la app: `APPS.active` en `v3/scripts/lib/architecture.js`,
+  el script `test:<app>` en `package.json` y sus filas en el README.
+
+Cualquier otro cambio (una opción nueva del config, un comando compartido,
+modificar una línea existente) sigue necesitando aprobación.
 
 ## 4. Estrategia para negativos y bordes
 
@@ -69,7 +82,7 @@ TRAZABILIDAD: Completa | Incompleta
 REUTILIZAR: ...
 EXTENDER: ...
 CREAR: ... (con justificación)
-ARQUITECTURA_COMPARTIDA: (cambios que requieren aprobación, o Ninguno)
+ARQUITECTURA_COMPARTIDA: (patrón conocido: informados; otros: requieren aprobación; o Ninguno)
 ESTRATEGIA_NEGATIVOS: ...
 RIESGOS: ... (general: Bajo | Medio | Alto)
 LISTO_PARA_IMPLEMENTAR: Sí | No

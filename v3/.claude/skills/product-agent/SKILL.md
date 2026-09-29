@@ -121,6 +121,12 @@ para tickets y Test Cases. Hoy soporta:
   tiene para la cobertura de cada CA;
 - `--dry-run`: valida el payload sin publicar ni modificar nada (usarlo
   siempre antes de publicar un lote);
+- **archivo de lote** (`"formato": "lote"`, `lib/payload-builder.js`):
+  `--data` lo arma y lo valida igual que un payload; `--expand-to
+  <archivo>` guarda el payload armado para revisarlo. Es la forma de
+  escribir un lote nuevo (nunca un `build-*.js` suelto). Un JSON sin
+  nada que publicar (ej. un lote sin `"formato"`) frena, no pasa con 0
+  Test Cases validados;
 - `--update-steps --data <archivo>`: reescribe precondición y pasos de
   Test Cases YA publicados (`{ "testcases": [ { key, precondition,
   steps } ] }`), con la misma validación que una publicación nueva,
@@ -129,7 +135,9 @@ para tickets y Test Cases. Hoy soporta:
 - reporte de resultados reales de una corrida (`--report-results` +
   `--test-cycle`, acepta varios ciclos separados por coma). En el flujo
   normal lo dispara `v3/scripts/run-and-report.js` solo si la corrida fue
-  100% exitosa.
+  100% exitosa. Arma el plan completo antes de escribir (un Test Case sin
+  ejecución frena sin tocar Xray) y cambia los estados de a 4 en paralelo;
+  la verificación por lectura sigue igual.
 
 Toda nueva capacidad relacionada con tickets se implementa extendiendo
 este script, de forma incremental y sin eliminar funcionalidades

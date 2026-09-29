@@ -32,6 +32,13 @@ la falta de validaciones visibles no implica que no haya negativos).
 Agregar LIMITACIONES O POSIBLES DEFECTOS (ver abajo). Recomendar una
 selección y **terminar el turno**: el usuario decide.
 
+Es la **única pausa del lote** (D-30): en el mismo mensaje van los
+escenarios, el alcance propuesto (HU y CA), las dudas y los archivos
+compartidos que se van a tocar, separando los de patrón conocido
+(informados, no se preguntan) de los que necesitan aprobación. Después
+de la respuesta no se vuelve a preguntar salvo que aparezca algo nuevo
+que no estaba en esa lista.
+
 **Lo aprobado no se cambia en silencio.** Si al escribir la Fase 2 la
 estructura aprobada cambia (cantidad de HU o de CA, escenarios que se
 suman o se caen), consultar al usuario ANTES de publicar, no avisar
@@ -176,5 +183,10 @@ secciones opcionales, `sinNegativo` si aplica, los Modelos Canónicos y la
 matriz de trazabilidad (`| CA | TC |`). Más: RIESGOS O AMBIGÜEDADES y
 LIMITACIONES O POSIBLES DEFECTOS.
 
-El validador de `create-jira-task.js --dry-run` controla estas reglas
-antes de publicar: corregir el payload ante cada error o warning.
+El payload se escribe como **archivo de lote** (`"formato": "lote"`,
+formato en `v3/scripts/lib/payload-builder.js`): pasos con nombre,
+`datos` reutilizables, TC numerados solos por CA, evidencia del negativo
+por nombre de escenario de `explore-page` y ciclo por defecto. Nunca un
+`build-*.js` suelto. El validador de `create-jira-task.js --dry-run`
+controla estas reglas antes de publicar (sobre el payload ya armado):
+corregir el lote ante cada error o warning.

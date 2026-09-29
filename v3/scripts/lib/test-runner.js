@@ -302,7 +302,47 @@ function compareReportedStatuses(executions, expectedKeys) {
   };
 }
 
+/**
+ * Plan del reporte a Xray, armado ANTES de escribir nada. `cycles`: los
+ * Test Runs de cada ciclo, en el orden en que se pasaron:
+ * [{ cycleKey, executions: [{ id, status: { name }, test: { jira: { key } } }] }].
+ * Cada test va al primer ciclo que tiene su Test Case (un TC pertenece a
+ * un solo ciclo en este proyecto). Los salteados por bug conocido vuelven
+ * a TO DO si tenían un resultado viejo.
+ *
+ * Devuelve { updates, missing, unknownStates }: con `missing` o
+ * `unknownStates` no se reporta nada (antes se cortaba a la mitad, con
+ * parte ya escrita en Xray).
+ */
+function planReport(taggedTests, knownBugSkips, cycles) {
+  const find = key => {
+    for (const cycle of cycles) {
+      const run = cycle.executions.find(e => e.test?.jira?.key === key);
+      if (run) return { cycleKey: cycle.cycleKey, id: run.id, status: run.status?.name || null };
+    }
+    return null;
+  };
+  const updates = [];
+  const missing = [];
+  const unknownStates = [];
+  for (const test of taggedTests) {
+    const status = mapMochaStateToXray(test.state);
+    if (!status) { unknownStates.push(test); continue; }
+    const run = find(test.testCaseKey);
+    if (!run) { missing.push(test.testCaseKey); continue; }
+    updates.push({ testCaseKey: test.testCaseKey, runId: run.id, cycleKey: run.cycleKey, status, previous: run.status });
+  }
+  for (const skip of knownBugSkips) {
+    const run = find(skip.testCaseKey);
+    if (run && run.status && run.status !== 'TO DO') {
+      updates.push({ testCaseKey: skip.testCaseKey, runId: run.id, cycleKey: run.cycleKey, status: 'TO DO', previous: run.status, bug: skip.bug });
+    }
+  }
+  return { updates, missing, unknownStates };
+}
+
 module.exports = {
+  planReport,
   summarizeResults,
   isReportable,
   compareReportedStatuses,

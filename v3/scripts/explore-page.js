@@ -50,6 +50,7 @@
  *                del sistema (nunca el repo).
  *   --detail     (opcional, varias pantallas) resumen completo de cada
  *                escenario en vez de una línea por escenario.
+ *   --no-bundle  (opcional) no lee el código de la app (ver abajo).
  *
  * El informe (report.json + captura de pantalla completa) trae:
  *   - quién lo generó (generator: "explore-page"), cuándo y las acciones
@@ -63,7 +64,16 @@
  *   - inventario de data-test / data-testid / data-cy con visibilidad real
  *     (detecta duplicados ocultos por CSS) y campos de formulario;
  *   - idioma del documento y del navegador, claves de localStorage y
- *     sessionStorage, errores de consola y excepciones no capturadas.
+ *     sessionStorage, errores de consola y excepciones no capturadas;
+ *   - los scripts que cargó la página.
+ *
+ * Código de la app (lib/bundle-scan.js): al terminar, baja los scripts del
+ * mismo dominio que cargaron las pantallas exploradas y deja en
+ * <out>/bundle-scan.json los atributos de test y los mensajes de validación
+ * que trae el código, marcando los atributos que ninguna exploración
+ * mostró (pantallas o estados sin explorar). Es una pista para elegir qué
+ * probar, no evidencia: un negativo se publica con lo observado en el
+ * navegador. Reemplaza leer el bundle minificado a mano en cada lote.
  *
  * Regla (CLAUDE.md): solo para el PASO 1. La corrida de los tests del
  * PASO 3 sigue siendo con run-and-report.js.
@@ -81,13 +91,14 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { parseScenarios, checkActions } = require('./lib/explore-scenarios');
 const { loadRecipes, validateRecipes, normalizeInvocations } = require('./lib/data-recipe');
+const bundleScan = require('./lib/bundle-scan');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const STANDARD_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 const SINGLE_NAME = 'explore';
 
 function parseArgs(argv) {
-  const args = { url: null, scenarios: null, app: null, data: null, storage: {}, sessionStorage: {}, actions: [], waitFor: null, initScript: null, viewport: '1280x800', out: null, detail: false };
+  const args = { url: null, scenarios: null, app: null, data: null, storage: {}, sessionStorage: {}, actions: [], waitFor: null, initScript: null, viewport: '1280x800', out: null, detail: false, bundle: true };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--url') args.url = argv[++i];
     else if (argv[i] === '--scenarios') args.scenarios = path.resolve(argv[++i]);
@@ -101,6 +112,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--viewport') args.viewport = argv[++i];
     else if (argv[i] === '--out') args.out = path.resolve(argv[++i]);
     else if (argv[i] === '--detail') args.detail = true;
+    else if (argv[i] === '--no-bundle') args.bundle = false;
   }
   return args;
 }
@@ -296,6 +308,12 @@ function collect(win) {
     uncaughtExceptions: CUR.uncaught,
     failedStep: CUR.failure,
     snapshots: SNAPSHOTS,
+    // Scripts de la página, incluidos los que se cargan después (chunks):
+    // los lee bundle-scan al terminar.
+    scripts: [...new Set([
+      ...[...doc.scripts].map(s => s.src).filter(Boolean),
+      ...win.performance.getEntriesByType('resource').map(e => e.name).filter(n => /\\.m?js(\\?|#|$)/.test(n))
+    ])],
     inventory,
     fieldsWithoutTestAttr: fields
   };
@@ -407,7 +425,48 @@ function summarizeBrief(name, report, reportPath) {
   console.log(`  Informe: ${reportPath}`);
 }
 
-function main() {
+const MAX_BUNDLE_BYTES = 20 * 1024 * 1024;
+
+// Baja los scripts del mismo dominio que las pantallas exploradas (los de
+// un CDN son librerías, no la app) y los escanea. Nunca corta la
+// exploración: si algo falla, se informa y sigue.
+async function scanAppCode(reports, outDir) {
+  const hosts = new Set(reports.map(r => { try { return new URL(r.url).host; } catch { return null; } }).filter(Boolean));
+  const urls = [...new Set(reports.flatMap(r => r.scripts || []))].filter(u => { try { return hosts.has(new URL(u).host); } catch { return false; } });
+  if (!urls.length) {
+    console.log('\nCodigo de la app: la pagina no cargo scripts propios (nada que leer).');
+    return;
+  }
+  const files = {};
+  const scripts = [];
+  await Promise.all(urls.map(async url => {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      const text = res.ok ? await res.text() : '';
+      scripts.push({ url, status: res.status, bytes: text.length });
+      if (text && text.length <= MAX_BUNDLE_BYTES) files[url] = text;
+    } catch (e) {
+      scripts.push({ url, status: 'error: ' + e.message });
+    }
+  }));
+  const { testAttributes, messages } = bundleScan.scanBundles(files);
+  const notSeen = bundleScan.notSeenInExploration(testAttributes, reports.map(r => r.inventory || []));
+  const outPath = path.join(outDir, 'bundle-scan.json');
+  fs.writeFileSync(outPath, JSON.stringify({
+    generator: 'explore-page/bundle-scan', generatedAt: new Date().toISOString(),
+    note: 'Pista para el discovery, no evidencia: lo que se publica sale de lo observado en el navegador.',
+    scripts, testAttributes, notSeenInExploration: notSeen, messages
+  }, null, 2));
+
+  const failed = scripts.filter(s => s.status !== 200);
+  console.log(`\nCodigo de la app (${Object.keys(files).length}/${urls.length} scripts leidos): ${testAttributes.length} atributos de test, ${notSeen.length} sin ver en estas exploraciones, ${messages.length} mensajes de validacion.`);
+  if (failed.length) console.log(`  ⚠ No se pudieron leer: ${failed.map(s => `${s.url} [${s.status}]`).join(', ')}`);
+  if (notSeen.length) console.log(`  Sin ver: ${notSeen.slice(0, 40).map(a => a.value).join(', ')}${notSeen.length > 40 ? ', ...' : ''}`);
+  if (messages.length) console.log(`  Mensajes:\n    ${messages.slice(0, 40).map(m => m.text).join('\n    ')}${messages.length > 40 ? '\n    ...' : ''}`);
+  console.log(`  Detalle: ${outPath}`);
+}
+
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.url && !args.scenarios) {
     console.error('Uso: node v3/scripts/explore-page.js --url <url> [--storage \'<json>\'] [--session-storage \'<json>\'] [--actions <archivo.json>] [--app <app> --data <recetas>] [--wait-for <selector>] [--init-script <archivo.js>] [--viewport 1280x800] [--out <carpeta>]');
@@ -468,6 +527,7 @@ function main() {
   // exige uno por Test Case negativo): quién lo generó y cuándo; las
   // acciones y la URL ya vienen resueltas desde el navegador.
   const missing = [];
+  const collected = [];
   let cut = 0;
   for (const s of plan.scenarios) {
     const reportPath = reports[s.name];
@@ -475,6 +535,7 @@ function main() {
     const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
     Object.assign(report, { generator: 'explore-page', generatedAt: new Date().toISOString() });
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    collected.push(report);
     if (report.failedStep) cut++;
 
     if (!plan.multi || args.detail) {
@@ -490,6 +551,14 @@ function main() {
     process.exit(1);
   }
 
+  if (args.bundle) {
+    try {
+      await scanAppCode(collected, outDir);
+    } catch (e) {
+      console.warn(`\nNo se pudo leer el codigo de la app (${e.message}); la exploracion sigue siendo valida.`);
+    }
+  }
+
   const seconds = Math.round((Date.now() - started) / 1000);
   if (plan.multi) {
     console.log(`\n${plan.scenarios.length} escenarios en ${seconds}s (${cut} cortados). Informes en: ${outDir}`);
@@ -500,4 +569,4 @@ function main() {
   }
 }
 
-main();
+main().catch(e => { console.error(e.message); process.exit(1); });

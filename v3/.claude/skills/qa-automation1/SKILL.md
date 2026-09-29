@@ -120,6 +120,11 @@ compartidas, estructura de Page Objects):
 4. **esperar aprobación del usuario antes de modificar el archivo
    compartido.**
 
+Excepción (D-30): los cambios de **patrón conocido** que lista
+`plan-automatizacion` (URL de la app en el config, import de sus
+comandos, declarar la app) están aprobados de antemano: se hacen y se
+informan. Los demás se preguntan en la única pausa del lote.
+
 Nunca modificar arquitectura compartida sin explicar la decisión antes.
 
 ## PRINCIPIO DE ENFOQUE
