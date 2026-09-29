@@ -172,7 +172,12 @@ después (caso real: SCRUM-485 se aprobó con 4 CA y se publicó con 3).
   observó (textos exactos entre comillas). Sin ella `create-jira-task.js`
   no publica; si el informe no lo generó `explore-page.js` o la
   exploración se cortó, tampoco. Un texto entre comillas que no aparece en
-  la exploración da warning. Los positivos no la llevan.
+  la exploración da warning. Los positivos no la llevan. Esta evidencia
+  queda en el payload y no se publica.
+- **Lo que se publica no nombra herramientas internas de la suite (D-31):**
+  nombre, objetivo, precondición, pasos, datos y resultados de los TC, y
+  todos los textos de la HU, sin `explore-page.js`, `v3/scripts/...`,
+  specs, recetas ni `report.json`. Es error del validador.
 - Nunca agregar campos propios de una herramienta: la adaptación la hace
   `product-agent` con `create-jira-task.js`.
 

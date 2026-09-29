@@ -48,6 +48,8 @@
  * Módulo puro: no habla con Jira/Xray ni lee archivos.
  */
 
+const { findInternalTool, internalToolMessage } = require('./internal-tools');
+
 const MIN_STEPS = 2;
 
 // Lotes chicos con 2 pasos uniformes son normales (casos de una sola
@@ -200,6 +202,14 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
       warnings.push(`${label}: el paso ${n} usa una palabra de secuencia ("luego"/"despues") -- probablemente son 2 pasos.`);
     }
   });
+
+  // Nombres internos de la suite fuera de Jira/Xray (D-31).
+  const tcTexts = [['el nombre', model?.name], ['el objetivo', model?.objective], ['la precondicion', model?.precondition],
+    ...steps.flatMap((step, i) => [[`el paso ${i + 1}`, step?.description], [`los datos del paso ${i + 1}`, step?.testData], [`el resultado del paso ${i + 1}`, step?.expectedResult]])];
+  for (const [where, text] of tcTexts) {
+    const hit = findInternalTool(text);
+    if (hit) errors.push(internalToolMessage(`${label}: ${where}`, hit));
+  }
 
   if (steps.length && LOGIN_PATTERN.test(normalize(steps[0]?.description)) && isBlank(model?.precondition)) {
     warnings.push(`${label}: el paso 1 incluye el login y la precondicion esta vacia -- mover la sesion iniciada a "precondition".`);
@@ -402,6 +412,7 @@ function contentWords(text) {
  * "Quiero" con sinónimos) lo cubre la regla de la skill especificacion.
  */
 function validateStoryText(issue) {
+  const errors = [];
   const warnings = [];
   const historia = issue?.historia;
   if (!historia) return { errors: [], warnings };
@@ -451,7 +462,23 @@ function validateStoryText(issue) {
     }
   }
 
-  return { errors: [], warnings };
+  // Nombres internos de la suite fuera de Jira/Xray (D-31).
+  const listed = value => (Array.isArray(value) ? value : [value]);
+  const storyTexts = [
+    ['el summary', issue.summary], ['Como', historia.como], ['Quiero', historia.quiero], ['Para', historia.para],
+    ['Contexto', historia.contexto], ['Objetivo', historia.objetivo],
+    ...criterios.map((text, i) => [normalizeCriterionId(text) || `criterio ${i + 1}`, text]),
+    ...listed(historia.reglasNegocio).map(text => ['reglasNegocio', text]),
+    ...listed(historia.fueraDeAlcance).map(text => ['fueraDeAlcance', text]),
+    ...listed(historia.defectosConocidos).map(text => ['defectosConocidos', text]),
+    ...Object.entries(historia.sinNegativo || {}).map(([id, text]) => [`sinNegativo ${id}`, text])
+  ];
+  for (const [name, text] of storyTexts) {
+    const hit = findInternalTool(text);
+    if (hit) errors.push(internalToolMessage(`${story}: ${name}`, hit));
+  }
+
+  return { errors, warnings };
 }
 
 /**
@@ -481,7 +508,9 @@ function validatePayload(payload, { existingTestCases = [] } = {}) {
     const result = validateStoryCriteria(issue, existingTestCases);
     errors.push(...result.errors);
     warnings.push(...result.warnings);
-    warnings.push(...validateStoryText(issue).warnings);
+    const storyText = validateStoryText(issue);
+    errors.push(...storyText.errors);
+    warnings.push(...storyText.warnings);
     if (result.criteriaCount !== null) criteriaCounts.push(result.criteriaCount);
     if (result.tcCountByCriterion) tcPerCriterionCounts.push(...Object.values(result.tcCountByCriterion));
   }
