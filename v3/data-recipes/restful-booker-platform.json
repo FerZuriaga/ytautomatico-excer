@@ -1,0 +1,33 @@
+{
+  "description": "Restful Booker Platform (Shady Meadows B&B). Datos para el discovery por la API publica de la app. Los datos son compartidos con todos los que usan la demo: cada receta crea datos propios, identificables por texto unico. Formato y uso en v3/scripts/lib/data-recipe.js.",
+  "api": "https://automationintesting.online/api",
+  "headers": { "Accept": "application/json" },
+  "recipes": {
+    "mensaje": {
+      "description": "Consulta enviada por el formulario de contacto (sin sesion). El asunto lleva un valor unico para ubicarla entre los mensajes de otros usuarios.",
+      "params": {
+        "name": "Qa Contacto",
+        "email": "qa.contacto@example.com",
+        "phone": "01234567890",
+        "description": "Quisiera saber si tienen disponibilidad para dos noches en octubre."
+      },
+      "vars": { "subject": "Consulta QA {{unique}}" },
+      "steps": [
+        {
+          "method": "POST", "path": "/message", "expect": 200,
+          "body": { "name": "{{name}}", "email": "{{email}}", "phone": "{{phone}}", "subject": "{{subject}}", "description": "{{description}}" }
+        }
+      ]
+    },
+    "admin": {
+      "description": "Login del administrador de la demo (admin/password). El front guarda el token en la cookie \"token\".",
+      "steps": [
+        {
+          "method": "POST", "path": "/auth/login", "expect": 200,
+          "body": { "username": "admin", "password": "password" },
+          "save": { "token": "token" }
+        }
+      ]
+    }
+  }
+}

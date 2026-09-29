@@ -109,7 +109,7 @@ function formatViolations(violations, rules = RULES) {
 // Nace del 2026-09-28: 14 selectores de Automation Test Store estaban
 // sueltos en la raíz de fixtures/selectors/ y nada lo detectaba.
 const APPS = {
-  active: ['automation-test-store', 'commitquality', 'expandtesting-notes', 'practicesoftwaretesting'],
+  active: ['automation-test-store', 'commitquality', 'expandtesting-notes', 'practicesoftwaretesting', 'restful-booker-platform'],
   legacy: ['argentinagobar', 'automation-exercise', 'blazedemo', 'disco', 'orangehrm', 'rentascordoba', 'saucedemo']
 };
 

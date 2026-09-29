@@ -1,0 +1,55 @@
+{
+  "api": {
+    "host": "automationintesting.online",
+    "messagePath": "/api/message",
+    "messageCountPath": "/api/message/count",
+    "loginPath": "/api/auth/login",
+    "adminUser": "admin",
+    "adminPassword": "password"
+  },
+  "paths": {
+    "home": "/",
+    "admin": "/admin",
+    "rooms": "/admin/rooms",
+    "inbox": "/admin/message"
+  },
+  "contact": {
+    "name": "[data-testid=\"ContactName\"]",
+    "email": "[data-testid=\"ContactEmail\"]",
+    "phone": "[data-testid=\"ContactPhone\"]",
+    "subject": "[data-testid=\"ContactSubject\"]",
+    "message": "[data-testid=\"ContactDescription\"]",
+    "submit": "button",
+    "errors": ".alert"
+  },
+  "admin": {
+    "username": "#username",
+    "password": "#password",
+    "login": "#doLogin",
+    "menuLink": "a.nav-link",
+    "roomListing": "[data-testid=\"roomlisting\"]",
+    "unreadBadge": ".badge",
+    "row": ".row.detail",
+    "rowUnread": "read-false",
+    "rowRead": "read-true",
+    "rowSubject": "[data-testid^=\"messageDescription\"]",
+    "detail": "[data-testid=\"message\"]",
+    "detailClose": "button"
+  },
+  "texts": {
+    "formTitle": "Send Us a Message",
+    "submit": "Submit",
+    "thanks": "Thanks for getting in touch {name}!",
+    "followUpStart": "We'll get back to you about",
+    "followUpEnd": "as soon as possible.",
+    "menu": ["Rooms", "Report", "Branding", "Messages"],
+    "messages": "Messages",
+    "frontPage": "Front Page",
+    "loginTitle": "Login",
+    "listHeaders": ["Name", "Subject"],
+    "from": "From: {name}",
+    "phone": "Phone: {phone}",
+    "email": "Email: {email}",
+    "close": "Close"
+  }
+}
