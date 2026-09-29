@@ -89,6 +89,7 @@ const testcaseDescription = require('./lib/testcase-description');
 const negativeEvidence = require('./lib/negative-evidence');
 const traceability = require('./lib/traceability');
 const payloadBuilder = require('./lib/payload-builder');
+const storyCoherence = require('./lib/story-coherence');
 const { mapWithLimit } = require('./lib/concurrency');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY;
@@ -224,6 +225,38 @@ async function existingTestCasesOf(issueKey) {
   });
 }
 
+// HU del payload comparadas con las HU publicadas de la misma app. Las
+// hermanas salen del encabezado "Ticket Jira" de los specs (cada HU
+// automatizada tiene el suyo), sin búsquedas por texto en Jira. Si Jira no
+// responde, se avisa y la publicación sigue: es una ayuda para revisar, no
+// un control de datos.
+async function storyCoherenceWarnings() {
+  const stories = (Array.isArray(ISSUE.issues) ? ISSUE.issues : [{ ...ISSUE, key: ISSUE_KEY || undefined }])
+    .filter(issue => issue && issue.historia && issue.summary)
+    .map(issue => ({ key: issue.key, summary: issue.summary, historia: issue.historia }));
+  if (!stories.length) return [];
+  const specsDir = path.resolve(__dirname, '../../cypress/e2e');
+  const specs = fs.existsSync(specsDir)
+    ? fs.readdirSync(specsDir, { recursive: true }).filter(f => String(f).endsWith('.cy.js')).map(f => fs.readFileSync(path.join(specsDir, String(f)), 'utf8'))
+    : [];
+  let published = [];
+  try {
+    const issues = await jira.getIssuesByKeys(storyCoherence.storyKeysFromSpecs(specs, PROJECT || 'SCRUM'), { withText: true });
+    published = [...issues].filter(([, issue]) => issue.issuetype === 'Historia' && issue.description)
+      .map(([key, issue]) => ({ key, summary: issue.summary, historia: storyCoherence.storyFromDescription(issue.description) }));
+  } catch (err) {
+    console.warn(`Coherencia entre HU: no se pudieron leer las HU publicadas (${err.message}); se sigue sin este chequeo.`);
+    return [];
+  }
+  const warnings = [];
+  for (const story of stories) {
+    const result = storyCoherence.checkStoryCoherence(story, [...published, ...stories]);
+    if (result.siblings.length) console.log(`Coherencia entre HU: "${story.summary}" comparada con ${result.siblings.join(', ')}.`);
+    warnings.push(...result.warnings);
+  }
+  return warnings;
+}
+
 // Validación de pasos de los Test Cases ANTES de tocar Jira/Xray (ver
 // lib/testcase-validator.js y CLAUDE.md sección 3). Los errores frenan
 // siempre; los warnings frenan salvo --accept-warnings, que se pasa
@@ -247,6 +280,11 @@ async function validateData() {
     validation.errors.push(...evidence.errors);
     validation.warnings.push(...evidence.warnings);
   }
+  // Coherencia con las HU hermanas de la misma app (lib/story-coherence.js):
+  // el mismo mensaje escrito distinto, un fuera de alcance que esta HU
+  // cubre, un criterio repetido. Nació de la auditoría de Notes App
+  // (2026-09-29): cada HU pasaba sola y el problema estaba en el conjunto.
+  if (!updateSteps) validation.warnings.push(...await storyCoherenceWarnings());
   // Estándar del Bug (lib/bug-validator.js): secciones fijas, sin Test
   // Cases ni keys en el texto y evidencia sin especular sobre el código.
   const bugs = updateSteps ? { errors: [], bugCount: 0 } : bugValidator.validateBugs(ISSUE, { projectKey: PROJECT || 'SCRUM' });

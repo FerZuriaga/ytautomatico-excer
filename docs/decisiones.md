@@ -288,6 +288,24 @@ agrega una contradictoria.
   `lib/bug-validator.js` y `lib/testcase-validator.js` (TC y texto de la
   HU); skills `bug-reporting`, `especificacion` y `product-agent`.
 
+### D-32 · Coherencia entre HU de la misma app
+- **Decisión:** al publicar o actualizar una HU se compara con las HU
+  publicadas de la misma app. WARNING si cita un mensaje de pantalla que
+  otra HU escribe distinto, si un CA cubre lo que otra HU dejó fuera de
+  alcance, o si un CA repite el de otra HU. Se corrige el texto (y la HU
+  hermana si hace falta) o, si es una superposición aceptada, se publica
+  con `--accept-warnings`.
+- **Por qué:** la auditoría de Notes App (2026-09-29) encontró que cada HU
+  pasaba sus validadores por separado y el problema estaba en el conjunto:
+  SCRUM-659 contradecía a SCRUM-635 en el texto del resumen, cubría algo
+  que 635 dejaba fuera de alcance y repetía su regla del resumen.
+- **Límite:** es un chequeo por palabras; no entiende el significado. No
+  reemplaza leer las HU hermanas (skill `especificacion`).
+- **Dónde:** `lib/story-coherence.js` + test; `create-jira-task.js` lo
+  corre en cada publicación, también en `--dry-run`. Las HU hermanas salen
+  del encabezado "Ticket Jira" de los specs (`getIssuesByKeys` con
+  `withText`), sin búsquedas por texto en Jira.
+
 ---
 
 ## Automatización y ejecución (PASO 3)
