@@ -127,3 +127,18 @@ test('regresion lote RBP (2026-09-29): dos HU nuevas del mismo lote (sin key) se
   const { siblings } = checkStoryCoherence(enviar, [enviar, leer]);
   assert.deepEqual(siblings, ['"Restful Booker Platform - Leer las consultas recibidas"']);
 });
+
+test('regresion lote reservas RBP: la hermana nueva se nombra por su summary y un fuera de alcance que ya la nombra no avisa', () => {
+  const reservar = { summary: 'Restful Booker Platform - Reservar una habitación', historia: {
+    criterios: ['CA-01: Una reserva con datos válidos se confirma con las fechas elegidas.'],
+    fueraDeAlcance: ['Fechas ocupadas o pasadas (Historia "No reservar fechas no disponibles").'] } };
+  const noDisponibles = { summary: 'Restful Booker Platform - No reservar fechas no disponibles', historia: {
+    criterios: ['CA-01: No se pueden reservar fechas en las que la habitación ya está reservada.', 'CA-02: No se pueden reservar fechas pasadas.'] } };
+  assert.deepEqual(checkStoryCoherence(noDisponibles, [reservar, noDisponibles]).warnings, []);
+
+  const sinNombre = { ...reservar, historia: { ...reservar.historia, fueraDeAlcance: ['Reservar fechas ocupadas o pasadas (Historia propia).'] } };
+  const { warnings } = checkStoryCoherence(noDisponibles, [sinNombre, noDisponibles]);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CA-02 parece cubrir lo que "Restful Booker Platform - Reservar una habitación" dejó fuera de alcance/);
+  assert.doesNotMatch(warnings[0], /undefined/);
+});

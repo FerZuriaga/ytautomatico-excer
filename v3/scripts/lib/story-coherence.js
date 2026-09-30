@@ -134,10 +134,13 @@ function checkStoryCoherence(story, siblings) {
   const family = siblings.filter(s => s !== story && !(story.key && s.key === story.key) && prefix && appPrefix(s.summary) === prefix);
   const own = storyTexts(story.historia || {});
   const ownQuoted = new Set(own.flatMap(([, text]) => quotedTexts(text)));
+  const storyTitle = normalize(String(story.summary || '').split(' - ').slice(1).join(' - ')).trim() || null;
   const ownCriteria = (story.historia?.criterios || []).map(text => ({ id: criterionId(text), text, words: contentWords(criterionBody(text)) }));
 
   for (const sibling of family) {
     const theirs = storyTexts(sibling.historia || {});
+    // Una HU nueva del mismo lote todavía no tiene key: se nombra por su summary.
+    const name = sibling.key || `"${sibling.summary}"`;
 
     // 1. El mismo mensaje de pantalla escrito de dos formas.
     const reported = new Set();
@@ -149,7 +152,7 @@ function checkStoryCoherence(story, siblings) {
             if (other === mine || ownQuoted.has(other) || reported.has(`${mine}|${other}`)) continue;
             if (other.startsWith(mine) || mine.startsWith(other)) {
               reported.add(`${mine}|${other}`);
-              warnings.push(`${label}: ${where} cita "${mine}" y ${sibling.key} (${theirWhere}) cita "${other}" -- parece el mismo mensaje con otra redacción; confirmar en qué pantalla o categoría aparece cada uno para que las HU no se contradigan.`);
+              warnings.push(`${label}: ${where} cita "${mine}" y ${name} (${theirWhere}) cita "${other}" -- parece el mismo mensaje con otra redacción; confirmar en qué pantalla o categoría aparece cada uno para que las HU no se contradigan.`);
             }
           }
         }
@@ -158,12 +161,13 @@ function checkStoryCoherence(story, siblings) {
 
     // 2. Lo que la hermana dejó fuera de alcance y esta HU cubre.
     for (const line of sibling.historia?.fueraDeAlcance || []) {
-      if (story.key && line.includes(story.key)) continue;
+      // Si la línea ya dice dónde quedó cubierto (key o nombre de esta HU), no se avisa.
+      if ((story.key && line.includes(story.key)) || (storyTitle && normalize(line).includes(storyTitle))) continue;
       const lineWords = contentWords(line);
       for (const criterion of ownCriteria) {
         const common = shared(criterion.words, lineWords);
         if (common.length >= MIN_SHARED_WORDS) {
-          warnings.push(`${label}: ${criterion.id} parece cubrir lo que ${sibling.key} dejó fuera de alcance ("${cut(line)}"; en común: ${common.join(', ')}) -- si es así, actualizar ${sibling.key} para que indique dónde quedó cubierto.`);
+          warnings.push(`${label}: ${criterion.id} parece cubrir lo que ${name} dejó fuera de alcance ("${cut(line)}"; en común: ${common.join(', ')}) -- si es así, actualizar ${name} para que indique dónde quedó cubierto.`);
         }
       }
     }
@@ -175,7 +179,7 @@ function checkStoryCoherence(story, siblings) {
         const common = shared(criterion.words, theirWords);
         const smaller = Math.min(criterion.words.size, theirWords.size) || 1;
         if (common.length >= MIN_SHARED_CRITERIA_WORDS && common.length / smaller >= SIMILAR_CRITERIA_RATIO) {
-          warnings.push(`${label}: ${criterion.id} se parece a ${sibling.key} ${criterionId(text)} ("${cut(criterionBody(text))}") -- si es la misma regla, que tenga un solo dueño; si cambia el disparador, dejarlo explícito en el criterio.`);
+          warnings.push(`${label}: ${criterion.id} se parece a ${name} ${criterionId(text)} ("${cut(criterionBody(text))}") -- si es la misma regla, que tenga un solo dueño; si cambia el disparador, dejarlo explícito en el criterio.`);
         }
       }
     }
