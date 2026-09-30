@@ -62,6 +62,10 @@ class NotesPage {
             cy.intercept({ method: 'PATCH', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('toggleNote')
             // Guardar el formulario "Edit note" manda PUT /notes/<id> con la nota completa.
             cy.intercept({ method: 'PUT', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('updateNote')
+            // Confirmar el borrado manda DELETE /notes/<id>; la lista se actualiza sin recargar.
+            cy.intercept({ method: 'DELETE', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('deleteNote')
+            // La vista de detalle pide la nota: GET /notes/<id>.
+            cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('getNote')
         })
     }
 
@@ -215,6 +219,52 @@ class NotesPage {
 
     verifyNoUpdateRequest() {
         cy.get('@updateNote.all').should('have.length', 0)
+    }
+
+    // ─── Borrado ──────────────────────────────────────────────────────────────
+
+    // "View" en la tarjeta con este título: vista de detalle de la nota, fuera
+    // de la lista.
+    openNoteView({ title, description }) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.card.root, title, T).find(sel.card.view).click()
+            cy.wait('@getNote', T).its('response.statusCode').should('eq', 200)
+            cy.get(sel.list.addNote).should('not.exist')
+            cy.get(sel.card.title, T).should('have.text', title)
+            cy.get(sel.card.description).should('have.text', description)
+            cy.get(sel.card.edit).should('be.visible')
+            cy.get(sel.card.delete).should('be.visible')
+        })
+    }
+
+    // "Delete" en la tarjeta con este título (en la lista o en la vista de
+    // detalle): abre el diálogo de confirmación con el título de la nota.
+    clickDelete(title) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.card.root, title, T).find(sel.card.delete).click()
+            cy.get(sel.deleteDialog.root, T).should('be.visible')
+                .and('contain.text', sel.texts.deleteDialogTitle)
+                .and('contain.text', title)
+            cy.get(sel.deleteDialog.confirm).should('have.text', sel.texts.delete)
+            cy.get(sel.deleteDialog.cancel).should('have.text', sel.texts.cancel)
+        })
+    }
+
+    confirmDelete() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.deleteDialog.confirm).click()
+            cy.wait('@deleteNote', T).its('response.statusCode').should('eq', 200)
+            cy.get(sel.deleteDialog.root).should('not.exist')
+        })
+    }
+
+    // Cierra el diálogo sin borrar: con "Cancel" o con la X (`close`).
+    dismissDelete(button = 'cancel') {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.deleteDialog[button]).click()
+            cy.get(sel.deleteDialog.root).should('not.exist')
+            cy.get('@deleteNote.all').should('have.length', 0)
+        })
     }
 
     // ─── Lista ────────────────────────────────────────────────────────────────

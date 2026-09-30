@@ -174,3 +174,20 @@ Datos con las recetas `usuario` y `nota`.
   (`Title is required`, `Title should be between 4 and 100 characters`,
   `Description is required`, `Description should be between 4 and 1000
   characters`).
+
+## Borrar una nota (2026-09-30)
+
+Explorado con `explore-page.js --scenarios` (8 escenarios en una corrida de
+60 s: diálogo, confirmar con una y con dos notas, recarga, Cancel, la X,
+nota completada dentro de Work y desde la vista de detalle).
+
+- **"Delete"** (`note-delete`) en la tarjeta o en la vista de detalle abre
+  el diálogo **"Delete note?"** (`note-delete-dialog`) con el título de la
+  nota, **Delete** (`note-delete-confirm`), **Cancel**
+  (`note-delete-cancel-2`) y la X (`note-delete-cancel-1`).
+- **Confirmar** manda `DELETE /notes/<id>` y la tarjeta se quita de la
+  lista **sin recargar la página** (a diferencia de crear y editar); el
+  resumen cuenta solo las que quedan. En el test, esperar el DELETE.
+- **Cancel y la X** cierran el diálogo sin request.
+- **Desde la vista de detalle** (`GET /notes/<id>`), confirmar vuelve a
+  "My Notes" (nuevo `GET /notes`).
