@@ -65,6 +65,15 @@
     "searchHeader": "Search Results for \"{keyword}\":",
     "searchHeaderPrefix": "Search Results for",
     "noResultsAll": "Couldn't find any notes in all categories",
-    "noResultsInCategory": "Couldn't find any notes in the {category} category"
+    "noResultsInCategory": "Couldn't find any notes in the {category} category",
+    "deleteDialogTitle": "Delete note?",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "deleteDialog": {
+    "root": "[data-testid=\"note-delete-dialog\"]",
+    "confirm": "[data-testid=\"note-delete-confirm\"]",
+    "cancel": "[data-testid=\"note-delete-cancel-2\"]",
+    "close": "[data-testid=\"note-delete-cancel-1\"]"
   }
 }

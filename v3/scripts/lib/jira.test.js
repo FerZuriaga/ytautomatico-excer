@@ -10,7 +10,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { buildHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody } = require('./jira');
+const { buildHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody, fetchIssuesByKeys } = require('./jira');
 
 const base = {
   como: 'cliente', quiero: 'comparar productos', para: 'elegir mejor',
@@ -91,4 +91,21 @@ test('buildMultipartBody: un archivo en el campo "file" con su nombre y el conte
   assert.ok(text.startsWith('--B0UND\r\nContent-Disposition: form-data; name="file"; filename="pw-vieja-explore.png"\r\nContent-Type: image/png\r\n\r\n'));
   assert.ok(text.endsWith('\r\n--B0UND--\r\n'));
   assert.ok(body.includes(content));
+});
+
+// Índice de búsqueda de Jira desactualizado: una issue recién creada no sale
+// en search/jql pero existe (caso real: SCRUM-737/738, 2026-09-30).
+test('fetchIssuesByKeys: lee directo la issue que la búsqueda todavía no indexó', async () => {
+  const issue = (key, type) => ({ key, fields: { issuetype: { name: type }, labels: ['CA-02'], issuelinks: [] } });
+  const calls = [];
+  const request = async (method, url) => {
+    calls.push(`${method} ${url.split('?')[0]}`);
+    if (method === 'POST') return { status: 200, body: { issues: [issue('SCRUM-736', 'Test')] } };
+    if (url.startsWith('/rest/api/3/issue/SCRUM-737')) return { status: 200, body: issue('SCRUM-737', 'Test') };
+    return { status: 404, body: {} };
+  };
+  const result = await fetchIssuesByKeys(['SCRUM-736', 'SCRUM-737', 'SCRUM-9999'], request);
+  assert.deepEqual([...result.keys()].sort(), ['SCRUM-736', 'SCRUM-737']);
+  assert.deepEqual(result.get('SCRUM-737'), { issuetype: 'Test', labels: ['CA-02'], linkedTests: [] });
+  assert.deepEqual(calls, ['POST /rest/api/3/search/jql', 'GET /rest/api/3/issue/SCRUM-737', 'GET /rest/api/3/issue/SCRUM-9999']);
 });

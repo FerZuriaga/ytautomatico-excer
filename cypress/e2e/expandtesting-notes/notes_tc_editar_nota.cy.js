@@ -125,6 +125,16 @@ describe('Notas: editar una nota [SCRUM-717]', () => {
         notes.verifyCardDescription(MATERIALES.description)
     })
 
+    it('[CA-03][TC-03.3][SCRUM-739] No debe guardar la nota con un titulo de mas de 100 caracteres', () => {
+        editMateriales()
+        notes.replaceField('title', 'x'.repeat(101))
+
+        notes.clickSave()
+        notes.verifyRejected(['titleLength'], 'updateNote')
+        notes.verifyCardTitle(MATERIALES.title)
+        notes.verifyCardDescription(MATERIALES.description)
+    })
+
     it('[CA-04][TC-04.1][SCRUM-728] No debe guardar la nota con la descripcion vacia', () => {
         editMateriales()
         notes.replaceField('description')
@@ -138,6 +148,16 @@ describe('Notas: editar una nota [SCRUM-717]', () => {
     it('[CA-04][TC-04.2][SCRUM-729] No debe guardar la nota con una descripcion de menos de 4 caracteres', () => {
         editMateriales()
         notes.replaceField('description', 'Ok')
+
+        notes.clickSave()
+        notes.verifyRejected(['descriptionLength'], 'updateNote')
+        notes.verifyCardTitle(MATERIALES.title)
+        notes.verifyCardDescription(MATERIALES.description)
+    })
+
+    it('[CA-04][TC-04.3][SCRUM-740] No debe guardar la nota con una descripcion de mas de 1000 caracteres', () => {
+        editMateriales()
+        notes.replaceField('description', 'y'.repeat(1001))
 
         notes.clickSave()
         notes.verifyRejected(['descriptionLength'], 'updateNote')

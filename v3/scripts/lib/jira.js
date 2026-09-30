@@ -80,16 +80,32 @@ async function getIssue(key) {
  * inexistente simplemente no aparece en el Map. Con `withText` trae además
  * summary y description (ADF): los usa el chequeo de coherencia entre HU.
  */
-async function getIssuesByKeys(keys, { withText = false } = {}) {
+async function getIssuesByKeys(keys, options = {}) {
+  return fetchIssuesByKeys(keys, jiraRequest, options);
+}
+
+function issueEntry(issue, withText) {
+  const linkedTests = (issue.fields.issuelinks || [])
+    .map(l => l.outwardIssue || l.inwardIssue)
+    .filter(o => o && o.fields?.issuetype?.name === 'Test')
+    .map(o => o.key);
+  const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
+  if (withText) Object.assign(entry, { summary: issue.fields.summary, description: issue.fields.description });
+  return entry;
+}
+
+// `request` es jiraRequest (inyectable para los tests).
+async function fetchIssuesByKeys(keys, request, { withText = false } = {}) {
+  const fields = withText ? ['issuetype', 'labels', 'issuelinks', 'summary', 'description'] : ['issuetype', 'labels', 'issuelinks'];
   const result = new Map();
   const unique = [...new Set(keys)];
   for (let i = 0; i < unique.length; i += 50) {
     const chunk = unique.slice(i, i + 50);
     let nextPageToken;
     do {
-      const res = await jiraRequest('POST', '/rest/api/3/search/jql', {
+      const res = await request('POST', '/rest/api/3/search/jql', {
         jql: `key in (${chunk.join(',')})`,
-        fields: withText ? ['issuetype', 'labels', 'issuelinks', 'summary', 'description'] : ['issuetype', 'labels', 'issuelinks'],
+        fields,
         maxResults: 100,
         nextPageToken
       });
@@ -97,23 +113,24 @@ async function getIssuesByKeys(keys, { withText = false } = {}) {
       // ... does not exist"): se reintenta de a una para aislarla.
       if (res.status === 400 && chunk.length > 1) {
         for (const key of chunk) {
-          (await getIssuesByKeys([key], { withText })).forEach((v, k) => result.set(k, v));
+          (await fetchIssuesByKeys([key], request, { withText })).forEach((v, k) => result.set(k, v));
         }
         break;
       }
       if (res.status === 400) break;
       if (res.status !== 200) throw new Error(`Error leyendo issues (${res.status}): ${JSON.stringify(res.body)}`);
-      for (const issue of res.body.issues || []) {
-        const linkedTests = (issue.fields.issuelinks || [])
-          .map(l => l.outwardIssue || l.inwardIssue)
-          .filter(o => o && o.fields?.issuetype?.name === 'Test')
-          .map(o => o.key);
-        const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
-        if (withText) Object.assign(entry, { summary: issue.fields.summary, description: issue.fields.description });
-        result.set(issue.key, entry);
-      }
+      for (const issue of res.body.issues || []) result.set(issue.key, issueEntry(issue, withText));
       nextPageToken = res.body.nextPageToken;
     } while (nextPageToken);
+
+    // La búsqueda usa el índice de Jira, que tarda unos minutos en incluir
+    // una issue recién creada: la que falta se lee directo antes de darla
+    // por inexistente (caso real: SCRUM-737/738 recién publicados, 2026-09-30).
+    for (const key of chunk.filter(k => !result.has(k))) {
+      const res = await request('GET', `/rest/api/3/issue/${key}?fields=${fields.join(',')}`);
+      if (res.status === 200) result.set(res.body.key, issueEntry(res.body, withText));
+      else if (res.status !== 404) throw new Error(`Error leyendo ${key} (${res.status}): ${JSON.stringify(res.body)}`);
+    }
   }
   return result;
 }
@@ -387,6 +404,7 @@ async function getAttachmentNames(key) {
 }
 
 module.exports = {
+  fetchIssuesByKeys,
   isIdempotent,
   HOSTNAME,
   jiraRequest,
