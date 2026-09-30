@@ -11,6 +11,7 @@ fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
 | `commitquality` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `expandtesting-notes` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `practicesoftwaretesting` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| `restful-booker-platform` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `saucedemo`, `orangehrm`, `argentinagobar`, `rentascordoba`, `disco` | Legado | Tags `[SCRUM-Txx]` de Zephyr (discontinuado) |
 | `automation-exercise`, `blazedemo` | Legado | Sin tags o con keys de la etapa experimental (SCRUM-1 a 42, archivados) |
 
@@ -44,6 +45,7 @@ desde los comandos custom (`cypress/support/commands/*.js`) con
 | `expandtestingNotesUrl` | Expand Testing Notes | `https://practice.expandtesting.com`     |
 | `orangehrmUrl`          | OrangeHRM           | `https://opensource-demo.orangehrmlive.com` |
 | `rentascordobaUrl`      | Rentas Córdoba      | `https://www.rentascordoba.gob.ar`        |
+| `restfulBookerPlatformUrl` | Restful Booker Platform | `https://automationintesting.online` |
 | `saucedemoUrl`          | SauceDemo           | `https://www.saucedemo.com`               |
 
 ### Cómo apuntar los tests a otra URL sin tocar código

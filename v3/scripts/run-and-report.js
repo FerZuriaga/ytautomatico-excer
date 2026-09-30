@@ -63,10 +63,12 @@ const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
 const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
+const architecture = require('./lib/architecture');
 const runTiming = require('./lib/run-timing');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = process.env.JIRA_PROJECT_KEY;
+const MAX_REGRESSION_SPECS = 20;
 
 function parseArgs(argv) {
   const args = { specs: [], cycles: [], resultsOut: null, fromResults: null, affected: false, base: 'main', list: false };
@@ -75,6 +77,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--affected') args.affected = true;
     else if (argv[i] === '--base') args.base = argv[++i];
     else if (argv[i] === '--list') args.list = true;
+    else if (argv[i] === '--max-specs') args.maxSpecs = Number(argv[++i]);
     else if (argv[i] === '--test-cycle') args.cycles = splitList(argv[++i]);
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
     else if (argv[i] === '--from-results') args.fromResults = argv[++i];
@@ -115,9 +118,17 @@ function resolveAffected(base) {
     ...git(['diff', '--name-only', 'HEAD']),
     ...git(['ls-files', '--others', '--exclude-standard'])
   ];
-  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed);
+  // Archivos globales que la rama solo toca para registrar una app nueva.
+  const mergeBase = git(['merge-base', base, 'HEAD'])[0];
+  const registrationOnly = [...affectedSpecs.GLOBAL_FILES].filter(file => changed.includes(file) &&
+    affectedSpecs.isAppRegistrationDiff(file, spawnSync('git', ['diff', '-U0', mergeBase, '--', file], { cwd: REPO_ROOT, encoding: 'utf8' }).stdout.split('\n')));
+  if (registrationOnly.length) console.log(`  Solo registro de app en: ${registrationOnly.join(', ')} (no es cambio global).`);
+  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed, { activeApps: architecture.APPS.active, registrationOnly });
   console.log(`Regresion por impacto (respecto de ${base}): ${new Set(changed).size} archivo(s) cambiado(s), ${result.specs.length} spec(s) afectado(s).`);
-  if (result.global) console.warn('  Cambio global: se corre la suite completa.');
+  if (result.global) {
+    console.warn(`  Cambio global: se corre la suite de las apps activas (${architecture.APPS.active.join(', ')}).`);
+    if (result.skipped.length) console.warn(`  Legado sin correr: ${result.skipped.length} spec(s) (D-33).`);
+  }
   else result.reasons.forEach((reason, spec) => console.log(`  - ${spec} (${reason})`));
   return result.specs;
 }
@@ -200,7 +211,7 @@ function printTimingReport(branch) {
 }
 
 async function main() {
-  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport } = parseArgs(process.argv.slice(2));
+  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport, maxSpecs } = parseArgs(process.argv.slice(2));
   if (timingReport !== undefined) {
     printTimingReport(timingReport);
     return;
@@ -210,6 +221,14 @@ async function main() {
   if (affected && !specs.length) {
     console.log('Ningun spec afectado por los cambios: no hay regresion que correr.');
     return;
+  }
+  // Tope de la regresión (D-33, 2026-09-29): una regresión de 89 specs corrió
+  // 40 minutos sin que nadie lo decidiera. Más de MAX_REGRESSION_SPECS se
+  // corre solo con --max-specs explícito, después de consultar al usuario.
+  const limit = Number.isFinite(maxSpecs) ? maxSpecs : MAX_REGRESSION_SPECS;
+  if (affected && specs.length > limit) {
+    console.error(`La regresion tiene ${specs.length} spec(s) (tope ${limit}). No se corre: consultar al usuario y, si aprueba, re-ejecutar con --max-specs ${specs.length}.`);
+    process.exit(1);
   }
   if (fromResults && !cycles.length) {
     console.error('--from-results requiere --test-cycle (solo sirve para reportar y verificar).');

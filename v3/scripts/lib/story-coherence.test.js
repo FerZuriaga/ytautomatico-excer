@@ -120,3 +120,10 @@ test('storyFromDescription: lee las secciones de la HU publicada (formato de bui
   assert.deepEqual(story.reglasNegocio, ['Regla.']);
   assert.deepEqual(story.fueraDeAlcance, ['Afuera.']);
 });
+
+test('regresion lote RBP (2026-09-29): dos HU nuevas del mismo lote (sin key) se comparan entre sí y se nombran por su summary', () => {
+  const enviar = { summary: 'Restful Booker Platform - Enviar una consulta al hotel', historia: { criterios: ['CA-01: Una consulta se envía.'] } };
+  const leer = { summary: 'Restful Booker Platform - Leer las consultas recibidas', historia: { criterios: ['CA-01: La consulta aparece en la bandeja.'] } };
+  const { siblings } = checkStoryCoherence(enviar, [enviar, leer]);
+  assert.deepEqual(siblings, ['"Restful Booker Platform - Leer las consultas recibidas"']);
+});

@@ -16,6 +16,7 @@ module.exports = defineConfig({
     orangehrmUrl: "https://opensource-demo.orangehrmlive.com",
     practicesoftwaretestingUrl: "https://practicesoftwaretesting.com",
     rentascordobaUrl: "https://www.rentascordoba.gob.ar",
+    restfulBookerPlatformUrl: "https://automationintesting.online",
     saucedemoUrl: "https://www.saucedemo.com",
   },
   e2e: {

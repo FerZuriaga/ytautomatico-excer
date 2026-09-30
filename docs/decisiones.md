@@ -325,6 +325,27 @@ agrega una contradictoria.
   fallidas se consulta al usuario. Solo se reporta a Xray si pasa el 100%.
 - **Dónde:** `run-and-report.js`, skill `ejecucion`.
 
+### D-33 · La regresión por cambio global corre solo las apps activas
+- **Decisión:** ante un cambio global (`cypress.config.js`,
+  `support/e2e.js`, `support/commands.js`, `package.json`),
+  `run-and-report.js --affected` corre los specs de las apps de
+  `APPS.active` y deja afuera el legado, informando cuántos specs quedaron
+  sin correr.
+- **Por qué:** al dar de alta Restful Booker Platform (2026-09-29) la suite
+  completa de 89 specs llevaba más de 35 minutos sin terminar, casi todo en
+  apps de legado rotas contra sitios reales que por decisión no se
+  mantienen (D-09). El legado no se toca, así que su regresión no aporta.
+- **Además (mismo día):** dar de alta una app nueva no es un cambio
+  global. Si los archivos globales solo suman sus líneas de registro (URL
+  en el config, import de comandos, script de npm), la regresión corre solo
+  lo que esa app toca. Y **ninguna regresión pasa de 20 specs sin
+  confirmación del usuario**: por encima del tope el script no corre y hay
+  que re-ejecutar con `--max-specs N`. En total se perdieron ~50 minutos en
+  regresiones que nadie decidió.
+- **Dónde:** `lib/affected-specs.js` (`activeApps`, `registrationOnly`,
+  `isAppRegistrationDiff`) + test; `run-and-report.js` (tope
+  `MAX_REGRESSION_SPECS`, `--max-specs`); skill `ejecucion`.
+
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
   selectores relevados (nunca adivinados) en fixtures JSON. Al extraer un
