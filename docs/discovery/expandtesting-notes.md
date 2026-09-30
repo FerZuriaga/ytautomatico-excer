@@ -148,3 +148,29 @@ búsqueda. Datos con las recetas `usuario`, `nota` y `completar`.
   principio y la completada al final de su grupo.
 - **Persiste** al recargar, en los dos sentidos. Funciona igual dentro de
   una búsqueda y de una pestaña de categoría.
+
+## Editar una nota (2026-09-30)
+
+Explorado con `explore-page.js --scenarios` (11 escenarios en una corrida:
+abrir, guardar texto, guardar y recargar, categoría, completada, cancelar,
+título y descripción vacíos o cortos, y edición desde la vista de detalle).
+Datos con las recetas `usuario` y `nota`.
+
+- **"Edit"** (`note-edit`) en la tarjeta abre el modal **"Edit note"**: el
+  mismo formulario que "Add new note" (mismos `data-testid`), con la
+  categoría, Completed, el título y la descripción de la nota ya cargados y
+  los botones **Save** (`note-submit`) y Cancel. La vista de detalle
+  ("View", `/notes/app/notes/<id>`) tiene su propio "Edit" que abre el
+  mismo modal.
+- **Save** manda `PUT /notes/<id>` con la nota completa (no PATCH) y,
+  igual que al crear, **recarga la página completa**
+  (`window.location.reload()` en el código): en el test, esperar la
+  respuesta del PUT y después el `GET /notes` de la recarga. La fecha de la
+  tarjeta pasa a ser la del cambio.
+- **Cambiar la categoría** mueve la nota de pestaña; marcar Completed la
+  deja completada (resumen `You have completed all notes`).
+- **Cancel** cierra el modal sin request y la tarjeta no cambia.
+- **Validaciones:** las mismas que al crear, bajo cada campo y sin request
+  (`Title is required`, `Title should be between 4 and 100 characters`,
+  `Description is required`, `Description should be between 4 and 1000
+  characters`).

@@ -60,6 +60,8 @@ class NotesPage {
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: `${sel.api.notesPath}/` }).as('searchNotes')
             // El interruptor de la tarjeta manda PATCH /notes/<id> con { completed }.
             cy.intercept({ method: 'PATCH', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('toggleNote')
+            // Guardar el formulario "Edit note" manda PUT /notes/<id> con la nota completa.
+            cy.intercept({ method: 'PUT', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.notesPath}/[^/]+$`) }).as('updateNote')
         })
     }
 
@@ -151,15 +153,68 @@ class NotesPage {
     }
 
     // Rechazo en el formulario: exactamente estos avisos, el formulario
-    // sigue abierto y no se envía ninguna nota.
-    verifyRejected(errorKeys) {
+    // sigue abierto y no se envía ninguna nota (alias del alta o de la edición).
+    verifyRejected(errorKeys, alias = 'createNote') {
         cy.fixture(FIXTURE).then(sel => {
             const expected = errorKeys.map(key => sel.texts[key])
             cy.get(sel.form.error, T).filter(':visible').should('have.length', expected.length)
                 .then($errors => expect([...$errors].map(e => e.innerText.trim())).to.have.members(expected))
             cy.get(sel.form.title).should('be.visible')
-            cy.get('@createNote.all').should('have.length', 0)
+            cy.get(`@${alias}.all`).should('have.length', 0)
         })
+    }
+
+    // ─── Formulario de edición ────────────────────────────────────────────────
+    // Guardar una edición recarga la página completa (ver docs/discovery).
+
+    // "Edit" en la tarjeta con este título: el formulario abre con los datos
+    // actuales de la nota.
+    openEditForm({ title, description, category, completed = false }) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.card.root, title, T).find(sel.card.edit).click()
+            cy.contains(sel.texts.editFormTitle, T).should('be.visible')
+            cy.get(sel.form.category).should('have.value', category)
+            cy.get(sel.form.completed).should(completed ? 'be.checked' : 'not.be.checked')
+            cy.get(sel.form.title).should('have.value', title)
+            cy.get(sel.form.description).should('have.value', description)
+            cy.get(sel.form.submit).should('have.text', sel.texts.save)
+        })
+    }
+
+    // Reemplaza el valor de un campo del formulario (title | description);
+    // sin texto lo deja vacío.
+    replaceField(field, text = '') {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.form[field]).clear()
+            if (text) cy.get(sel.form[field]).type(text, { delay: 0 })
+            cy.get(sel.form[field]).should('have.value', text)
+        })
+    }
+
+    clickSave() {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.form.submit).should('have.text', sel.texts.save).click())
+    }
+
+    // Edición aceptada: el servidor guarda la nota, la página se recarga y el
+    // formulario ya no está. Devuelve la nota tal como la guardó el servidor.
+    verifySaved() {
+        return cy.fixture(FIXTURE).then(sel => {
+            cy.wait('@updateNote', T).then(({ response }) => {
+                expect(response.statusCode, 'nota editada').to.eq(200)
+                cy.wait('@notesList', T)
+                cy.get(sel.form.title).should('not.exist')
+                return cy.wrap(response.body.data)
+            })
+        })
+    }
+
+    // Texto de la fecha de la única tarjeta ("September 30, 2026 at 17:53:31").
+    cardUpdatedAt() {
+        return cy.fixture(FIXTURE).then(sel => cy.get(sel.card.updatedAt, T).invoke('text'))
+    }
+
+    verifyNoUpdateRequest() {
+        cy.get('@updateNote.all').should('have.length', 0)
     }
 
     // ─── Lista ────────────────────────────────────────────────────────────────
@@ -178,6 +233,13 @@ class NotesPage {
         cy.fixture(FIXTURE).then(sel => {
             cy.get(sel.card.root, T).should('have.length', 1)
             cy.get(sel.card.title).should('have.text', title)
+        })
+    }
+
+    verifyCardDescription(description) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.card.root, T).should('have.length', 1)
+            cy.get(sel.card.description).should('have.text', description)
         })
     }
 

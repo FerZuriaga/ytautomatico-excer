@@ -50,6 +50,8 @@
   "texts": {
     "formTitle": "Add new note",
     "create": "Create",
+    "editFormTitle": "Edit note",
+    "save": "Save",
     "noNotesAll": "You don't have any notes in all categories",
     "noNotesInCategory": "You don't have any notes in the {category} category",
     "progressAll": "You have {done}/{total} notes completed in the all categories",
