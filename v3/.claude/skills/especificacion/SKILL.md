@@ -67,8 +67,17 @@ chequeo es por palabras: no reemplaza leerlas. Caso real: SCRUM-659 citaba
   Hammer por carrito"), `fueraDeAlcance`, `defectosConocidos` (keys de
   Bugs relacionados).
 - **Sin contradicciones entre secciones:** una regla que queda fuera de
-  alcance no se lista en `reglasNegocio` (caso real: SCRUM-586 listaba
-  "15 por página" y a la vez dejaba la paginación fuera de alcance).
+  alcance no se lista en `reglasNegocio` ni dentro de un criterio (casos
+  reales: SCRUM-586 listaba "15 por página" y a la vez dejaba la
+  paginación fuera de alcance; SCRUM-717 decía "título de 4 a 100
+  caracteres" en el CA y dejaba "los largos máximos" fuera de alcance, sin
+  TC para el máximo). Antes de publicar, releer cada línea de
+  `fueraDeAlcance` contra los criterios: **cada límite que nombra un CA
+  (mínimo y máximo) tiene su TC**.
+- **Una justificación de `sinNegativo` tiene que ser verdad:** si el código
+  muestra un camino de error (ej. el servidor no pudo borrar), no es "no
+  hay nada que rechazar"; es "no se puede provocar desde la pantalla", y
+  va también en `fueraDeAlcance` (caso real: SCRUM-730 CA-02).
 
 ## Criterios de Aceptación
 
