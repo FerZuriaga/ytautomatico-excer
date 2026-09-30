@@ -335,8 +335,16 @@ agrega una contradictoria.
   completa de 89 specs llevaba más de 35 minutos sin terminar, casi todo en
   apps de legado rotas contra sitios reales que por decisión no se
   mantienen (D-09). El legado no se toca, así que su regresión no aporta.
-- **Dónde:** `lib/affected-specs.js` (opción `activeApps`) + test;
-  `run-and-report.js`; skill `ejecucion`.
+- **Además (mismo día):** dar de alta una app nueva no es un cambio
+  global. Si los archivos globales solo suman sus líneas de registro (URL
+  en el config, import de comandos, script de npm), la regresión corre solo
+  lo que esa app toca. Y **ninguna regresión pasa de 20 specs sin
+  confirmación del usuario**: por encima del tope el script no corre y hay
+  que re-ejecutar con `--max-specs N`. En total se perdieron ~50 minutos en
+  regresiones que nadie decidió.
+- **Dónde:** `lib/affected-specs.js` (`activeApps`, `registrationOnly`,
+  `isAppRegistrationDiff`) + test; `run-and-report.js` (tope
+  `MAX_REGRESSION_SPECS`, `--max-specs`); skill `ejecucion`.
 
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,

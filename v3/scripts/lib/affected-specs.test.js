@@ -7,7 +7,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { findAffectedSpecs, parseImports, parseCommandsDefined } = require('./affected-specs');
+const { findAffectedSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined } = require('./affected-specs');
 
 // Estructura real (resumida) de Practice Software Testing.
 const SOURCES = new Map([
@@ -76,6 +76,25 @@ test('regresion D-33: un cambio global corre solo las apps activas y deja afuera
   assert.equal(specs.length, 5);
   assert.deepEqual(skipped, ['cypress/e2e/disco/d_tc_busqueda.cy.js']);
   assert.equal(findAffectedSpecs(sources, ['cypress.config.js']).specs.length, 6);
+});
+
+test('regresion alta de RBP: registrar una app nueva en los archivos globales no es cambio global', () => {
+  const config = ['diff --git a/cypress.config.js b/cypress.config.js', '--- a/cypress.config.js', '+++ b/cypress.config.js', '@@ -18,0 +19 @@', '+    restfulBookerPlatformUrl: "https://automationintesting.online",'];
+  const commands = ['--- a/cypress/support/commands.js', '+++ b/cypress/support/commands.js', '@@ -21,0 +22 @@', "+import './commands/restful-booker-platform'"];
+  const pkg = ['--- a/package.json', '+++ b/package.json', '@@ -18,0 +19 @@', '+    "test:restful-booker-platform": "cypress run --spec \\"cypress/e2e/restful-booker-platform/**/*.cy.js\\"",'];
+  assert.equal(isAppRegistrationDiff('cypress.config.js', config), true);
+  assert.equal(isAppRegistrationDiff('cypress/support/commands.js', commands), true);
+  assert.equal(isAppRegistrationDiff('package.json', pkg), true);
+
+  // Cualquier otra cosa sigue siendo global: una opción nueva, un cambio o un borrado.
+  assert.equal(isAppRegistrationDiff('cypress.config.js', ['@@ -5 +5 @@', '-  defaultCommandTimeout: 4000,', '+  defaultCommandTimeout: 8000,']), false);
+  assert.equal(isAppRegistrationDiff('cypress.config.js', ['@@ -5,0 +6 @@', '+  retries: { runMode: 2 },']), false);
+  assert.equal(isAppRegistrationDiff('cypress/support/e2e.js', ["+import './commands/x'"]), false);
+
+  const { specs, global } = findAffectedSpecs(SOURCES, ['cypress.config.js', 'cypress/support/commands.js', 'cypress/support/commands/commitquality.js'],
+    { registrationOnly: ['cypress.config.js', 'cypress/support/commands.js'] });
+  assert.equal(global, false);
+  assert.deepEqual(specs, ['cypress/e2e/commitquality/cq_tc_login.cy.js']);
 });
 
 test('cambios fuera de cypress/ (scripts, docs) no afectan a ningun spec', () => {

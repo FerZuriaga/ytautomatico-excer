@@ -72,10 +72,10 @@ function callsCommand(source, name) {
  * ordenados, por spec el primer motivo encontrado (para mostrarlo en
  * consola) y, en un cambio global, los specs de legado que no se corren.
  */
-function findAffectedSpecs(sources, changed, { activeApps } = {}) {
+function findAffectedSpecs(sources, changed, { activeApps, registrationOnly = [] } = {}) {
   const changedFiles = [...new Set(changed.map(toPosix))];
   const allSpecs = [...sources.keys()].filter(isSpec).sort();
-  const globalChange = changedFiles.find(f => GLOBAL_FILES.has(f));
+  const globalChange = changedFiles.find(f => GLOBAL_FILES.has(f) && !registrationOnly.includes(f));
   if (globalChange) {
     const isActive = spec => !activeApps || activeApps.some(app => spec.startsWith(`cypress/e2e/${app}/`));
     const specs = allSpecs.filter(isActive);
@@ -126,4 +126,28 @@ function findAffectedSpecs(sources, changed, { activeApps } = {}) {
   return { specs, global: false, reasons: new Map(specs.map(s => [s, reasons.get(s)])) };
 }
 
-module.exports = { findAffectedSpecs, parseImports, parseCommandsDefined, isSpec, toPosix };
+// Dar de alta una app nueva toca los archivos globales solo para agregar su
+// línea de registro (D-30): la URL en el config, el import de sus comandos
+// y su script de npm. Eso no cambia nada para las demás apps, así que no es
+// un cambio global (2026-09-29: el alta de Restful Booker Platform disparó
+// una regresión de 89 specs por una línea en cada archivo).
+const REGISTRATION_LINE = {
+  'cypress.config.js': /^\s*\w+Url:\s*["'][^"']+["'],?\s*$/,
+  'cypress/support/commands.js': /^\s*import\s+['"]\.\/commands\/[\w-]+['"];?\s*$/,
+  'package.json': /^\s*"test:[\w-]+":\s*".*",?\s*$/
+};
+
+/**
+ * `diffLines`: salida de `git diff -U0` del archivo. true si el diff solo
+ * agrega líneas de registro de una app (sin borrar ni modificar nada).
+ */
+function isAppRegistrationDiff(file, diffLines) {
+  const pattern = REGISTRATION_LINE[toPosix(file)];
+  if (!pattern) return false;
+  const body = diffLines.filter(l => !l.startsWith('+++') && !l.startsWith('---'));
+  const added = body.filter(l => l.startsWith('+')).map(l => l.slice(1));
+  const removed = body.filter(l => l.startsWith('-'));
+  return added.length > 0 && removed.length === 0 && added.every(line => pattern.test(line));
+}
+
+module.exports = { findAffectedSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined, isSpec, toPosix, GLOBAL_FILES };
