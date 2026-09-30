@@ -100,6 +100,13 @@ JSON nuevo, no código.
 
 Del informe, revisar siempre:
 
+- **El resumen final de la corrida** ("⚠ Excepciones y errores de
+  consola"): agrupa las excepciones no capturadas y los errores de consola
+  de todos los escenarios. Una excepción de la app hace fallar cualquier
+  test de Cypress: decidir antes de escribir los specs si es un defecto
+  (bug-reporting) o un efecto del entorno a manejar en el comando de la
+  app (caso real: React #418 de Restful Booker, una iteración perdida).
+
 - **Método HTTP real** de cada request (no asumir GET porque `curl` GET
   funcione) y requests sin respuesta.
 - **Idioma** del documento vs. del navegador (¿la app traduce según el

@@ -94,7 +94,7 @@ Registrar una app nueva (su URL en el config, el import de sus comandos,
 su script de npm) no cuenta como cambio global. **Tope de 20 specs:** si
 la regresión es más grande, el script no corre; consultar al usuario con
 la cantidad y el tiempo estimado, y solo con su OK re-ejecutar con
-`--max-specs N`. Nunca esperar una corrida larga sin avisar. `--list` muestra los specs y el motivo sin correr
+`--max-specs N`. Nunca esperar una corrida larga sin avisar: toda corrida de más de ~5 minutos se avisa antes y se informa el avance (D-34). `--list` muestra los specs y el motivo sin correr
 nada. Correrla en segundo plano y, mientras tanto, preparar el cuerpo del
 PR, el discovery y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
 regresión completa (108 tests) llevó 10,5 min de espera.

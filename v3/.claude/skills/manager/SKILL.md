@@ -62,6 +62,21 @@ Skills de fase (v3): `discovery`, `especificacion`,
 de 2 PRs abiertos, informarlo y proponer mergear o cerrar antes de
 empezar; no arrancar un lote apilado sin que el usuario lo decida.
 
+**Al empezar una sesión de trabajo** (D-34): `node v3/scripts/run-and-report.js
+--health` (un spec por app activa, ~3 min, sin reporte). Si algo falla, se
+diagnostica antes de arrancar trabajo nuevo: una rotura ajena no se
+mezcla con un lote (caso real: ATS roto apareció en medio del lote de
+Restful Booker).
+
+**Pausa de herramientas nuevas** (D-34): no se agregan validadores,
+heurísticas ni opciones nuevas a los scripts salvo que el usuario lo pida;
+se corrigen bugs de lo existente. Un error de proceso nuevo se anota y se
+decide con el usuario si amerita código.
+
+**Corridas largas** (D-34): cualquier corrida o espera de más de ~5
+minutos se avisa antes con la cantidad de specs y el tiempo estimado, y
+se informa el avance si se extiende. Nunca esperar en silencio.
+
 **Proyecto limpio:** cada prevención acordada con el usuario se lleva a
 código cuando se puede (validador, script, chequeo en un CLI existente) y
 no solo a una regla escrita; si no se puede automatizar, se escribe en la

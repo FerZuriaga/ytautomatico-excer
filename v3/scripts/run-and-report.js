@@ -81,6 +81,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--test-cycle') args.cycles = splitList(argv[++i]);
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
     else if (argv[i] === '--from-results') args.fromResults = argv[++i];
+    else if (argv[i] === '--health') args.health = true;
     else if (argv[i] === '--timing-report') args.timingReport = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : null;
   }
   return args;
@@ -211,10 +212,21 @@ function printTimingReport(branch) {
 }
 
 async function main() {
-  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport, maxSpecs } = parseArgs(process.argv.slice(2));
+  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport, maxSpecs, health } = parseArgs(process.argv.slice(2));
   if (timingReport !== undefined) {
     printTimingReport(timingReport);
     return;
+  }
+  if (health) {
+    const healthList = affectedSpecs.healthSpecs(readCypressSources(), architecture.APPS.active);
+    console.log(`Chequeo de salud: un spec por app activa (${healthList.length}), sin reporte a Xray.`);
+    healthList.forEach(spec => console.log(`  - ${spec}`));
+    if (list) return;
+    const resultsPath = path.join(os.tmpdir(), `cypress-health-${Date.now()}.json`);
+    const status = runCypress(healthList, resultsPath);
+    printSummary(testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath)));
+    console.log(`\nChequeo de salud: ${status === 0 ? 'todas las apps activas OK' : 'hay fallas: diagnosticar antes de arrancar trabajo nuevo (ver capturas)'}.`);
+    process.exit(status === 0 ? 0 : 1);
   }
   const specs = affected ? [...new Set([...specArgs, ...resolveAffected(base)])] : specArgs;
   if (affected && list) return;

@@ -346,6 +346,29 @@ agrega una contradictoria.
   `isAppRegistrationDiff`) + test; `run-and-report.js` (tope
   `MAX_REGRESSION_SPECS`, `--max-specs`); skill `ejecucion`.
 
+### D-34 · Consolidar: salud al empezar, pausa de herramientas y corridas avisadas
+- **Decisión:**
+  - Cada sesión arranca con `run-and-report.js --health` (un spec por app
+    activa, el de menos tests; sin reporte). Si algo falla, se diagnostica
+    antes de trabajo nuevo.
+  - Pausa de herramientas nuevas: no se agregan validadores, heurísticas ni
+    opciones a los scripts salvo pedido del usuario; se corrigen bugs de lo
+    existente.
+  - Toda corrida o espera de más de ~5 minutos se avisa antes y se informa
+    el avance.
+  - `explore-page.js` imprime al final un resumen de excepciones y errores
+    de consola de toda la corrida (`summarizeProblems`), para que no quede
+    enterrado en los informes.
+- **Por qué:** revisión del usuario (2026-09-30) tras dos días de lotes. Las
+  demoras venían de descuidos del asistente (excepciones sin revisar,
+  esperas silenciosas) y de roturas ajenas descubiertas a mitad de un lote;
+  y las herramientas crecían a un ritmo de una por error, sumando falsos
+  positivos.
+- **Dónde:** `lib/affected-specs.js` (`healthSpecs`) y
+  `lib/explore-scenarios.js` (`summarizeProblems`) + tests;
+  `run-and-report.js --health`; `explore-page.js`; skills `manager`,
+  `discovery` y `ejecucion`.
+
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
   selectores relevados (nunca adivinados) en fixtures JSON. Al extraer un
