@@ -62,11 +62,13 @@ Skills de fase (v3): `discovery`, `especificacion`,
 de 2 PRs abiertos, informarlo y proponer mergear o cerrar antes de
 empezar; no arrancar un lote apilado sin que el usuario lo decida.
 
-**Al empezar una sesión de trabajo** (D-34): `node v3/scripts/run-and-report.js
---health` (un spec por app activa, ~3 min, sin reporte). Si algo falla, se
-diagnostica antes de arrancar trabajo nuevo: una rotura ajena no se
-mezcla con un lote (caso real: ATS roto apareció en medio del lote de
-Restful Booker).
+**Chequeo de salud** (D-35): `node v3/scripts/run-and-report.js --health`
+(un spec por app activa, ~3 min) NO se corre al empezar cada sesión. Solo
+cuando el usuario lo pide o cuando una falla del lote parece ajena a lo
+que cambió la rama, para separar una rotura de otra app del lote.
+
+**Regresión** (D-35): según lo que la rama modifica, no por reflejo; nunca
+frena el PR (ver skill `ejecucion`).
 
 **Pausa de herramientas nuevas** (D-34): no se agregan validadores,
 heurísticas ni opciones nuevas a los scripts salvo que el usuario lo pida;

@@ -368,6 +368,28 @@ agrega una contradictoria.
   `lib/explore-scenarios.js` (`summarizeProblems`) + tests;
   `run-and-report.js --health`; `explore-page.js`; skills `manager`,
   `discovery` y `ejecucion`.
+- **Cambiado por D-35:** el chequeo de salud ya no se corre al empezar cada
+  sesión.
+
+### D-35 · Regresión solo si se modifica algo existente, y sin frenar el PR
+- **Decisión:**
+  - Si la rama solo **agrega** (spec, métodos, textos o selectores nuevos),
+    no hay regresión: alcanza con la corrida del lote.
+  - Si **modifica** algo existente (método, selector o texto ya usado,
+    comando custom), corre solo los specs que usan eso.
+  - Si es un **cambio global**, `--affected` como en D-33.
+  - La regresión no frena el PR: corre en segundo plano después de abrirlo
+    y su resultado se agrega al PR; el merge espera a que termine en verde.
+  - El chequeo de salud (`--health`) deja de correrse al empezar cada
+    sesión: solo a pedido o si una falla del lote parece ajena a la rama.
+- **Por qué:** revisión del usuario (2026-09-30) tras el lote SCRUM-717: 45
+  min de reloj, con 12,5 min esperando una regresión de 5 specs cuando la
+  rama solo agregaba métodos (alcanzaba con 1 spec) y 3 min de chequeo de
+  salud por sesión. La regresión por lote se había vuelto un reflejo (desde
+  el 2026-09-27) sin que nadie lo decidiera. En un equipo real quien
+  automatiza corre sus tests y no espera la regresión para abrir el PR. Se
+  resuelve restando pasos, sin herramientas nuevas.
+- **Dónde:** skills `ejecucion` (tabla de regresión) y `manager`.
 
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
