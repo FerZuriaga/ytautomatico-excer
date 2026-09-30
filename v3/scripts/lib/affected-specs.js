@@ -150,4 +150,19 @@ function isAppRegistrationDiff(file, diffLines) {
   return added.length > 0 && removed.length === 0 && added.every(line => pattern.test(line));
 }
 
-module.exports = { findAffectedSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined, isSpec, toPosix, GLOBAL_FILES };
+/**
+ * Chequeo de salud al empezar una sesión (run-and-report.js --health): un
+ * spec por app activa, el de menos tests que corren (it sin skip), para
+ * saber en pocos minutos si alguna app ya está rota antes de mezclarlo con
+ * trabajo nuevo (2026-09-29: ATS estaba roto y apareció en medio de otro
+ * lote). Empate: orden alfabético.
+ */
+function healthSpecs(sources, activeApps) {
+  const runnable = source => (String(source).match(/\bit\s*\(/g) || []).length;
+  return activeApps.map(app => [...sources.keys()]
+    .filter(file => isSpec(file) && file.startsWith(`cypress/e2e/${app}/`) && runnable(sources.get(file)) > 0)
+    .sort((a, b) => runnable(sources.get(a)) - runnable(sources.get(b)) || a.localeCompare(b))[0])
+    .filter(Boolean);
+}
+
+module.exports = { findAffectedSpecs, healthSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined, isSpec, toPosix, GLOBAL_FILES };

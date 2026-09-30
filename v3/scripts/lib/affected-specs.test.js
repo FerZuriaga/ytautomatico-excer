@@ -7,7 +7,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { findAffectedSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined } = require('./affected-specs');
+const { findAffectedSpecs, healthSpecs, isAppRegistrationDiff, parseImports, parseCommandsDefined } = require('./affected-specs');
 
 // Estructura real (resumida) de Practice Software Testing.
 const SOURCES = new Map([
@@ -106,4 +106,15 @@ test('cambios fuera de cypress/ (scripts, docs) no afectan a ningun spec', () =>
 test('lectura de imports y comandos', () => {
   assert.deepEqual(parseImports("import A from '../a'\nimport './b'\nconst c = require(\"./c\")\nimport x from 'cypress'"), ['../a', './b', './c']);
   assert.deepEqual(parseCommandsDefined("Cypress.Commands.add('uno', () => {})\nCypress.Commands.overwrite(\"visit\", fn)"), ['uno', 'visit']);
+});
+
+test('healthSpecs: un spec por app activa, el de menos tests que corren (sin contar it.skip)', () => {
+  const sources = new Map([
+    ['cypress/e2e/app-a/a_largo.cy.js', "it('1')\nit('2')\nit('3')"],
+    ['cypress/e2e/app-a/a_corto.cy.js', "it('1')\nit.skip('2')\nit.skip('3')"],
+    ['cypress/e2e/app-b/b_todo_skip.cy.js', "it.skip('1')"],
+    ['cypress/e2e/app-b/b_uno.cy.js', "it('1')\nit('2')"],
+    ['cypress/e2e/legado/l.cy.js', "it('1')"]
+  ]);
+  assert.deepEqual(healthSpecs(sources, ['app-a', 'app-b', 'app-c']), ['cypress/e2e/app-a/a_corto.cy.js', 'cypress/e2e/app-b/b_uno.cy.js']);
 });

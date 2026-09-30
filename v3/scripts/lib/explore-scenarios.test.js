@@ -7,7 +7,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { checkActions, parseScenarios, resolveScenario } = require('./explore-scenarios');
+const { checkActions, parseScenarios, resolveScenario, summarizeProblems } = require('./explore-scenarios');
 
 const FILE = {
   app: 'practicesoftwaretesting',
@@ -77,4 +77,19 @@ test('resolveScenario completa la URL, las plantillas y pone la sesión de las r
     waitFor: null
   });
   assert.throws(() => resolveScenario(ajena, FILE.baseUrl), /Variable sin definir: \{\{otro.invoiceId\}\}/);
+});
+
+test('summarizeProblems: agrupa las excepciones y errores de consola de toda la corrida (regresion hidratacion RBP)', () => {
+  const hydration = 'The following error originated from your application code, not from Cypress.\n\n  > Minified React error #418; visit https://react.dev/errors/418\n\nWhen Cypress detects uncaught errors...';
+  const crash = 'The following error originated from your application code, not from Cypress.\n\n  > Cannot read properties of undefined (reading \'length\')\n\nWhen Cypress...';
+  const problems = summarizeProblems([
+    { scenario: 'home', uncaughtExceptions: [hydration], consoleErrors: [] },
+    { scenario: 'res-ok', uncaughtExceptions: [hydration, hydration], consoleErrors: [] },
+    { scenario: 'res-ocupada', uncaughtExceptions: [hydration, crash], consoleErrors: ['Error booking room'] }
+  ]);
+  assert.equal(problems.length, 3);
+  assert.deepEqual(problems[0], { kind: 'excepción no capturada', message: 'Minified React error #418; visit https://react.dev/errors/418', scenarios: ['home', 'res-ok', 'res-ocupada'] });
+  assert.ok(problems.some(p => p.message === "Cannot read properties of undefined (reading 'length')" && p.scenarios.join() === 'res-ocupada'));
+  assert.ok(problems.some(p => p.kind === 'error de consola' && p.message === 'Error booking room'));
+  assert.deepEqual(summarizeProblems([{ scenario: 'limpio', uncaughtExceptions: [], consoleErrors: [] }]), []);
 });

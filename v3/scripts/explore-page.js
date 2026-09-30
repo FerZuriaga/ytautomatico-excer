@@ -89,7 +89,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { parseScenarios, checkActions } = require('./lib/explore-scenarios');
+const { parseScenarios, checkActions, summarizeProblems } = require('./lib/explore-scenarios');
 const { loadRecipes, validateRecipes, normalizeInvocations } = require('./lib/data-recipe');
 const bundleScan = require('./lib/bundle-scan');
 
@@ -557,6 +557,17 @@ async function main() {
     } catch (e) {
       console.warn(`\nNo se pudo leer el codigo de la app (${e.message}); la exploracion sigue siendo valida.`);
     }
+  }
+
+  // Al final, donde se lee primero: excepciones y errores de consola de toda
+  // la corrida. Revisarlos antes de escribir los specs (una excepción de la
+  // app hace fallar cualquier test de Cypress).
+  const problems = summarizeProblems(collected);
+  if (problems.length) {
+    console.log(`\n⚠ Excepciones y errores de consola (${problems.length} distintos) -- revisar antes de escribir los specs:`);
+    problems.forEach(p => console.log(`  [${p.kind}] ${p.message}\n    en ${p.scenarios.length} escenario(s): ${p.scenarios.slice(0, 6).join(', ')}${p.scenarios.length > 6 ? ', ...' : ''}`));
+  } else {
+    console.log('\nSin excepciones ni errores de consola en la corrida.');
   }
 
   const seconds = Math.round((Date.now() - started) / 1000);
