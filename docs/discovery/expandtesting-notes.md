@@ -44,7 +44,7 @@ categorías y recarga). Selectores en
   - título obligatorio (`Title is required`), de 4 a 100 caracteres
     (`Title should be between 4 and 100 characters`); 4 y 100 se aceptan;
   - descripción obligatoria (`Description is required`), de 4 a 1000
-    caracteres (`Description should be between 4 and 1000 characters`);
+    caracteres (`Description should be between 4 and 1000 characters`); 4 y 1000 se aceptan (verificado 2026-09-30);
   - categoría obligatoria y válida: desde la UI no se puede elegir otra (la
     API rechaza una inválida con 400).
   - Los errores se muestran bajo cada campo (`.invalid-feedback`) al

@@ -1,6 +1,6 @@
 // Modulo: Notas - Crear una nota
 // Sitio bajo prueba: https://practice.expandtesting.com/notes/app (Expand Testing - Notes App)
-// Ticket Jira: SCRUM-621 (CA-01..CA-04, Test Cycle SCRUM-622)
+// Ticket Jira: SCRUM-621 (CA-01..CA-05, Test Cycle SCRUM-622)
 //
 // Cada test registra su propio usuario por API (cada usuario ve solo sus
 // notas) y entra a "My Notes" con la sesion iniciada y sin notas.
@@ -11,6 +11,8 @@ const notes = new NotesPage()
 
 const MATERIALES = { category: 'Personal', title: 'Comprar materiales', description: 'Pintura, rodillos y cinta de enmascarar' }
 const INFORME = { title: 'Informe mensual', description: 'Enviar el informe de ventas al equipo' }
+const TITLE_100 = 'x'.repeat(100)
+const DESCRIPTION_1000 = 'd'.repeat(1000)
 const TITLE_101 = 'Lista de tareas pendientes para la reforma de la cocina y el bano principal de la casa de verano ya.s'
 
 describe('Notas: crear una nota [SCRUM-621]', () => {
@@ -68,19 +70,20 @@ describe('Notas: crear una nota [SCRUM-621]', () => {
         notes.verifyRejected(['titleLength'])
     })
 
-    it('[CA-02][TC-02.4][SCRUM-629] No debe crear una nota con una descripcion de 3 caracteres', () => {
-        notes.openForm()
-        notes.fillForm({ title: MATERIALES.title, description: 'Sal' })
-        notes.clickCreate()
-        notes.verifyRejected(['descriptionLength'])
-    })
-
     it('[CA-02][TC-02.5][SCRUM-630] Debe aceptar un titulo de exactamente 4 caracteres', () => {
         notes.openForm()
         notes.fillForm({ title: 'Plan', description: MATERIALES.description })
         notes.clickCreate()
         notes.verifyCreated()
         notes.verifyCardTitle('Plan')
+    })
+
+    it('[CA-02][TC-02.6][SCRUM-741] Debe aceptar un titulo de exactamente 100 caracteres', () => {
+        notes.openForm()
+        notes.fillForm({ title: TITLE_100, description: MATERIALES.description })
+        notes.clickCreate()
+        notes.verifyCreated()
+        notes.verifyCardTitle(TITLE_100)
     })
 
     it('[CA-03][TC-03.1][SCRUM-631] La nota de Work debe aparecer solo en la categoria Work', () => {
@@ -132,5 +135,37 @@ describe('Notas: crear una nota [SCRUM-621]', () => {
         notes.verifyCardTitle(INFORME.title)
         notes.verifyCompletedSwitch(false)
         notes.verifyProgress('progressAll', { done: 0, total: 1 })
+    })
+
+    it('[CA-05][TC-05.1][SCRUM-629] No debe crear una nota con una descripcion de 3 caracteres', () => {
+        notes.openForm()
+        notes.fillForm({ title: MATERIALES.title, description: 'Sal' })
+        notes.clickCreate()
+        notes.verifyRejected(['descriptionLength'])
+    })
+
+    it('[CA-05][TC-05.2][SCRUM-742] No debe crear una nota con una descripcion de 1001 caracteres', () => {
+        notes.openForm()
+        notes.fillForm({ title: MATERIALES.title, description: 'd'.repeat(1001) })
+        notes.clickCreate()
+        notes.verifyRejected(['descriptionLength'])
+    })
+
+    it('[CA-05][TC-05.3][SCRUM-743] Debe aceptar una descripcion de exactamente 4 caracteres', () => {
+        notes.openForm()
+        notes.fillForm({ title: MATERIALES.title, description: 'Pan!' })
+        notes.clickCreate()
+        notes.verifyCreated()
+        notes.verifyCardTitle(MATERIALES.title)
+        notes.verifyCardDescription('Pan!')
+    })
+
+    it('[CA-05][TC-05.4][SCRUM-744] Debe aceptar una descripcion de exactamente 1000 caracteres', () => {
+        notes.openForm()
+        notes.fillForm({ title: MATERIALES.title, description: DESCRIPTION_1000 })
+        notes.clickCreate()
+        notes.verifyCreated()
+        notes.verifyCardTitle(MATERIALES.title)
+        notes.verifyCardDescription(DESCRIPTION_1000)
     })
 })
