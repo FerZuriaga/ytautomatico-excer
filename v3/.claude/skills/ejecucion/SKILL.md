@@ -75,29 +75,28 @@ de Git). Al cerrar el lote, `node v3/scripts/run-and-report.js
 va al Informe de Cierre y a la memoria del proyecto, para comparar lotes
 con datos.
 
-## Regresión después del lote
+## Regresión después del lote (D-35)
 
-Solo de lo afectado, no de toda la app:
+Se decide por **qué tocó la rama fuera de los archivos nuevos del lote**,
+no por qué archivos importan lo modificado:
 
-```
-node v3/scripts/run-and-report.js --affected
-```
+| La rama… | Regresión |
+|---|---|
+| solo **agrega** (spec nuevo, métodos nuevos de Page Object, textos o selectores nuevos en el fixture, sección del discovery) | **Ninguna**: alcanza con la corrida del lote. |
+| **modifica** algo existente (cuerpo o firma de un método, un selector o texto del fixture ya usado, un comando custom) | Solo los specs que **usan eso** (buscarlos con Grep por el nombre del método o la clave), en una corrida: `run-and-report.js --spec <esos>`. |
+| hace un **cambio global** (`cypress.config.js`, `support/e2e.js`, `support/commands.js`, `package.json`, salvo registrar una app nueva) | `run-and-report.js --affected` (apps activas, tope de 20 specs; D-33). |
 
-Calcula los specs afectados por la rama respecto de `main` (commits,
-cambios sin commitear y archivos nuevos): los que importan en cadena un
-page object modificado, usan un fixture modificado o llaman a un comando
-custom de un archivo de soporte modificado. Ante un cambio global
-(`cypress.config.js`, `support/e2e.js`, `support/commands.js`,
-`package.json`) corre la suite de las apps activas (`APPS.active`), no el
-legado (D-33: la suite completa con legado pasaba los 35 minutos).
-Registrar una app nueva (su URL en el config, el import de sus comandos,
-su script de npm) no cuenta como cambio global. **Tope de 20 specs:** si
-la regresión es más grande, el script no corre; consultar al usuario con
-la cantidad y el tiempo estimado, y solo con su OK re-ejecutar con
-`--max-specs N`. Nunca esperar una corrida larga sin avisar: toda corrida de más de ~5 minutos se avisa antes y se informa el avance (D-34). `--list` muestra los specs y el motivo sin correr
-nada. Correrla en segundo plano y, mientras tanto, preparar el cuerpo del
-PR, el discovery y la memoria: no esperar sin hacer nada. Caso real: en Checkout la
-regresión completa (108 tests) llevó 10,5 min de espera.
+- **No frena el PR:** apenas el lote pasa al 100% se hacen commit, push y
+  PR; la regresión (si corresponde) corre en segundo plano y su resultado
+  se agrega al PR con `create-pull-request.js --action update`. El merge
+  espera a que termine en verde.
+- Toda corrida de más de ~5 minutos se avisa antes con cantidad de specs y
+  tiempo estimado (D-34).
+- Caso real (SCRUM-717, 2026-09-30): la rama solo agregaba métodos y
+  cambiaba un parámetro opcional de `verifyRejected` (usado solo por el
+  spec de crear nota); `--affected` corrió los 5 specs de Notes (52 tests,
+  12,5 min, esperando para abrir el PR) cuando alcanzaba con 1 spec en
+  segundo plano.
 
 Los cortes de red contra Jira/Xray (`socket hang up`, 5xx) se reintentan
 solos en las lecturas y en el cambio de estado de las ejecuciones
