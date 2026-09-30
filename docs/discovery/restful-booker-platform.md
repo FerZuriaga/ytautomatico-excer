@@ -59,3 +59,32 @@ Explorado con 14 escenarios en cuatro tandas. Selectores en
 - Una vez, entrar directo a `/admin/report` recargando la página dejó el
   panel en "Loading..." con "Error validating authentication: Failed to
   fetch"; no se repitió en `/admin/message`. Sin reportar.
+
+## Reservas (2026-09-29)
+
+Explorado con 16 escenarios en dos tandas (receta `reserva` para dejar
+fechas ocupadas). Selectores en
+`cypress/fixtures/selectors/restful-booker-platform/reservas.json`.
+
+- **Pantalla de la habitación:** `/reservation/<id>?checkin=YYYY-MM-DD&checkout=YYYY-MM-DD`
+  (a la que lleva "Book now" desde la home con las fechas elegidas). Pide
+  la disponibilidad `GET /api/report/room/<id>` ya montada: esperarla antes
+  de hacer clic (misma re-hidratación de Next.js que el panel).
+- **"Reserve Now"** abre el formulario (`.room-firstname`, `.room-lastname`,
+  `.room-email`, `.room-phone`, sin atributos de test); un segundo
+  "Reserve Now" hace `POST /api/booking` (201). "Cancel" cierra sin enviar.
+- **Resumen de precio:** `£<precio> x <n> nights`, "Cleaning fee" £25,
+  "Service fee" £15, "Total" = precio × noches + 40.
+- **Confirmación:** "Booking Confirmed" + "Your booking has been confirmed
+  for the following dates:" + `<checkin> - <checkout>`.
+- **Validaciones del servidor (400, `errors`):** nombre 3–18, apellido 3–30,
+  teléfono 11–21, email válido; vacío → "Firstname/Lastname should not be
+  blank" y "must not be empty". Los avisos de largo no nombran el campo
+  (Bug SCRUM-716).
+- **Fechas ocupadas o check-out ≤ check-in → 409** con `error` (no
+  `errors`): la pantalla lee `errors.length` y la página se rompe ("This
+  page couldn’t load", Bug SCRUM-714). **Fechas pasadas se confirman**
+  (Bug SCRUM-715).
+- **Datos en los tests:** fechas futuras al azar y distintas por test
+  (`randomFutureStay`): una corrida anterior deja ocupadas las mismas
+  fechas hasta el próximo reinicio de la demo.

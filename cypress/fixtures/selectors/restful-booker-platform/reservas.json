@@ -1,0 +1,39 @@
+{
+  "api": {
+    "host": "automationintesting.online",
+    "bookingPath": "/api/booking",
+    "roomReportPath": "/api/report/room/"
+  },
+  "paths": {
+    "room": "/reservation/{roomId}?checkin={checkin}&checkout={checkout}"
+  },
+  "room": {
+    "id": 1,
+    "price": 100
+  },
+  "fees": {
+    "cleaning": 25,
+    "service": 15
+  },
+  "form": {
+    "firstname": ".room-firstname",
+    "lastname": ".room-lastname",
+    "email": ".room-email",
+    "phone": ".room-phone",
+    "button": "button",
+    "errors": ".alert-danger li"
+  },
+  "texts": {
+    "bookThisRoom": "Book This Room",
+    "perNight": "per night",
+    "reserveNow": "Reserve Now",
+    "cancel": "Cancel",
+    "priceSummary": "Price Summary",
+    "nights": "£{price} x {nights} nights",
+    "cleaningFee": "Cleaning fee",
+    "serviceFee": "Service fee",
+    "total": "Total",
+    "confirmed": "Booking Confirmed",
+    "confirmedDates": "Your booking has been confirmed for the following dates:"
+  }
+}
