@@ -31,5 +31,12 @@ Cypress.Commands.add("registerATSTestAccount", () => {
     registerPage.submit()
     registerPage.verifyAccountCreated()
 
+    // El sitio deja la sesión iniciada después del registro, y las páginas de
+    // login, registro y recuperación redirigen a "My Account" con sesión. El
+    // comando solo crea credenciales: sale sin sesión. Lo llama un before(),
+    // que corre dentro del primer test después de la limpieza de Cypress
+    // (2026-09-29: fallaba el primer test de 4 specs).
+    cy.clearCookies()
+
     return cy.wrap({ loginName, password, email, lastName: 'Tester' })
 })
