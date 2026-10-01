@@ -146,23 +146,22 @@ escenarios que entran o salen), se consulta ANTES de publicar.
 - `folder`: la misma ruta para todos los lotes de la app.
 - Cada negativo lleva `evidencia: { reporte, observado }` (D-13).
 
-### Revisión de contenido (antes del `--dry-run`, ~2 minutos)
+### Sentido de los CA: se cuida al escribir, no en una revisión aparte
 
-Los validadores controlan la forma; esto controla el sentido. Con la HU
-delante, cinco respuestas cortas, sin redactar un informe:
+Los validadores controlan la forma, no el sentido. El sentido no lleva un
+paso extra: sale del orden en que se escribe cada CA del payload.
 
-1. **¿Cada límite que nombra un CA (mínimo y máximo) tiene su TC?**
-2. **¿Alguna línea de `fueraDeAlcance` contradice un CA o una
-   `reglasNegocio`?** (lo que queda fuera no aparece en ningún criterio)
-3. **¿Cada `sinNegativo` es verdad?** Si existe un camino de error que no
-   se puede provocar desde la pantalla, el motivo es ese (y va también a
-   `fueraDeAlcance`), no "no hay nada que rechazar".
-4. **¿Cada TC está en la regla que se rompe si falla?** No en una vecina.
-5. **¿Algo relevado contradice el "Para"?** Entonces es posible defecto,
-   no CA.
-
-Si una respuesta es "no", se corrige y se sigue. Casos que originaron las
-preguntas: SCRUM-717 (1, 2), SCRUM-730 (3), SCRUM-593 (4), SCRUM-338 (5).
+1. **Al escribir un CA, sus TC van en el mismo momento:** cada límite
+   que nombra (mínimo y máximo) recibe su TC ahí mismo (SCRUM-717).
+2. **Cada TC se escribe debajo de la regla que se rompe si falla**, no de
+   una vecina (SCRUM-593).
+3. **`sinNegativo` se escribe con el motivo real:** si hay un camino de
+   error que no se puede provocar desde la pantalla, se dice eso y va
+   también a `fueraDeAlcance` (SCRUM-730).
+4. **`fueraDeAlcance` se escribe al final**, con lo que ningún CA
+   nombra; si algo choca con un CA, sale de una de las dos (SCRUM-717).
+5. **Lo relevado que contradice el "Para"** va directo a posibles
+   defectos, nunca a un CA (SCRUM-338).
 
 ---
 

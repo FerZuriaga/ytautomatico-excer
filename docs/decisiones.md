@@ -136,8 +136,8 @@ agrega una contradictoria.
 
 ### D-36 · Un solo documento de lote en vez de 10 skills
 - **Decisión:** el asistente trabaja con un solo documento, `docs/lote.md`
-  (pasos, comandos exactos y 5 preguntas de revisión de contenido antes de
-  publicar). Las 10 skills de la v3 (3 roles + 7 de fase) se archivaron en
+  (pasos, comandos exactos y el orden de escritura de los CA que evita
+  contradicciones). Las 10 skills de la v3 (3 roles + 7 de fase) se archivaron en
   `v3/.claude/skills-archive/`. Cada regla vive en un solo lugar: el cómo
   en `docs/lote.md`, el porqué acá, el control en los validadores. Una
   regla nueva se agrega en uno de esos tres lugares, nunca en dos.
@@ -148,8 +148,11 @@ agrega una contradictoria.
   de skills pero no sacaron las copias. Además los validadores controlan la
   forma y no el sentido: los errores de CA de SCRUM-717 (máximos fuera de
   alcance), SCRUM-730 (`sinNegativo` falso) y SCRUM-621 (CA con dos reglas)
-  pasaron todos los controles y los encontró el usuario. De ahí la revisión
-  de contenido de ~2 minutos (5 preguntas), sin herramientas nuevas.
+  pasaron todos los controles y los encontró el usuario. Se resuelve en el
+  orden de escritura (cada CA con sus TC de límite en el mismo momento,
+  `fueraDeAlcance` al final, `sinNegativo` con el motivo real), sin una
+  revisión aparte ni herramientas nuevas: el usuario no quiso sumar
+  tiempo al lote (2026-10-01).
 - **Dónde:** `docs/lote.md`, `CLAUDE.md` §2.
 
 ### D-09 · Solo 2 apps activas; el resto es legado intocable
