@@ -24,6 +24,31 @@
       ],
       "browser": { "localStorage": { "token": "{{token}}" } }
     },
+    "cuenta": {
+      "description": "Usuario nuevo registrado SIN sesion (para probar el login). Mismas variables que usuario.",
+      "vars": {
+        "name": "Qa Notes",
+        "email": "qa.notes.{{unique}}@example.com",
+        "password": "Qa!Notes2026"
+      },
+      "steps": [
+        {
+          "method": "POST", "path": "/users/register", "expect": 201,
+          "body": { "name": "{{name}}", "email": "{{email}}", "password": "{{password}}" },
+          "save": { "userId": "data.id" }
+        }
+      ]
+    },
+    "cerrar-sesion": {
+      "description": "Cierra en el servidor la sesion de la receta usuario (la misma llamada que el boton Logout). El token queda en localStorage: sirve para probar que una sesion cerrada no se puede reusar.",
+      "requires": ["token"],
+      "steps": [
+        {
+          "method": "DELETE", "path": "/users/logout", "expect": 200,
+          "headers": { "x-auth-token": "{{token}}" }
+        }
+      ]
+    },
     "nota": {
       "description": "Nota del usuario de la receta usuario. category: Home | Work | Personal.",
       "requires": ["token"],
