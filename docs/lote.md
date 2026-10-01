@@ -149,10 +149,13 @@ escenarios que entran o salen), se consulta ANTES de publicar.
 ### Sentido de los CA: se cuida al escribir, no en una revisión aparte
 
 Los validadores controlan la forma, no el sentido. El sentido no lleva un
-paso extra: sale del orden en que se escribe cada CA del payload.
+paso extra: sale del orden en que se escribe cada CA del payload. No
+cambia cómo se definen los CA (arriba): solo evita contradicciones.
 
-1. **Al escribir un CA, sus TC van en el mismo momento:** cada límite
-   que nombra (mínimo y máximo) recibe su TC ahí mismo (SCRUM-717).
+1. **Si un CA nombra un límite** (ej. "título de 4 a 100 caracteres"),
+   el TC del mínimo y el del máximo se escriben en el mismo momento
+   (SCRUM-717). La mayoría de los CA no nombra límites: este punto no
+   aplica y no se inventan.
 2. **Cada TC se escribe debajo de la regla que se rompe si falla**, no de
    una vecina (SCRUM-593).
 3. **`sinNegativo` se escribe con el motivo real:** si hay un camino de
