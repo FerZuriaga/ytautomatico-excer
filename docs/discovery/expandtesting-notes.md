@@ -191,3 +191,29 @@ nota completada dentro de Work y desde la vista de detalle).
 - **Cancel y la X** cierran el diálogo sin request.
 - **Desde la vista de detalle** (`GET /notes/<id>`), confirmar vuelve a
   "My Notes" (nuevo `GET /notes`).
+
+## Iniciar y cerrar sesión (2026-10-01)
+
+Explorado con 22 escenarios en 4 corridas cortas. Recetas nuevas:
+`cuenta` (registrada sin sesión) y `cerrar-sesion` (cierra en el servidor
+la sesión de `usuario`). Selectores en
+`cypress/fixtures/selectors/expandtesting-notes/sesion.json`.
+
+- **Login** (`/notes/app/login`): `login-email`, `login-password`,
+  `login-submit`. El front valida antes de enviar (sin request), con el
+  aviso `.invalid-feedback` bajo cada campo: email obligatorio y con
+  formato; contraseña obligatoria de 6 a 30 caracteres (6 y 30 se envían).
+- **Credenciales incorrectas:** `POST /users/login` 401 y el toast
+  `alert-message` muestra el `message` del servidor; es el mismo para una
+  contraseña equivocada y un email no registrado. El email no distingue
+  mayúsculas (verificado por API).
+- **Login correcto:** guarda `localStorage["token"]` y va a `/notes/app`.
+- **Logout** (`logout`, en el menú de todas las pantallas):
+  `DELETE /users/logout`, borra el token y muestra la bienvenida
+  (`open-login-view`) sin recargar. **El servidor anula el token:**
+  reusarlo lleva al login con `Your session has expired. Please login
+  again to continue.` (lo mismo con cualquier token inválido).
+- **Sin token**, `/notes/app` muestra la bienvenida y no pide notas.
+- En el test, un alias de `GET /notes` ya tiene la respuesta 200 de la
+  carga anterior: la sesión vencida se afirma por pantalla, no con
+  `cy.wait`.

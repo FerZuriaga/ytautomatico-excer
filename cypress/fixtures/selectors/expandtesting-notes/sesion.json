@@ -1,0 +1,55 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "loginPath": "/notes/api/users/login",
+    "logoutPath": "/notes/api/users/logout",
+    "profilePath": "/notes/api/users/profile",
+    "notesPath": "/notes/api/notes"
+  },
+  "paths": {
+    "login": "/notes/app/login",
+    "notes": "/notes/app",
+    "profile": "/notes/app/profile"
+  },
+  "login": {
+    "email": "[data-testid=\"login-email\"]",
+    "password": "[data-testid=\"login-password\"]",
+    "submit": "[data-testid=\"login-submit\"]",
+    "error": ".invalid-feedback",
+    "alert": "[data-testid=\"alert-message\"]"
+  },
+  "menu": {
+    "profile": "[data-testid=\"profile\"]",
+    "logout": "[data-testid=\"logout\"]"
+  },
+  "notes": {
+    "addNote": "[data-testid=\"add-new-note\"]",
+    "card": "[data-testid=\"note-card\"]"
+  },
+  "profile": {
+    "email": "[data-testid=\"user-email\"]"
+  },
+  "welcome": {
+    "heading": "h1",
+    "actions": "[data-testid=\"open-login-view\"]",
+    "register": "[data-testid=\"open-register-view\"]"
+  },
+  "texts": {
+    "welcome": "Welcome to Notes App",
+    "loginButton": "Login",
+    "createAccount": "Create an account",
+    "loginTitle": "Login",
+    "emailRequired": "Email address is required",
+    "emailInvalid": "Email address is invalid",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password should be between 6 and 30 characters",
+    "sessionExpired": "Your session has expired. Please login again to continue."
+  },
+  "hallazgos": [
+    "El formulario valida antes de enviar (sin request): email obligatorio y con formato (regex \\S+@\\S+\\.\\S+), contraseña obligatoria de 6 a 30 caracteres; aviso .invalid-feedback bajo cada campo.",
+    "Credenciales incorrectas: POST /users/login 401 con message 'Incorrect email address or password', mostrado en el toast alert-message; mismo aviso para contraseña equivocada y email no registrado.",
+    "Login correcto: guarda localStorage token y navega a /notes/app (GET /notes).",
+    "Logout: DELETE /users/logout, borra localStorage token y muestra la bienvenida en /notes/app (sin recarga). El servidor anula el token: reusarlo lleva a /notes/app/login con 'Your session has expired. Please login again to continue.'",
+    "Sin token, /notes/app muestra la bienvenida (open-login-view) sin pedir notas; con un token inválido, GET /notes 401 y redirige al login con el aviso de sesión vencida."
+  ]
+}
