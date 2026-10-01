@@ -1,6 +1,6 @@
 // Modulo: Cuenta - Registrarse
 // Sitio bajo prueba: https://practice.expandtesting.com/notes/app (Expand Testing - Notes App)
-// Ticket Jira: SCRUM-766 (CA-01..CA-05, Test Cycle SCRUM-767)
+// Ticket Jira: SCRUM-766 (CA-01..CA-06, Test Cycle SCRUM-767)
 //
 // Cada test abre el registro sin sesión y usa un email nuevo; el caso del
 // email repetido registra antes esa cuenta por API.
@@ -37,7 +37,7 @@ const submitAndExpectCreated = data => {
 
 describe('[SCRUM-766] Notes App - Registrarse', () => {
 
-    // CA-01: Con datos válidos y un email que no tiene cuenta se crea la cuenta y con ella se puede ingresar.
+    // CA-01: Con datos válidos y un email que no tiene cuenta, al registrarse se crea la cuenta.
 
     it('[CA-01][TC-01.1][SCRUM-768] Crear una cuenta con datos válidos', () => {
         submitAndExpectCreated(validData())
@@ -52,15 +52,6 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         session.typePassword(data.password)
         session.submit()
         session.loginSucceeds()
-    })
-
-    it('[CA-01][TC-01.3][SCRUM-770] No se crea una cuenta con un email que ya está registrado', () => {
-        notes.prepareUser().then(user => {
-            register.open()
-            register.fill(validData({ email: user.email }))
-            register.submit()
-            register.verifyRejectedByServer()
-        })
     })
 
     // CA-02: Al registrarse, un email vacío o sin formato válido se avisa debajo del campo y no se crea la cuenta.
@@ -125,5 +116,23 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
 
     it('[CA-05][TC-05.2][SCRUM-784] No se envía el registro con una confirmación distinta de la contraseña', () => {
         submitAndExpectError(validData({ confirmPassword: 'Qa!Notes2027' }), 'confirmPassword', 'confirmMismatch')
+    })
+
+    // CA-06: Un email que ya tiene cuenta no se puede registrar otra vez, aunque se escriba con otras mayúsculas.
+
+    const submitExistingEmail = toEmail => notes.prepareUser().then(user => {
+        register.open()
+        register.fill(validData({ email: toEmail(user.email) }))
+        register.submit()
+        register.verifyRejectedByServer()
+    })
+
+    it('[CA-06][TC-06.1][SCRUM-770] No se crea una cuenta con un email que ya está registrado', () => {
+        submitExistingEmail(email => email)
+    })
+
+    it('[CA-06][TC-06.2][SCRUM-785] No se crea una cuenta con un email registrado escrito con otras mayúsculas', () => {
+        // qa.notes.<n>@example.com -> QA.Notes.<n>@Example.com
+        submitExistingEmail(email => email.replace('qa.notes', 'QA.Notes').replace('example.com', 'Example.com'))
     })
 })

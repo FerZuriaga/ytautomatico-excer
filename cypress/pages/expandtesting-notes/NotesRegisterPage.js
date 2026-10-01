@@ -33,7 +33,9 @@ class NotesRegisterPage {
     fill(data) {
         cy.fixture(FIXTURE).then(sel => {
             FIELDS.filter(field => data[field] !== undefined).forEach(field => {
-                cy.get(sel.form[field]).type(data[field], { log: !/password/i.test(field) }).should('have.value', data[field])
+                const secret = /password/i.test(field)
+                cy.get(sel.form[field]).type(data[field], { log: !secret }).should('have.value', data[field])
+                if (secret) cy.get(sel.form[field]).should('have.attr', 'type', 'password')
             })
             FIELDS.forEach(field => cy.get(sel.form[field]).should('not.have.class', 'is-invalid'))
         })

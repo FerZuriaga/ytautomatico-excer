@@ -37,6 +37,6 @@
     "El front valida antes de enviar (sin request), con .invalid-feedback bajo cada campo: email obligatorio y con formato; nombre obligatorio de 4 a 30; contraseña obligatoria de 6 a 30; confirmación obligatoria e igual a la contraseña.",
     "Contraseña vacía con la confirmación completa muestra también 'Passwords don't match!' bajo Confirm Password.",
     "Registro correcto: POST /users/register 201, el formulario se reemplaza por .alert-success con 'User account created successfully' y el enlace login-view 'Click here to Log In'. No inicia sesión (sin token).",
-    "Email ya registrado (también con otras mayúsculas, verificado por API): 409 'An account already exists with the same email address' en el toast alert-message; el formulario sigue visible."
+    "Email ya registrado (también con otras mayúsculas, explorado en el navegador): 409 'An account already exists with the same email address' en el toast alert-message; el formulario sigue visible."
   ]
 }
