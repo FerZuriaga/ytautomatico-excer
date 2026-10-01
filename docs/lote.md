@@ -286,6 +286,26 @@ alcance. Lo que falle se corrige antes del commit.
   PR apilado: base = rama de la que depende, avisado en el body.
 - HU a "In Review" (D-04).
 
+### Auditoría en el PR (antes de pedir el merge)
+
+El body del PR lleva esta tabla, armada **releyendo lo publicado** (el
+payload que se publicó y el spec), no de memoria. Una fila por HU y una
+columna por control; ✅ o ⚠️ con el motivo y qué se hizo:
+
+| Control | Qué se mira |
+|---|---|
+| HU | Rol concreto, "Para" que no repite el "Quiero", objetivo de negocio. |
+| CA: un resultado | Cada CA, un solo resultado (contar los ", y"); lo que es regla de otra HU no va en el texto. |
+| CA: sin pisarse | Dos CA de la misma HU (o de HU hermanas) no prueban lo mismo. |
+| TC: una acción por paso | Cada campo y cada botón, su paso (D-38; el validador lo frena). |
+| TC = test | Lo que dice el resultado esperado es lo que afirma el `it()`, ni más ni menos. |
+| Bordes | Cada límite que nombra un CA tiene TC del mínimo y del máximo. |
+
+Un ⚠️ se corrige antes del merge o se explica por qué queda. Caso que lo
+originó: 2026-10-01, el usuario tuvo que preguntar dos veces por HU de
+SCRUM-745/760/766 y aparecieron un CA con 3 resultados, dos CA que se
+pisaban y textos de TC que el test no controlaba.
+
 ---
 
 ## 5. Cierre
