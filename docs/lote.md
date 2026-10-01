@@ -288,20 +288,28 @@ alcance. Lo que falle se corrige antes del commit.
 
 ### Auditoría en el PR (antes de pedir el merge)
 
-El body del PR lleva esta tabla, armada **releyendo lo publicado** (el
-payload que se publicó y el spec), no de memoria. Una fila por HU y una
-columna por control; ✅ o ⚠️ con el motivo y qué se hizo:
+El body del PR lleva, **por cada HU**, una tabla armada **releyendo lo
+publicado** (el payload que se publicó y el spec), no de memoria. Muestra
+el contenido, no un ✅ suelto:
 
-| Control | Qué se mira |
-|---|---|
-| HU | Rol concreto, "Para" que no repite el "Quiero", objetivo de negocio. |
-| CA: un resultado | Cada CA, un solo resultado (contar los ", y"); lo que es regla de otra HU no va en el texto. |
-| CA: sin pisarse | Dos CA de la misma HU (o de HU hermanas) no prueban lo mismo. |
-| TC: una acción por paso | Cada campo y cada botón, su paso (D-38; el validador lo frena). |
-| TC = test | Lo que dice el resultado esperado es lo que afirma el `it()`, ni más ni menos. |
-| Bordes | Cada límite que nombra un CA tiene TC del mínimo y del máximo. |
+| CA | Texto | Resultados | TC (pasos) | Bordes |
+|---|---|---|---|---|
+| CA-03 | Al iniciar sesión, una contraseña vacía, <6 o >30 se avisa y no se envía | 1 | 753 (3) · 754 (4) · … | 5 ✗ · 6 ✓ · 30 ✓ · 31 ✗ |
 
-Un ⚠️ se corrige antes del merge o se explica por qué queda. Caso que lo
+- **Texto:** el CA tal como está en Jira (se puede abreviar sin cambiar el
+  sentido).
+- **Resultados:** cuántos resultados tiene (contar los ", y"). Si son más
+  de 1, se dice por qué es una sola regla (ej. "la 2.ª parte es su
+  negativo") o se corrige. Lo que es regla de otra HU no va en el texto.
+- **TC (pasos):** key y cantidad de pasos; cada paso es un campo o un
+  botón (D-38). Un TC cuyo resultado esperado dice algo que el `it()` no
+  afirma (o al revés) se marca y se corrige.
+- **Bordes:** para cada límite que nombra el CA, el mínimo y el máximo,
+  dentro (✓) y fuera (✗).
+
+Arriba de las tablas, una línea por HU: rol, "Para" y objetivo, y si algún
+CA se pisa con otro de la misma HU o de una hermana. Un problema se
+corrige antes del merge o se explica por qué queda. Caso que lo
 originó: 2026-10-01, el usuario tuvo que preguntar dos veces por HU de
 SCRUM-745/760/766 y aparecieron un CA con 3 resultados, dos CA que se
 pisaban y textos de TC que el test no controlaba.
