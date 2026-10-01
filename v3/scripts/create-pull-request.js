@@ -22,6 +22,8 @@ Acciones soportadas actualmente:
   lectura y recién ahí (con --delete-branch) borra la rama origen. Nunca
   encadenar a mano el borrado de la rama detrás del merge (caso real #123:
   405 recién pusheado, la rama se borró igual y el PR quedó cerrado).
+  Antes de borrar la rama re-apunta a la base los PRs apilados sobre ella
+  (caso real #143: GitHub lo cerró al borrarse su base).
 - view --pr <n>: muestra estado, ramas, título y descripción de un PR.
 - close --pr <n>[,<n>...]: cierra PRs abiertos SIN mergear (la rama queda
   en el remoto). Solo con confirmación explícita del usuario.
@@ -352,6 +354,12 @@ async function main() {
           },
           merge: () => githubRequest('PUT', `${prPath}/merge`),
           deleteBranch: ref => githubRequest('DELETE', `/repos/${owner}/${name}/git/refs/heads/${ref.split('/').map(encodeURIComponent).join('/')}`),
+          listDependents: async ref => {
+            const res = await githubRequest('GET', `/repos/${owner}/${name}/pulls?state=open&base=${encodeURIComponent(ref)}&per_page=100`);
+            if (res.status !== 200) throw new Error(`Error al buscar PRs apilados sobre ${ref} (HTTP ${res.status}): no se borra la rama.`);
+            return res.body;
+          },
+          retarget: (number, base) => githubRequest('PATCH', `/repos/${owner}/${name}/pulls/${number}`, { base }),
           deleteHeadBranch: Boolean(deleteBranch),
           log: message => console.log(message)
         });

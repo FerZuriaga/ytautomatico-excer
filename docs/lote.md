@@ -287,7 +287,10 @@ alcance. Lo que falle se corrige antes del commit.
   (D-04).
 - Tras el merge: HU a "Listo". Con un Bug abierto que rompe la HU, no se
   cierra sin decidirlo con el usuario.
-- PR apilado cuya base se mergeó: `--action update --pr <n> --base main`.
+- PR apilado: se mergea primero la base. Con `--delete-branch`, el merge
+  re-apunta solo a `main` los PRs apilados ANTES de borrar la rama (si se
+  borra antes, GitHub los cierra: caso #143). Sin `--delete-branch`,
+  re-apuntarlo a mano con `--action update --pr <n> --base main`.
   Si el PR cambia, actualizar su descripción (`--action view` /
   `--action update --body-file`).
 - `node v3/scripts/run-and-report.js --timing-report <rama>` para los
