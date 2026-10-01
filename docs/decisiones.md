@@ -17,18 +17,18 @@ agrega una contradictoria.
 ## Proceso y gobernanza
 
 ### D-01 · Todo en el hilo principal: roles como skills, sin subagentes
-- **Decisión:** Manager, ProductAgent y QaAutomation1 son skills
-  (`v3/.claude/skills/`) que carga el hilo principal. No se delega en
-  subagentes. Desde PR #106 hay 7 skills de fase: discovery, especificacion,
-  plan-automatizacion, git, ejecucion, automation-review y bug-reporting.
+- **Decisión:** todo el trabajo lo hace el hilo principal. No se delega en
+  subagentes. Los roles (Manager, ProductAgent, QaAutomation1) pasaron a
+  skills en el PR #106 y desde 2026-10-01 a un solo documento,
+  `docs/lote.md` (D-36).
 - **Por qué:** la cadena de agentes tardaba más de 40 minutos por
   mensajería y perdía contexto en cada traspaso (2026-07-29).
-- **Dónde:** `CLAUDE.md` §2, skill `manager`.
+- **Dónde:** `CLAUDE.md` §2.
 
 ### D-02 · Prevención en código, sin scripts sueltos
 - **Decisión:** cada error de proceso acordado se previene en código
   (validador o chequeo en un CLI oficial, con test del caso real). Si no se
-  puede, va en la skill que corresponde. Siempre se extiende la
+  puede, va en `docs/lote.md`. Siempre se extiende la
   implementación oficial.
 - **Por qué:** las lecciones escritas se repetían. "Explorar el camino del
   test" falló dos veces, en Carrito y en Login (2026-09-26).
@@ -47,7 +47,7 @@ agrega una contradictoria.
   el merge y recién ahí pasan a "Listo".
 - **Por qué:** cerrar el ticket antes del merge da una foto falsa: dice
   "terminado" y el código no está en `main` (SCRUM-65, 2026-07-29).
-- **Dónde:** `CLAUDE.md` §2, skills `manager` y `product-agent`.
+- **Dónde:** `CLAUDE.md` §2, `docs/lote.md` §5.
 - **Cómo se mergea (2026-09-28):** siempre con `create-pull-request.js
   --action merge --pr <n> --delete-branch`. El script espera a que GitHub
   confirme que el PR se puede mergear, confirma el merge por lectura y
@@ -92,7 +92,7 @@ agrega una contradictoria.
   desvíos no pedidos.
 - **Por qué:** pedido explícito del usuario (2026-09-11 y 2026-09-27). El
   valor del proyecto es el criterio de QA.
-- **Dónde:** skills `ejecucion` y `discovery`. Mejoras aplicadas: D-14
+- **Dónde:** `docs/lote.md`. Mejoras aplicadas: D-14
   (discovery en lote), D-29 (armador, bundle, reporte en paralelo) y D-30
   (una sola pausa).
 
@@ -132,8 +132,25 @@ agrega una contradictoria.
 - **Por qué:** pedido del usuario (2026-09-28). Cada pausa extra es tiempo
   de espera sin trabajo, y esos cambios de una línea se aprobaron igual en
   todas las apps nuevas.
-- **Dónde:** skills `manager`, `discovery`, `especificacion`,
-  `plan-automatizacion` y `qa-automation1`.
+- **Dónde:** `docs/lote.md` §2.
+
+### D-36 · Un solo documento de lote en vez de 10 skills
+- **Decisión:** el asistente trabaja con un solo documento, `docs/lote.md`
+  (pasos, comandos exactos y 5 preguntas de revisión de contenido antes de
+  publicar). Las 10 skills de la v3 (3 roles + 7 de fase) se archivaron en
+  `v3/.claude/skills-archive/`. Cada regla vive en un solo lugar: el cómo
+  en `docs/lote.md`, el porqué acá, el control en los validadores. Una
+  regla nueva se agrega en uno de esos tres lugares, nunca en dos.
+- **Por qué:** revisión del 2026-09-30. Cada lote cargaba ~2.200 líneas de
+  skills más CLAUDE.md, estas decisiones y la memoria, con reglas escritas
+  hasta tres veces (`wip-check` en 4 archivos, la regla de "Verificar" en
+  9). Las consolidaciones anteriores (PR #106, D-34) achicaron la cantidad
+  de skills pero no sacaron las copias. Además los validadores controlan la
+  forma y no el sentido: los errores de CA de SCRUM-717 (máximos fuera de
+  alcance), SCRUM-730 (`sinNegativo` falso) y SCRUM-621 (CA con dos reglas)
+  pasaron todos los controles y los encontró el usuario. De ahí la revisión
+  de contenido de ~2 minutos (5 preguntas), sin herramientas nuevas.
+- **Dónde:** `docs/lote.md`, `CLAUDE.md` §2.
 
 ### D-09 · Solo 2 apps activas; el resto es legado intocable
 - **Decisión:** el trabajo nuevo va solo en apps con trazabilidad a Xray.
@@ -163,14 +180,14 @@ agrega una contradictoria.
   specs no se usan para explorar.
 - **Por qué:** leer código minificado no mostró el método HTTP `QUERY` ni el
   idioma automático de PST, y costó 4 corridas (2026-09-25, PR #106).
-- **Dónde:** skill `discovery`, `CLAUDE.md` §1.
+- **Dónde:** `docs/lote.md`, `CLAUDE.md` §1.
 
 ### D-12 · Explorar el mismo camino que usará el test
 - **Decisión:** si el test prepara el estado por API (sesión, carrito,
   compras), la exploración se hace con ese mismo estado, no solo por la UI.
 - **Por qué:** en Carrito y en Login el camino de la UI andaba y el del
   test no.
-- **Dónde:** skill `discovery`.
+- **Dónde:** `docs/lote.md`.
 
 ### D-13 · Cada negativo se prueba antes de especificarlo
 - **Decisión:** todo Test Case negativo lleva `evidencia: { reporte,
@@ -190,7 +207,7 @@ agrega una contradictoria.
   de sesión rehecho a mano en cada uno. Medido: 6 escenarios en 87 s contra
   unos 66 s cada uno por separado (2026-09-28, PR #121). El motor es
   general a pedido del usuario: una app nueva es un JSON, no código.
-- **Dónde:** `explore-page.js`, `lib/data-recipe.js`, skill `discovery`.
+- **Dónde:** `explore-page.js`, `lib/data-recipe.js`, `docs/lote.md`.
 
 ### D-15 · Leer el precedente antes de relevar
 - **Decisión:** antes de relevar una funcionalidad, leer
@@ -198,7 +215,7 @@ agrega una contradictoria.
   credencial, checkout...) para precargar los gotchas ya conocidos.
 - **Por qué:** en SCRUM-194 se redescubrió por un fallo un gotcha ya
   documentado en SCRUM-158. Leerlo cuesta unos 20 segundos.
-- **Dónde:** `CLAUDE.md` §1 PASO 1, skill `discovery`.
+- **Dónde:** `CLAUDE.md` §1 PASO 1, `docs/lote.md`.
 
 ### D-16 · Seguridad en entornos ajenos
 - **Decisión:** en producción real (Rentas Córdoba, sitios `.gob.ar`) solo
@@ -218,7 +235,7 @@ agrega una contradictoria.
   separadas.
 - **Por qué:** una HU por escenario fragmentaba la funcionalidad (PIM,
   2026-07-22).
-- **Dónde:** `CLAUDE.md` §2, skill `especificacion`.
+- **Dónde:** `CLAUDE.md` §2, `docs/lote.md`.
 
 ### D-18 · Los CA salen de las reglas relevadas
 - **Decisión:** una regla de negocio es un CA, en una oración. El mínimo es
@@ -253,7 +270,7 @@ agrega una contradictoria.
   alcance.
 - **Por qué:** auditoría del 2026-09-27 (PR #120): un test tiene que señalar
   el CA correcto y no romperse por un cambio de redacción.
-- **Dónde:** skills `especificacion`, `qa-automation1` y `automation-review`.
+- **Dónde:** `docs/lote.md`.
 
 ### D-22 · Estándar de Bugs
 - **Decisión:** secciones fijas (Resumen, Precondiciones, Pasos, Resultado
@@ -286,7 +303,7 @@ agrega una contradictoria.
   Tareas 222 y 225 quedan como están, por decisión del usuario.
 - **Dónde:** `lib/internal-tools.js`, usado como error por
   `lib/bug-validator.js` y `lib/testcase-validator.js` (TC y texto de la
-  HU); skills `bug-reporting`, `especificacion` y `product-agent`.
+  HU); `docs/lote.md`.
 
 ### D-32 · Coherencia entre HU de la misma app
 - **Decisión:** al publicar o actualizar una HU se compara con las HU
@@ -300,7 +317,7 @@ agrega una contradictoria.
   SCRUM-659 contradecía a SCRUM-635 en el texto del resumen, cubría algo
   que 635 dejaba fuera de alcance y repetía su regla del resumen.
 - **Límite:** es un chequeo por palabras; no entiende el significado. No
-  reemplaza leer las HU hermanas (skill `especificacion`).
+  reemplaza leer las HU hermanas (`docs/lote.md`).
 - **Dónde:** `lib/story-coherence.js` + test; `create-jira-task.js` lo
   corre en cada publicación, también en `--dry-run`. Las HU hermanas salen
   del encabezado "Ticket Jira" de los specs (`getIssuesByKeys` con
@@ -323,7 +340,7 @@ agrega una contradictoria.
 - **Decisión:** si una corrida falla, se diagnostica con evidencia antes de
   volver a correr. Nunca se re-corre "a ver si pasa". A las 3 iteraciones
   fallidas se consulta al usuario. Solo se reporta a Xray si pasa el 100%.
-- **Dónde:** `run-and-report.js`, skill `ejecucion`.
+- **Dónde:** `run-and-report.js`, `docs/lote.md`.
 
 ### D-33 · La regresión por cambio global corre solo las apps activas
 - **Decisión:** ante un cambio global (`cypress.config.js`,
@@ -344,7 +361,7 @@ agrega una contradictoria.
   regresiones que nadie decidió.
 - **Dónde:** `lib/affected-specs.js` (`activeApps`, `registrationOnly`,
   `isAppRegistrationDiff`) + test; `run-and-report.js` (tope
-  `MAX_REGRESSION_SPECS`, `--max-specs`); skill `ejecucion`.
+  `MAX_REGRESSION_SPECS`, `--max-specs`); `docs/lote.md`.
 
 ### D-34 · Consolidar: salud al empezar, pausa de herramientas y corridas avisadas
 - **Decisión:**
@@ -366,8 +383,7 @@ agrega una contradictoria.
   positivos.
 - **Dónde:** `lib/affected-specs.js` (`healthSpecs`) y
   `lib/explore-scenarios.js` (`summarizeProblems`) + tests;
-  `run-and-report.js --health`; `explore-page.js`; skills `manager`,
-  `discovery` y `ejecucion`.
+  `run-and-report.js --health`; `explore-page.js`; `docs/lote.md`.
 - **Cambiado por D-35:** el chequeo de salud ya no se corre al empezar cada
   sesión.
 
@@ -389,7 +405,7 @@ agrega una contradictoria.
   el 2026-09-27) sin que nadie lo decidiera. En un equipo real quien
   automatiza corre sus tests y no espera la regresión para abrir el PR. Se
   resuelve restando pasos, sin herramientas nuevas.
-- **Dónde:** skills `ejecucion` (tabla de regresión) y `manager`.
+- **Dónde:** `docs/lote.md` §4 (tabla de regresión).
 
 ### D-25 · Estándares de código Cypress
 - **Decisión:** nada de `cy.wait()` estático, timeouts de 15 s como máximo,
@@ -398,7 +414,7 @@ agrega una contradictoria.
   paso. Antes de borrar un spec "duplicado" se leen todos sus `it()`.
 - **Por qué:** casos reales de OrangeHRM (PR #38) y del saneamiento
   (se hubieran perdido 2 escenarios únicos).
-- **Dónde:** `CLAUDE.md` §2, skill `automation-review`.
+- **Dónde:** `CLAUDE.md` §2, `docs/lote.md`.
 
 ---
 

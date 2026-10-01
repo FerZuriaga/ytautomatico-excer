@@ -47,7 +47,7 @@ restricciones: [
 ```
 
 **Relación:** 1 Application → N User Story.
-**Quién la genera:** skill `discovery` (Parte A).
+**Quién la genera:** `docs/lote.md` §1 (Parte A).
 
 ---
 
@@ -71,7 +71,7 @@ evolucionar de forma autónoma, o cuando es una acción destructiva
 **Relación:** 1 HU → 2..N Acceptance Criteria (piso estricto 2, sin
 techo — ver método de 3 dimensiones más abajo). 1 HU → 0..1 Branch/PR.
 1 HU → 0..N Bug.
-**Quién la genera:** skill `especificacion` → rol `product-agent` (skill, crea en Jira).
+**Quién la genera:** `docs/lote.md` §2 → publicada con `create-jira-task.js` (§3).
 
 ---
 
@@ -102,7 +102,7 @@ de relleno solo para llegar a un número — es el mismo error que ya se
 corrigió una vez con el piso de Test Case por CA (ver abajo).
 
 **Relación:** 1 CA → 2..5 Test Case (mínimo 2, techo 5 si aplica).
-**Quién lo genera:** mismo origen que la HU (`especificacion`).
+**Quién lo genera:** mismo origen que la HU (`docs/lote.md` §2).
 
 ---
 
@@ -118,7 +118,7 @@ Escenario concreto y ejecutable que valida un CA.
 | `pasos` | Lista de Test Step |
 
 **Relación:** 1 TC → N Test Step. 1 TC → N Test Execution (histórico).
-**Quién lo genera:** skill `especificacion` (transforma el escenario
+**Quién lo genera:** `docs/lote.md` §2 (transforma el escenario
 funcional en modelo canónico) → publicado a Zephyr por
 `scripts/lib/zephyr.js`.
 
@@ -135,7 +135,7 @@ un TC.
 | `datosPrueba` | Datos concretos usados, o `N/A` |
 | `resultadoEsperado` | Uno o más resultados numerados, lenguaje funcional (nunca selectores) |
 
-**Quién lo genera:** parte de `especificacion`.
+**Quién lo genera:** `docs/lote.md` §2.
 
 ---
 
@@ -154,7 +154,7 @@ se pisa** — cada corrida es una entrada nueva, igual que en Zephyr.
 **Invariante:** el "estado actual" de un TC es una vista derivada (la
 Test Execution más reciente), no un campo propio del TC.
 
-**Quién lo genera:** skill `ejecucion` sobre `v3/scripts/run-and-report.js`
+**Quién lo genera:** `docs/lote.md` §4 con `v3/scripts/run-and-report.js`
 (corre y valida el resultado) → reportado a Xray por
 `v3/scripts/lib/test-runner.js` + `xray.js`.
 
@@ -188,7 +188,7 @@ evidenció.
 | `resultadoActual` / `resultadoEsperado` | Comportamiento observado vs. esperado |
 
 **Relación:** N Bug → 1 HU (0..N por HU).
-**Quién lo genera:** skill `bug-reporting`.
+**Quién lo genera:** `docs/lote.md` §6.
 
 ---
 
@@ -203,7 +203,7 @@ Artefacto de git asociado a la implementación de una HU.
 | `hu` | HU que implementa |
 
 **Relación:** 1 HU → 0..1 Branch/PR activo.
-**Quién lo genera:** skill `git` (Parte A: rama; Parte B: commit/push/PR).
+**Quién lo genera:** `docs/lote.md` §4 (rama; commit, push y PR).
 
 ---
 
