@@ -54,6 +54,11 @@ agrega una contradictoria.
   recién ahí borra la rama. Nació del #123: un 405 recién pusheado quedó
   oculto por un pipe, la rama se borró igual y el PR se cerró sin mergear.
   Controlado en `lib/pr-merge.js` con test.
+- **PRs apilados (2026-10-01):** antes de borrar la rama, el merge re-apunta
+  a la base los PRs abiertos que la usan como base y lo verifica; si no
+  puede, no borra la rama. Nació del #143: estaba apilado sobre el #142, el
+  merge del #142 borró su rama y GitHub lo cerró sin mergear (se rehizo
+  como #144). Mismo `lib/pr-merge.js`, con test.
 - **Permiso del asistente (2026-09-29):** `.claude/settings.json` permite
   correr `node v3/scripts/create-pull-request.js` sin pedir permiso: el
   clasificador del modo automático frenaba el merge ya confirmado por el

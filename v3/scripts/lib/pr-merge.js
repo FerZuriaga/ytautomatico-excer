@@ -17,6 +17,11 @@
  *   - El merge se confirma por lectura (merged: true) y recién entonces,
  *     si se pidió, se borra la rama origen. Nunca se borra una rama de un
  *     PR que no quedó mergeado.
+ *   - Antes de borrar la rama, los PRs abiertos que la usan como base (PRs
+ *     apilados) se re-apuntan a la base del PR mergeado y se verifica el
+ *     cambio. Si alguno no se puede re-apuntar, la rama no se borra.
+ *     Caso real 2026-10-01: el merge del #142 borró su rama y GitHub cerró
+ *     el #143, apilado sobre ella; hubo que rehacerlo como #144.
  *
  * Función pura: las llamadas a GitHub y la espera se inyectan.
  */
@@ -27,8 +32,10 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
  * getPr() -> Promise<{ state, merged, mergeable, mergeable_state, head: { ref } }>
  * merge() -> Promise<{ status, body }>
  * deleteBranch(ref) -> Promise<{ status, body }>
+ * listDependents(ref) -> Promise<[{ number }]>  PRs abiertos con base = ref
+ * retarget(number, base) -> Promise<{ status, body: { base: { ref } } }>
  */
-async function safeMerge({ getPr, merge, deleteBranch, deleteHeadBranch = false, attempts = 6, delayMs = 3000, wait = sleep, log = () => {} }) {
+async function safeMerge({ getPr, merge, deleteBranch, listDependents, retarget, deleteHeadBranch = false, attempts = 6, delayMs = 3000, wait = sleep, log = () => {} }) {
   let result = null;
 
   for (let attempt = 1; attempt <= attempts && !result; attempt++) {
@@ -60,7 +67,17 @@ async function safeMerge({ getPr, merge, deleteBranch, deleteHeadBranch = false,
   if (!after.merged) throw new Error('GitHub respondió el merge pero el PR no figura mergeado al leerlo: no se borra la rama.');
 
   let branchDeleted = false;
+  const retargeted = [];
   if (deleteHeadBranch) {
+    const dependents = await listDependents(after.head.ref);
+    for (const dep of dependents) {
+      const res = await retarget(dep.number, after.base.ref);
+      if (res.status !== 200 || !res.body || !res.body.base || res.body.base.ref !== after.base.ref) {
+        throw new Error(`Merge confirmado (SHA ${result.sha}), pero el PR apilado #${dep.number} no se pudo re-apuntar a ${after.base.ref} (HTTP ${res.status}): no se borra la rama ${after.head.ref} para que no se cierre.`);
+      }
+      retargeted.push(dep.number);
+      log(`PR apilado #${dep.number} re-apuntado a ${after.base.ref}.`);
+    }
     const del = await deleteBranch(after.head.ref);
     if (del.status !== 204) {
       throw new Error(`Merge confirmado (SHA ${result.sha}), pero no se pudo borrar la rama ${after.head.ref} (HTTP ${del.status}).`);
@@ -68,7 +85,7 @@ async function safeMerge({ getPr, merge, deleteBranch, deleteHeadBranch = false,
     branchDeleted = true;
   }
 
-  return { sha: result.sha, branch: after.head.ref, branchDeleted };
+  return { sha: result.sha, branch: after.head.ref, branchDeleted, retargeted };
 }
 
 module.exports = { safeMerge };
