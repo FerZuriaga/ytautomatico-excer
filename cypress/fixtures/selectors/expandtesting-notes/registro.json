@@ -1,0 +1,42 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "registerPath": "/notes/api/users/register"
+  },
+  "paths": {
+    "register": "/notes/app/register",
+    "login": "/notes/app/login"
+  },
+  "form": {
+    "email": "[data-testid=\"register-email\"]",
+    "name": "[data-testid=\"register-name\"]",
+    "password": "[data-testid=\"register-password\"]",
+    "confirmPassword": "[data-testid=\"register-confirm-password\"]",
+    "submit": "[data-testid=\"register-submit\"]",
+    "error": ".invalid-feedback",
+    "alert": "[data-testid=\"alert-message\"]"
+  },
+  "success": {
+    "box": ".alert-success",
+    "loginLink": "[data-testid=\"login-view\"]"
+  },
+  "texts": {
+    "title": "Register",
+    "success": "User account created successfully",
+    "loginLink": "Click here to Log In",
+    "emailRequired": "Email address is required",
+    "emailInvalid": "Email address is invalid",
+    "nameRequired": "User name is required",
+    "nameLength": "User name should be between 4 and 30 characters",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password should be between 6 and 30 characters",
+    "confirmRequired": "Confirm Password is required",
+    "confirmMismatch": "Passwords don't match!"
+  },
+  "hallazgos": [
+    "El front valida antes de enviar (sin request), con .invalid-feedback bajo cada campo: email obligatorio y con formato; nombre obligatorio de 4 a 30; contraseña obligatoria de 6 a 30; confirmación obligatoria e igual a la contraseña.",
+    "Contraseña vacía con la confirmación completa muestra también 'Passwords don't match!' bajo Confirm Password.",
+    "Registro correcto: POST /users/register 201, el formulario se reemplaza por .alert-success con 'User account created successfully' y el enlace login-view 'Click here to Log In'. No inicia sesión (sin token).",
+    "Email ya registrado (también con otras mayúsculas, verificado por API): 409 'An account already exists with the same email address' en el toast alert-message; el formulario sigue visible."
+  ]
+}
