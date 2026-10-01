@@ -1,0 +1,35 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "profilePath": "/notes/api/users/profile"
+  },
+  "paths": {
+    "profile": "/notes/app/profile"
+  },
+  "menu": {
+    "profile": "[data-testid=\"profile\"]"
+  },
+  "form": {
+    "id": "[data-testid=\"user-id\"]",
+    "email": "[data-testid=\"user-email\"]",
+    "name": "[data-testid=\"user-name\"]",
+    "phone": "[data-testid=\"user-phone\"]",
+    "company": "[data-testid=\"user-company\"]",
+    "submit": "[data-testid=\"update-profile\"]",
+    "error": ".invalid-feedback",
+    "alert": "[data-testid=\"alert-message\"]"
+  },
+  "texts": {
+    "title": "Profile settings",
+    "nameRequired": "User name is required",
+    "nameLength": "User name should be between 4 and 30 characters",
+    "phoneLength": "Phone number should be between 8 and 20 digits",
+    "companyLength": "company name should be between 4 and 30 characters"
+  },
+  "hallazgos": [
+    "Profile (/notes/app/profile) pide GET /users/profile y recién ahí carga los campos: esperar el nombre cargado antes de editar (mismo gotcha que el perfil de PST).",
+    "User ID y Email address están deshabilitados.",
+    "El front valida antes de enviar (sin request), con .invalid-feedback bajo cada campo: nombre obligatorio de 4 a 30; teléfono opcional, si se completa /^\\+?\\d{8,20}$/; empresa opcional, si se completa de 4 a 30.",
+    "Guardar: PATCH /users/profile 200 y el toast alert-message con el message del servidor ('Profile updated successful'); los datos persisten al recargar."
+  ]
+}
