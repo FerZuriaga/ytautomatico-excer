@@ -336,5 +336,3 @@ Lo que no se validó se escribe "No validado"; nunca se asume.
   sus opciones → `.env`/APIs → el repo. Hay pausa de herramientas nuevas
   salvo pedido del usuario (D-34); cambios en `v3/scripts/lib/` con
   `npm run test:unit` y un test nuevo si corrigen un bug real (D-02).
-- Windows: archivos solo con Write/Edit (CRLF); un comando por llamada
-  cuando el exit code decide el paso siguiente.

@@ -166,7 +166,7 @@ Datos con las recetas `usuario` y `nota`.
   igual que al crear, **recarga la página completa**
   (`window.location.reload()` en el código): en el test, esperar la
   respuesta del PUT y después el `GET /notes` de la recarga. La fecha de la
-  tarjeta pasa a ser la del cambio.
+  tarjeta pasa a ser la del cambio (se muestra en UTC, no en hora local).
 - **Cambiar la categoría** mueve la nota de pestaña; marcar Completed la
   deja completada (resumen `You have completed all notes`).
 - **Cancel** cierra el modal sin request y la tarjeta no cambia.

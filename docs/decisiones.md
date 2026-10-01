@@ -155,6 +155,20 @@ agrega una contradictoria.
   tiempo al lote (2026-10-01).
 - **Dónde:** `docs/lote.md`, `CLAUDE.md` §2.
 
+### D-37 · La memoria del asistente guarda solo estado; el conocimiento va al repo
+- **Decisión:** la memoria local del asistente (fuera de git) queda en
+  ~5 archivos: estado actual (~12 líneas), plan en curso, hábitos propios
+  y datos de la cuenta de Jira. Las reglas viven en este archivo o en
+  `docs/lote.md`; los gotchas de cada app, en `docs/discovery/<app>.md`;
+  las particularidades de Jira, en `docs/architecture/herramientas.md`. El
+  historial ya está en git y en Jira.
+- **Por qué:** 2026-10-01. Había 45 memorias: 27 repetían decisiones (y
+  algunas quedaban viejas y contradecían al repo, como la de los roles como
+  skills), y los gotchas de ATS, PST, Notes y RBP estaban solo en la PC del
+  usuario: se perdían al cambiar de PC o de herramienta.
+- **Dónde:** este archivo, `docs/discovery/`,
+  `docs/architecture/herramientas.md`.
+
 ### D-09 · Solo 2 apps activas; el resto es legado intocable
 - **Decisión:** el trabajo nuevo va solo en apps con trazabilidad a Xray.
   SauceDemo, OrangeHRM, Argentina.gob.ar, Rentas Córdoba, Disco, Automation

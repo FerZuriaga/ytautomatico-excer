@@ -21,6 +21,17 @@ el mismo commit.
 | **GitHub** (PRs, merge, ramas) | Pull Requests | `v3/scripts/create-pull-request.js` (`GITHUB_TOKEN`, API REST; sin `gh`) | — | `github` |
 | **APIs de las apps bajo prueba** | Preparar datos del discovery | motor general `v3/scripts/lib/data-recipe.js` + una receta JSON por app en `v3/data-recipes/<app>.json` | `explore-page.js` | — |
 
+**Particularidades de la instancia de Jira:**
+- La cuenta de Jira (`JIRA_EMAIL` del `.env`) no es la misma que la del
+  usuario de git: usar siempre la del `.env`.
+- El tipo de HU se llama "Historia" y el de Bug se ve como "Error" (en el
+  payload `"issuetype": "Bug"`).
+- La transición para cerrar se llama **"Listo"**, pero el estado que queda
+  es **"Finalizada"**: `--transition "Finalizada"` falla.
+- Para saber si un addon (Xray, Zephyr) está instalado, la API no es
+  concluyente: en proyectos team-managed y con apps Forge da falsos
+  negativos. Confirmarlo en la UI del proyecto.
+
 ## Lógica independiente de las herramientas
 
 Estas libs no hablan con ninguna herramienta externa: reciben datos y
