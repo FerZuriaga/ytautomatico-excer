@@ -44,7 +44,8 @@
     "emailInvalid": "Email address is invalid",
     "passwordRequired": "Password is required",
     "passwordLength": "Password should be between 6 and 30 characters",
-    "sessionExpired": "Your session has expired. Please login again to continue."
+    "sessionExpired": "Your session has expired. Please login again to continue.",
+    "noNotesAll": "You don't have any notes in all categories"
   },
   "hallazgos": [
     "El formulario valida antes de enviar (sin request): email obligatorio y con formato (regex \\S+@\\S+\\.\\S+), contraseña obligatoria de 6 a 30 caracteres; aviso .invalid-feedback bajo cada campo.",

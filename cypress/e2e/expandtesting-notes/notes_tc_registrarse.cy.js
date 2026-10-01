@@ -41,6 +41,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
 
     it('[CA-01][TC-01.1][SCRUM-768] Crear una cuenta con datos válidos', () => {
         submitAndExpectCreated(validData())
+        register.verifyNoSession()
     })
 
     it('[CA-01][TC-01.2][SCRUM-769] Ingresar con la cuenta recién creada', () => {
@@ -52,6 +53,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         session.typePassword(data.password)
         session.submit()
         session.loginSucceeds()
+        session.verifyNoNotes()
     })
 
     // CA-02: Al registrarse, un email vacío o sin formato válido se avisa debajo del campo y no se crea la cuenta.

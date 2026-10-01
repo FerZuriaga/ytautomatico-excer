@@ -64,6 +64,14 @@ class NotesSessionPage {
         this.verifyLoggedIn()
     }
 
+    // Cuenta recién creada: "My Notes" vacío.
+    verifyNoNotes() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.texts.noNotesAll, T).should('be.visible')
+            cy.get(sel.notes.card).should('not.exist')
+        })
+    }
+
     // Rechazo del servidor: el aviso es el motivo que devuelve el servicio
     // (no se copia el texto) y se sigue en el login, sin sesión.
     loginRejectedByServer() {

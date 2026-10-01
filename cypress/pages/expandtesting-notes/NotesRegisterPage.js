@@ -54,6 +54,11 @@ class NotesRegisterPage {
         })
     }
 
+    // Crear la cuenta no inicia la sesión (regla de negocio de la HU).
+    verifyNoSession() {
+        cy.window().its('localStorage').invoke('getItem', 'token').should('be.null')
+    }
+
     openLoginFromSuccess() {
         cy.fixture(FIXTURE).then(sel => {
             cy.get(sel.success.loginLink).click()
