@@ -129,12 +129,22 @@ escenarios que entran o salen), se consulta ANTES de publicar.
   va en la misma oración (no con ";"). Dos comportamientos que fallan por
   separado = dos CA.
 - El negativo de una regla ya cubierta es un TC de ese CA, no un CA nuevo.
+- Antes de cerrar un CA, contar sus verbos de resultado: "se crea la
+  cuenta, **y** con ella se puede ingresar, **y** un email repetido se
+  rechaza" son 3 cosas (SCRUM-766). El validador solo ve ";" o "mientras
+  que": un ", y" con otro resultado lo tiene que ver quien escribe. Lo que
+  es regla de otra HU (ingresar es de SCRUM-745) no va en el texto del CA.
 
 ### Test Cases
 
 - 2 a 5 por CA, al menos un negativo o `sinNegativo` con motivo.
 - Precondición aparte; Paso 1 = entrar a la pantalla probada; un paso por
   acción verificable; la Acción no verifica; datos en `testData` (D-20).
+- **Un dato por paso (D-38):** cada campo que se completa es su propio
+  paso (con su valor en Datos) y cada botón es otro paso. Nunca "Completar
+  el formulario", "Ingresar el email y la contraseña" ni "Escribir X y
+  hacer clic en Y". Un campo que el TC deja vacío no lleva paso. El
+  validador lo frena (Datos con varios valores separados por ";" = error).
 - Resultado esperado con textos exactos de la pantalla; los mensajes que
   redacta el servidor, por significado + consecuencia (D-21).
 - Datos que no choquen con bugs conocidos ni reglas ocultas del backend.
