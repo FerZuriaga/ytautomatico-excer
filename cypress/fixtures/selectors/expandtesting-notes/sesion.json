@@ -24,6 +24,7 @@
   },
   "notes": {
     "addNote": "[data-testid=\"add-new-note\"]",
+    "categoryTabs": ["[data-testid=\"category-all\"]", "[data-testid=\"category-home\"]", "[data-testid=\"category-work\"]", "[data-testid=\"category-personal\"]"],
     "card": "[data-testid=\"note-card\"]"
   },
   "profile": {

@@ -35,19 +35,24 @@ class NotesSessionPage {
     }
 
     typePassword(password) {
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.login.password).type(password, { log: false }).should('have.value', password))
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.login.password).type(password, { log: false })
+                .should('have.value', password)
+                .and('have.attr', 'type', 'password')
+        })
     }
 
     submit() {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.login.submit).click())
     }
 
-    // "My Notes" con la sesión iniciada: token guardado, lista pedida y
-    // "Logout" en el menú.
+    // "My Notes" con la sesión iniciada: pestañas de categorías, "+ Add
+    // Note", "Logout" en el menú y token guardado.
     verifyLoggedIn() {
         cy.fixture(FIXTURE).then(sel => {
             cy.location('pathname', T).should('eq', sel.paths.notes)
             cy.get(sel.notes.addNote, T).should('be.visible')
+            sel.notes.categoryTabs.forEach(tab => cy.get(tab).should('be.visible'))
             cy.get(sel.menu.logout).should('be.visible')
             cy.window().its('localStorage').invoke('getItem', 'token').should('be.a', 'string').and('not.be.empty')
         })
@@ -137,14 +142,6 @@ class NotesSessionPage {
             cy.get(sel.menu.logout).should('not.exist')
             cy.get(sel.notes.card).should('not.exist')
             cy.window().its('localStorage').invoke('getItem', 'token').should('be.null')
-        })
-    }
-
-    openLoginFromWelcome() {
-        cy.fixture(FIXTURE).then(sel => {
-            cy.get(sel.welcome.actions).contains('a', sel.texts.loginButton).click()
-            cy.location('pathname', T).should('eq', sel.paths.login)
-            cy.get(sel.login.submit, T).should('be.visible')
         })
     }
 

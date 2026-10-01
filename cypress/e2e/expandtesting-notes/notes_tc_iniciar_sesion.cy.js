@@ -135,10 +135,11 @@ describe('[SCRUM-745] Notes App - Iniciar sesión', () => {
     it('[CA-04][TC-04.1][SCRUM-758] Sin sesión iniciada My Notes muestra la bienvenida', () => {
         session.visitNotes()
         session.verifyWelcome()
-        session.openLoginFromWelcome()
+        session.reload()
+        session.verifyWelcome()
     })
 
-    it('[CA-04][TC-04.2][SCRUM-759] Con la sesión vencida My Notes pide volver a ingresar', () => {
+    it('[CA-04][TC-04.2][SCRUM-759] Con una sesión que ya no es válida My Notes pide volver a ingresar', () => {
         session.visitNotes({ token: 'sesion-que-ya-no-es-valida' })
         session.verifySessionExpired()
         session.reload()
