@@ -55,7 +55,7 @@ describe('[SCRUM-786] Notes App - Actualizar mi perfil', () => {
         profile.verifyValues(VALID)
     })
 
-    // CA-02: Al guardar el perfil, un nombre vacío, de menos de 4 o de más de 30 caracteres se avisa debajo del campo.
+    // CA-02: Al guardar el perfil, un nombre que no tenga entre 4 y 30 caracteres se avisa debajo del campo y el perfil no se actualiza.
 
     it('[CA-02][TC-02.1][SCRUM-790] No se guarda el perfil sin nombre', () => {
         saveAndExpectError('name', '', 'nameRequired')
@@ -77,7 +77,7 @@ describe('[SCRUM-786] Notes App - Actualizar mi perfil', () => {
         saveAndExpectSaved('name', 'A'.repeat(30))
     })
 
-    // CA-03: Al guardar el perfil, un teléfono completado que no tenga entre 8 y 20 dígitos se avisa debajo del campo.
+    // CA-03: Al guardar el perfil, un teléfono completado que no tenga entre 8 y 20 dígitos se avisa debajo del campo y el perfil no se actualiza.
 
     it('[CA-03][TC-03.1][SCRUM-795] No se guarda el perfil con un teléfono de 7 dígitos', () => {
         saveAndExpectError('phone', '1234567', 'phoneLength')
@@ -99,7 +99,7 @@ describe('[SCRUM-786] Notes App - Actualizar mi perfil', () => {
         saveAndExpectSaved('phone', '1'.repeat(20))
     })
 
-    // CA-04: Al guardar el perfil, una empresa completada de menos de 4 o de más de 30 caracteres se avisa debajo del campo.
+    // CA-04: Al guardar el perfil, una empresa completada que no tenga entre 4 y 30 caracteres se avisa debajo del campo y el perfil no se actualiza.
 
     it('[CA-04][TC-04.1][SCRUM-800] No se guarda el perfil con una empresa de 3 caracteres', () => {
         saveAndExpectError('company', 'Acm', 'companyLength')
