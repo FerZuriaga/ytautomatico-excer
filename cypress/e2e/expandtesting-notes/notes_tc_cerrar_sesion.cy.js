@@ -23,7 +23,7 @@ const openNotesWithSession = () => notes.prepareUser().then(user => {
 
 describe('[SCRUM-760] Notes App - Cerrar sesión', () => {
 
-    // CA-05: "Logout" cierra la sesión desde cualquier pantalla de la app y lleva a la bienvenida.
+    // CA-05: "Logout", desde cualquier pantalla de la app, lleva a la bienvenida.
 
     it('[CA-05][TC-05.1][SCRUM-762] Cerrar sesión desde My Notes', () => {
         openNotesWithSession()

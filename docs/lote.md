@@ -129,12 +129,22 @@ escenarios que entran o salen), se consulta ANTES de publicar.
   va en la misma oración (no con ";"). Dos comportamientos que fallan por
   separado = dos CA.
 - El negativo de una regla ya cubierta es un TC de ese CA, no un CA nuevo.
+- Antes de cerrar un CA, contar sus verbos de resultado: "se crea la
+  cuenta, **y** con ella se puede ingresar, **y** un email repetido se
+  rechaza" son 3 cosas (SCRUM-766). El validador solo ve ";" o "mientras
+  que": un ", y" con otro resultado lo tiene que ver quien escribe. Lo que
+  es regla de otra HU (ingresar es de SCRUM-745) no va en el texto del CA.
 
 ### Test Cases
 
 - 2 a 5 por CA, al menos un negativo o `sinNegativo` con motivo.
 - Precondición aparte; Paso 1 = entrar a la pantalla probada; un paso por
   acción verificable; la Acción no verifica; datos en `testData` (D-20).
+- **Un dato por paso (D-38):** cada campo que se completa es su propio
+  paso (con su valor en Datos) y cada botón es otro paso. Nunca "Completar
+  el formulario", "Ingresar el email y la contraseña" ni "Escribir X y
+  hacer clic en Y". Un campo que el TC deja vacío no lleva paso. El
+  validador lo frena (Datos con varios valores separados por ";" = error).
 - Resultado esperado con textos exactos de la pantalla; los mensajes que
   redacta el servidor, por significado + consecuencia (D-21).
 - Datos que no choquen con bugs conocidos ni reglas ocultas del backend.
@@ -275,6 +285,26 @@ alcance. Lo que falle se corrige antes del commit.
   --head <rama> --title "..." --body-file <md del scratchpad>` (D-07).
   PR apilado: base = rama de la que depende, avisado en el body.
 - HU a "In Review" (D-04).
+
+### Auditoría en el PR (antes de pedir el merge)
+
+El body del PR lleva esta tabla, armada **releyendo lo publicado** (el
+payload que se publicó y el spec), no de memoria. Una fila por HU y una
+columna por control; ✅ o ⚠️ con el motivo y qué se hizo:
+
+| Control | Qué se mira |
+|---|---|
+| HU | Rol concreto, "Para" que no repite el "Quiero", objetivo de negocio. |
+| CA: un resultado | Cada CA, un solo resultado (contar los ", y"); lo que es regla de otra HU no va en el texto. |
+| CA: sin pisarse | Dos CA de la misma HU (o de HU hermanas) no prueban lo mismo. |
+| TC: una acción por paso | Cada campo y cada botón, su paso (D-38; el validador lo frena). |
+| TC = test | Lo que dice el resultado esperado es lo que afirma el `it()`, ni más ni menos. |
+| Bordes | Cada límite que nombra un CA tiene TC del mínimo y del máximo. |
+
+Un ⚠️ se corrige antes del merge o se explica por qué queda. Caso que lo
+originó: 2026-10-01, el usuario tuvo que preguntar dos veces por HU de
+SCRUM-745/760/766 y aparecieron un CA con 3 resultados, dos CA que se
+pisaban y textos de TC que el test no controlaba.
 
 ---
 

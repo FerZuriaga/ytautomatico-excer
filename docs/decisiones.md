@@ -283,7 +283,24 @@ agrega una contradictoria.
   pantalla probada. La sesión y los datos semilla van en `precondition`.
 - **Por qué:** todos los TC salían con 2 pasos y acciones encadenadas
   (2026-09-23), y había verificaciones dentro de la acción (SCRUM-477).
-- **Dónde:** `lib/testcase-validator.js` (PR #93, #108).
+- **Dónde:** `lib/testcase-validator.js` (PR #93, #108). Desde D-38 el dato
+  y el botón también son pasos separados.
+
+### D-38 · Un dato por paso en los Test Cases
+- **Decisión:** cada campo que se completa es un paso propio (con su valor
+  en Datos) y cada botón es otro paso. Reemplaza la excepción anterior de
+  D-20, que aceptaba "completar X y presionar Guardar" como una sola acción.
+- **Por qué:** pedido del usuario (2026-10-01). En SCRUM-766 los 17 TC
+  tenían "Completar el formulario de registro" (4 campos en un paso) y
+  SCRUM-769 "Ingresar con el email y la contraseña" (escribir, escribir y
+  clic en un paso), mientras que en SCRUM-745 cada campo era su paso: la
+  misma acción quedaba escrita de dos formas y el validador no lo veía
+  porque los verbos de carga no contaban como acción. Se corrigieron los
+  17 TC con `--update-steps`.
+- **Dónde:** `lib/testcase-validator.js` + tests: ERROR si los Datos de un
+  paso traen varios valores separados por ";"; WARNING si la acción carga
+  un dato y además hace otra cosa, o nombra varios datos ("el email y la
+  contraseña", "el formulario"). `docs/lote.md` §2.
 
 ### D-21 · Alcance: cada artefacto cumple su función sin pisar al vecino
 - **Decisión:** cada TC va en la regla que se rompe si falla, y cada `it()`

@@ -25,10 +25,11 @@
       "browser": { "localStorage": { "token": "{{token}}" } }
     },
     "cuenta": {
-      "description": "Usuario nuevo registrado SIN sesion (para probar el login). Mismas variables que usuario.",
+      "description": "Usuario nuevo registrado SIN sesion (para probar el login y el email repetido). Mismas variables que usuario, mas emailMayusculas (el mismo email con otras mayusculas).",
       "vars": {
         "name": "Qa Notes",
         "email": "qa.notes.{{unique}}@example.com",
+        "emailMayusculas": "QA.Notes.{{unique}}@Example.com",
         "password": "Qa!Notes2026"
       },
       "steps": [

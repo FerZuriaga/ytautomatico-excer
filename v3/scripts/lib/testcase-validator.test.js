@@ -35,13 +35,15 @@ const SCRUM_335_ORIGINAL = {
   ]
 };
 
-// SCRUM-335 reescrito con la regla nueva (precondición + 1 paso por acción).
+// SCRUM-335 reescrito con la regla nueva (precondición + 1 paso por acción;
+// desde D-38 el dato y el botón también van en pasos separados).
 const SCRUM_335_REWRITTEN = {
   name: 'Producto eliminado no reaparece al resetear el filtro',
   precondition: 'Sesion iniciada con las credenciales validas (test/test).',
   steps: [
     step('Navegar a la Home https://commitquality.com/.', 'Se muestra el listado con 10 productos.'),
-    step('Ingresar el texto en el filtro y presionar Filter.', 'El listado muestra solo los 5 productos llamados Product 1.'),
+    { description: 'Ingresar el texto en el filtro.', testData: 'Product 1', expectedResult: 'El filtro muestra el texto ingresado.' },
+    step('Presionar Filter.', 'El listado muestra solo los 5 productos llamados Product 1.'),
     step('Presionar Delete sobre el producto con ID 10.', 'La vista filtrada queda con 4 filas.'),
     step('Presionar Reset.', 'El listado completo muestra 10 productos y el ID 10 no aparece.')
   ]
@@ -99,9 +101,43 @@ test('regresion SCRUM-335 reescrito: sin errores ni warnings', () => {
   assert.deepEqual(warnings, []);
 });
 
-test('cargar datos y confirmar ("completar X y presionar Y") cuenta como UNA accion', () => {
+test('findActionVerbs no cuenta los verbos de carga (los controla la regla de un dato por paso)', () => {
   assert.deepEqual(findActionVerbs('Reemplazar Name y Youtube y presionar Save.'), ['presionar']);
   assert.deepEqual(findActionVerbs('Ingresar el texto en el filtro y presionar Filter.'), ['presionar']);
+});
+
+// ─── Un dato por paso (D-38, regresión SCRUM-766/769) ───────────────────────
+
+test('error: los Datos de un paso traen varios campos separados por ";"', () => {
+  const { errors } = validateTestCaseModel({
+    name: 'TC',
+    steps: [step('Abrir la pantalla de registro.'),
+      { description: 'Completar el formulario de registro', testData: 'Email nuevo; Name: Qa Registro; Password: Qa!Notes2026', expectedResult: 'Los campos muestran los datos.' }]
+  });
+  assert.deepEqual(errors, ['TC: el paso 2 carga 3 datos en una sola accion (Email nuevo | Name: Qa Registro | Password: Qa!Notes2026) -- un paso por dato: cada campo que se completa es su propio paso.']);
+});
+
+test('warning: cargar un dato y hacer clic en el mismo paso', () => {
+  const { warnings } = validateTestCaseModel({ name: 'TC', steps: [step('Abrir el login.'), step('Ingresar el texto en el filtro y presionar Filter.')] });
+  assert.deepEqual(warnings, ['TC: el paso 2 carga un dato y ademas hace otra accion (presionar) -- separar: un paso para el dato y otro para la accion.']);
+});
+
+test('warning: varios datos nombrados en la accion (regresion SCRUM-769 y SCRUM-766)', () => {
+  for (const [text, hit] of [['Ingresar con el email y la contraseña registrados', 'el email y la contrasena'], ['Completar el formulario de registro', 'el formulario']]) {
+    const { warnings } = validateTestCaseModel({ name: 'TC', steps: [step('Abrir el login.'), { description: text, testData: 'dato', expectedResult: 'Ok.' }] });
+    assert.deepEqual(warnings, [`TC: el paso 2 parece cargar varios datos a la vez ("${hit}") -- un paso por campo.`]);
+  }
+});
+
+test('un dato por paso con su valor en Datos no avisa', () => {
+  const { errors, warnings } = validateTestCaseModel({
+    name: 'TC',
+    steps: [step('Abrir la pantalla de login.'),
+      { description: 'Escribir el email en el campo Email address', testData: 'Email de la cuenta registrada', expectedResult: 'El campo muestra el email.' },
+      step('Hacer clic en "Login"', 'Se muestra My Notes.')]
+  });
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
 });
 
 test('"verificar"/"observar" no cuentan como accion', () => {

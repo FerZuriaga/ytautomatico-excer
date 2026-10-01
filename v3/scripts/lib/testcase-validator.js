@@ -87,9 +87,19 @@ const ACTION_VERBS = [
 ];
 
 // Los verbos de CARGA DE DATOS (ingresar, completar, escribir, tipear,
-// reemplazar, seleccionar, marcar) quedan afuera a propósito: "completar X
-// y presionar Guardar" es UNA acción con un único resultado verificable
-// (cargar y confirmar), no dos pasos.
+// reemplazar, seleccionar, marcar) no están en ACTION_VERBS: los controla
+// la regla de "un dato por paso" (ver INPUT_VERBS más abajo).
+//
+// Cambio del 2026-10-01 (pedido del usuario, D-38): antes "completar X y
+// presionar Guardar" se aceptaba como UNA acción. Pasaron así "Completar
+// el formulario de registro" (4 campos en un paso, SCRUM-766) e "Ingresar
+// con el email y la contraseña" (escribir, escribir y clic en un paso,
+// SCRUM-769). Ahora cada dato que se carga y cada botón son un paso.
+const INPUT_VERBS = ['ingresar', 'escribir', 'tipear', 'completar', 'cargar', 'seleccionar', 'elegir', 'marcar', 'desmarcar', 'adjuntar', 'reemplazar'];
+const INPUT_VERB_REGEX = new RegExp(`\\b(${INPUT_VERBS.join('|')})\\b`);
+// Varios datos nombrados en la acción: "el email y la contraseña",
+// "los datos", "el formulario", "los campos".
+const SEVERAL_INPUTS_REGEX = /\b(el|la|los|las|su|sus)\s+[a-z]+(\s+[a-z]+)?\s+y\s+(el|la|los|las|su|sus)\s+[a-z]+|\b(el formulario|los campos|todos los campos|los datos|sus datos)\b/;
 
 const SEQUENCE_WORDS = ['luego', 'despues', 'a continuacion'];
 
@@ -195,9 +205,21 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
       warnings.push(`${label}: el paso ${n} repite una accion anterior ("${normalizedDescription.match(REPEATED_STEP_REGEX)[0]}") -- confirmar que produce un resultado nuevo; si no, es relleno.`);
     }
 
+    // Un dato por paso (D-38): los Datos de un paso con varios valores
+    // separados por ";" son varios campos cargados en una sola acción.
+    const dataParts = String(step?.testData || '').split(';').map(part => part.trim()).filter(part => part && part !== '-');
+    if (dataParts.length >= 2) {
+      errors.push(`${label}: el paso ${n} carga ${dataParts.length} datos en una sola accion (${dataParts.join(' | ')}) -- un paso por dato: cada campo que se completa es su propio paso.`);
+    }
+
     const verbs = findActionVerbs(step?.description);
+    const loadsData = INPUT_VERB_REGEX.test(normalizedDescription);
     if (verbs.length >= 2) {
       warnings.push(`${label}: el paso ${n} parece encadenar ${verbs.length} acciones (${verbs.join(', ')}) -- separar un paso por accion verificable.`);
+    } else if (loadsData && verbs.length === 1) {
+      warnings.push(`${label}: el paso ${n} carga un dato y ademas hace otra accion (${verbs[0]}) -- separar: un paso para el dato y otro para la accion.`);
+    } else if (loadsData && SEVERAL_INPUTS_REGEX.test(normalizedDescription)) {
+      warnings.push(`${label}: el paso ${n} parece cargar varios datos a la vez ("${normalizedDescription.match(SEVERAL_INPUTS_REGEX)[0]}") -- un paso por campo.`);
     } else if (SEQUENCE_REGEX.test(normalize(step?.description))) {
       warnings.push(`${label}: el paso ${n} usa una palabra de secuencia ("luego"/"despues") -- probablemente son 2 pasos.`);
     }

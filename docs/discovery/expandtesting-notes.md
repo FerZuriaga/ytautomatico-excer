@@ -217,3 +217,23 @@ la sesión de `usuario`). Selectores en
 - En el test, un alias de `GET /notes` ya tiene la respuesta 200 de la
   carga anterior: la sesión vencida se afirma por pantalla, no con
   `cy.wait`.
+
+## Registrarse (2026-10-01)
+
+Explorado con 20 escenarios en 3 corridas (cada campo vacío con el resto
+completo, bordes de largo, confirmación, email repetido y registro +
+ingreso). Selectores en
+`cypress/fixtures/selectors/expandtesting-notes/registro.json`.
+
+- **Formulario** (`/notes/app/register`): `register-email`,
+  `register-name`, `register-password`, `register-confirm-password`,
+  `register-submit`. El front valida antes de enviar (sin request), con
+  `.invalid-feedback` bajo cada campo: email obligatorio y con formato;
+  nombre de 4 a 30; contraseña de 6 a 30; confirmación obligatoria e igual
+  a la contraseña. Con la contraseña vacía y la confirmación completa
+  también aparece `Passwords don't match!`.
+- **Registro correcto:** `POST /users/register` 201; el formulario se
+  reemplaza por `.alert-success` con `User account created successfully` y
+  `login-view` ("Click here to Log In"). **No inicia sesión.**
+- **Email ya registrado** (también con otras mayúsculas): 409 con el
+  `message` del servidor en `alert-message`; el formulario sigue.
