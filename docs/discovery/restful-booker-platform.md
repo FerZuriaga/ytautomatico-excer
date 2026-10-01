@@ -29,6 +29,14 @@ documentación funcional oficial: fuente = la app explorada con
   `messageDescription<n>`, detalle `message`). El resto: id (`#username`,
   `#password`, `#doLogin`) o texto.
 - Pedir un mensaje que no existe responde 500 (no 404).
+- **React #418 (hidratación) en todas las pantallas dentro de Cypress**
+  (Next.js SSR más los scripts que inyecta Cypress). El comando de la app
+  ignora SOLO #418/#423/#425. En el discovery mirar las
+  `uncaughtExceptions` del informe, no solo los errores de consola (costó
+  iteraciones en el primer lote).
+- **`/admin` redirige solo a `/admin/rooms`:** un clic en el menú antes de
+  que termine se pierde. Esperar `/admin/rooms` y la lista de habitaciones
+  antes de navegar (`waitPanelReady`).
 
 ## Mensajes: contacto y bandeja (2026-09-29)
 
@@ -43,7 +51,8 @@ Explorado con 14 escenarios en cuatro tandas. Selectores en
   20–2000; el nombre no tiene largo mínimo.
 - **Envío aceptado (200):** el formulario se reemplaza por
   `Thanks for getting in touch <nombre>!` + `We'll get back to you about
-  <asunto> as soon as possible.`
+  <asunto> as soon as possible.` La confirmación ocupa varios renglones:
+  `cy.contains` con la frase entera falla, buscar cada parte.
 - **Bandeja** (`/admin/message`, menú "Messages"): filas
   `.row.detail.read-false|read-true` con nombre y asunto. El menú muestra
   en rojo (`.badge`) las no leídas (`GET /api/message/count`).

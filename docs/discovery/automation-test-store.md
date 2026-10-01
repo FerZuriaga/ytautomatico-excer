@@ -53,6 +53,44 @@ pedidos ni pagos reales). Todas las páginas usan `index.php?rt=<ruta>`.
   Newsletter (First Name/Last Name/Email). **Formularios que NO** (el
   captcha tapa cualquier otro error): reseña de producto.
 
+## Cuenta, pedidos y carrito (HU de 2026-09-14 a 17; sus fixtures no traen `hallazgos`)
+
+- **Sin credenciales de demo:** cada spec registra su propia cuenta por la
+  UI (`cy.registerATSTestAccount`, login name y email con `Date.now()`) en
+  `before()`. **El registro deja la sesión iniciada** y con sesión el sitio
+  redirige a My Account: login, registro y recuperar contraseña/login name
+  necesitan cerrar sesión antes (el comando ya limpia cookies al final).
+- **Login:** login name sin distinción de mayúsculas; los espacios al
+  inicio/fin NO se recortan (con espacios falla). Campos vacíos dan el
+  mismo error genérico que credenciales inválidas (`.alert-danger`
+  "Error: Incorrect login or password provided."). Sin sesión,
+  `rt=account/account` redirige a `rt=account/login`.
+- **Registro:** form `#AccountFrm`; país → zona es un select dependiente
+  por AJAX. A diferencia del login, SÍ valida formato y rechaza login
+  name/email con espacios al inicio/fin. Éxito → `rt=account/success`.
+- **Logout:** el link de Logoff aparece 5 veces (desktop/mobile): `.first()`.
+  `.menu_account` existe con y sin sesión: verificar su texto ("Welcome
+  back" vs "Login or register"), no su existencia. El carrito se conserva
+  y vuelve al iniciar sesión.
+- **Recuperar contraseña (`#forgottenFrm`):** datos que no coinciden dan un
+  único error genérico (no dice qué campo); campo vacío da un mensaje
+  propio por campo. Mismo patrón de mayúsculas/espacios que el login.
+- **Consultar pedido como invitado (`#CheckOrderFrm`):** Order ID vacío o
+  no numérico → "Order ID is required field!"; email vacío → mensaje de
+  formato. "No encontrado" es texto plano en `.contentpanel`. No se puede
+  generar un pedido real en el sitio: "pedido encontrado" queda fuera de
+  alcance.
+- **Agregar al carrito: dos mecanismos.** Desde la home es AJAX
+  (`a.productcart[data-id]`, siempre 1 unidad, sin recargar); desde el
+  detalle es un form real (`#product_quantity`) que recarga y lleva al
+  carrito. El listado de categoría no tiene botón de agregar.
+- **Pantalla del carrito:** hay 2 tablas con las mismas clases (el
+  mini-cart del header y la real): usar `.cart-info table`. Cantidad
+  `#cart_quantity{id}` + `#cart_update` (recarga, sin aviso de éxito).
+  Quitar es un link solo con ícono `a[href*="remove={id}"]`. Para validar
+  el recálculo usar **Sub-Total** de `#totals_table`: "Total" suma un envío
+  fijo de $2.00. Carrito vacío: "Your shopping cart is empty!".
+
 ## Catálogo de datos de prueba ya verificados (evita volver a sondear ids)
 
 - **Categoría Makeup:** `path=36`, 6 productos reales.

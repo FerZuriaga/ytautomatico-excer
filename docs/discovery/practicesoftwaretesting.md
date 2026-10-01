@@ -333,6 +333,11 @@ actual y cambio correcto) y la API. Selectores en
   successfully updated!` y persiste al recargar.
 - **Los avisos se ocultan a los 5 segundos** (`fadeOutMessage`): verificar
   el mensaje apenas aparece.
+- **Esperar el perfil cargado antes de interactuar:** la pantalla guarda
+  el dato del servidor en el componente (`this.profile.id` al enviar). Un
+  clic antes de que llegue `GET /users/me` no envía nada y Angular absorbe
+  la excepción sin aviso (iteración perdida en el lote Perfil): `open()`
+  espera el email precargado.
 - **Contraseña:** el front NO valida antes de enviar (aunque muestra las
   reglas): todo lo rechaza el backend y el aviso muestra su `message` tal
   cual: actual incorrecta (400) `Your current password does not matches
