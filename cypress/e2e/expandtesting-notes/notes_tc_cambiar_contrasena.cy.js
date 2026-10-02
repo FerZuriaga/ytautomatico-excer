@@ -1,6 +1,6 @@
 // Modulo: Cuenta - Cambiar mi contraseña
 // Sitio bajo prueba: https://practice.expandtesting.com/notes/app (Expand Testing - Notes App)
-// Ticket Jira: SCRUM-804 (CA-01..CA-04, Test Cycle SCRUM-805)
+// Ticket Jira: SCRUM-804 (CA-01..CA-05, Test Cycle SCRUM-805)
 //
 // Cada test registra su propia cuenta por API (contraseña Qa!Notes2026),
 // entra a "My Notes" con la sesión iniciada, abre "Profile" desde el menú
@@ -47,7 +47,7 @@ const logoutAndLogin = (user, loginPassword) => {
 
 describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
 
-    // CA-01: Al cambiar la contraseña, la nueva reemplaza a la actual solo si es distinta de ella.
+    // CA-01: Al cambiar la contraseña con la actual correcta y una nueva válida, desde ese momento se ingresa con la nueva y la anterior deja de servir.
 
     it('[CA-01][TC-01.1][SCRUM-806] Cambiar la contraseña con la actual correcta y una nueva válida', () => {
         openChangePassword().then(user => {
@@ -71,13 +71,6 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
             password.verifyChanged()
             logoutAndLogin(user, user.password)
             session.loginRejectedByServer()
-        })
-    })
-
-    it('[CA-01][TC-01.4][SCRUM-809] No se acepta una contraseña nueva igual a la actual', () => {
-        openChangePassword().then(user => {
-            changeFrom(user, user.password)
-            password.verifyRejectedByServer()
         })
     })
 
@@ -151,6 +144,22 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
         openChangePassword().then(user => {
             fillAndSubmit({ current: user.password, new: NEW })
             password.verifyFieldError('confirm', 'confirmRequired')
+        })
+    })
+
+    // CA-05: Al cambiar la contraseña, una contraseña nueva igual a la actual se rechaza y la contraseña no cambia.
+
+    it('[CA-05][TC-05.1][SCRUM-809] No se acepta una contraseña nueva igual a la actual', () => {
+        openChangePassword().then(user => {
+            changeFrom(user, user.password)
+            password.verifyRejectedByServer()
+        })
+    })
+
+    it('[CA-05][TC-05.2][SCRUM-820] Una contraseña nueva que solo cambia mayúsculas se acepta', () => {
+        openChangePassword().then(user => {
+            changeFrom(user, user.password.toUpperCase())
+            password.verifyChanged()
         })
     })
 })
