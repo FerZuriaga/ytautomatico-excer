@@ -274,6 +274,21 @@ agrega una contradictoria.
   786 CA-02/04.
 - **Dónde:** `lib/testcase-validator.js` (PR #94).
 
+### D-39 · Una regla no se acomoda al mínimo de TC
+- **Decisión:** una regla relevada que tiene un solo TC a la vista no se
+  junta con otro CA para llegar al mínimo de 2: se le busca su segundo TC
+  (el borde, qué variante sí se acepta), se explora y queda como CA propio,
+  aunque la HU pase de 4 CA (el warning de split se justifica). El texto
+  del CA nombra el resultado observable que prueban sus TC.
+- **Por qué:** en SCRUM-804 (2026-10-02) el CA-01 decía "la nueva reemplaza
+  a la actual solo si es distinta de ella": juntaba el reemplazo con "nueva
+  distinta de la actual", que sola tenía un TC; el "solo si" además dejaba
+  esa condición como la única, y "reemplaza" no decía qué se ve. El usuario
+  lo detectó al pedir releer los CA. Se reescribió el CA-01 y se creó el
+  CA-05 con su borde explorado (cambiar solo mayúsculas se acepta).
+- **Dónde:** `lib/testcase-validator.js` (warning de CA compuesto con "solo
+  si", "salvo que", "excepto si", "siempre que") + test, `docs/lote.md` §2.
+
 ### D-19 · HU en lenguaje de negocio
 - **Decisión:** "Como" lleva un rol concreto y "Para" un beneficio real. El
   Objetivo es un resultado de negocio (no "Verificar…") y no se mencionan

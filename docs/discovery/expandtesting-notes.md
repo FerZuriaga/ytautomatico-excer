@@ -254,3 +254,25 @@ cada borde de nombre, teléfono y empresa. Selectores en
   opcional, si se completa de 4 a 30.
 - **Guardar:** `PATCH /users/profile` 200 y el `message` del servidor en
   `alert-message`; los datos siguen al recargar.
+
+## Cambiar la contraseña (2026-10-02)
+
+Explorado con 18 escenarios en una corrida (183 s): cambio, recarga,
+ingreso con la nueva y con la anterior, actual incorrecta, nueva igual a la
+actual y cada borde y vacío. Selectores en
+`cypress/fixtures/selectors/expandtesting-notes/contrasena.json`.
+
+- **Pestaña "Change password"** (`change-password`) de Profile:
+  `current-password`, `new-password`, `confirm-password` y
+  `update-password`.
+- **Validaciones del front** (sin request, `.invalid-feedback`): actual
+  obligatoria de 6 a 30; nueva obligatoria de 6 a 30 (6 y 30 se envían);
+  confirmación obligatoria e igual a la nueva (`Passwords don't match!`).
+- **Envío:** `POST /users/change-password`. 200 con el aviso de éxito; 400
+  si la actual es incorrecta o si la nueva es igual a la actual. En los
+  tres casos el `message` va a `alert-message` y los campos quedan vacíos.
+- **Después del cambio** la sesión sigue iniciada; la contraseña anterior
+  da 401 en el login y la nueva entra.
+- **Bienvenida:** `open-login-view` es el contenedor de "Login" (sin
+  atributo de test) y "Create an account": un clic sobre él cae en el
+  registro. Ubicar "Login" por su texto dentro del contenedor.

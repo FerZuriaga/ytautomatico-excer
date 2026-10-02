@@ -30,6 +30,19 @@ class NotesSessionPage {
         })
     }
 
+    // "Login" desde la bienvenida (después de cerrar sesión). El link no
+    // tiene atributo de test: open-login-view es el contenedor de "Login" y
+    // "Create an account".
+    openLoginFromWelcome() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.welcome.actions).contains('a', sel.texts.loginButton).click()
+            cy.location('pathname', T).should('eq', sel.paths.login)
+            cy.get(sel.login.email, T).should('be.visible')
+            cy.get(sel.login.password).should('be.visible')
+            cy.get(sel.login.submit).should('be.visible')
+        })
+    }
+
     typeEmail(email) {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.login.email).type(email).should('have.value', email))
     }

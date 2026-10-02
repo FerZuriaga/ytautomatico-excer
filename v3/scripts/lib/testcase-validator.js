@@ -412,12 +412,16 @@ const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre',
 // Lote SCRUM-502 (2026-09-26) sumó los conectores que esquivaban el ";":
 // "mientras que", "en cambio", "y si no" y ", y sin" (la regla opuesta:
 // "con sesión avanza…, mientras que sin sesión se le pide…").
+// Lote SCRUM-804 (2026-10-02, D-39) sumó las condiciones que esconden otra
+// regla dentro del camino feliz: "la nueva reemplaza a la actual solo si es
+// distinta de ella" juntaba el reemplazo con "distinta de la actual" para
+// que esa regla llegara al mínimo de 2 TC.
 const MIN_CLAUSE_WORDS = 4;
 
 function compoundClauses(text) {
   const body = normalize(text).replace(CRITERION_ID_REGEX, '').replace(/^\s*:/, '');
   return body
-    .split(/;|\by ademas\b|\bademas,|\bmientras que\b|\ben cambio\b|\by si no\b|,\s*y sin\b/)
+    .split(/;|\by ademas\b|\bademas,|\bmientras que\b|\ben cambio\b|\by si no\b|,\s*y sin\b|\bsolo si\b|\bsalvo que\b|\bexcepto si\b|\bsiempre que\b/)
     .filter(part => part.split(/\s+/).filter(Boolean).length >= MIN_CLAUSE_WORDS)
     .length;
 }
@@ -477,7 +481,7 @@ function validateStoryText(issue) {
   for (const text of criterios) {
     const clauses = compoundClauses(text);
     if (clauses > 1) {
-      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";", "ademas", "mientras que", "en cambio", "y si no" o ", y sin") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion.`);
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";", "ademas", "mientras que", "en cambio", "y si no", ", y sin", "solo si", "salvo que", "excepto si" o "siempre que") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion. Nunca juntar una regla en otro CA para llegar al minimo de 2 TC: buscarle su segundo TC (D-39).`);
     }
     if (DATA_LOSS_REGEX.test(normalize(text))) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);

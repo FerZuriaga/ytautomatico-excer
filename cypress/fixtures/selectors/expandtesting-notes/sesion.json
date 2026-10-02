@@ -52,6 +52,7 @@
     "Credenciales incorrectas: POST /users/login 401 con message 'Incorrect email address or password', mostrado en el toast alert-message; mismo aviso para contraseña equivocada y email no registrado.",
     "Login correcto: guarda localStorage token y navega a /notes/app (GET /notes).",
     "Logout: DELETE /users/logout, borra localStorage token y muestra la bienvenida en /notes/app (sin recarga). El servidor anula el token: reusarlo lleva a /notes/app/login con 'Your session has expired. Please login again to continue.'",
+    "Bienvenida: open-login-view es un div que contiene los links 'Login' (sin atributo de test) y 'Create an account' (open-register-view); un clic sobre el div cae en el registro. Ubicar 'Login' por su texto dentro del div (2026-10-02).",
     "Sin token, /notes/app muestra la bienvenida (open-login-view) sin pedir notas; con un token inválido, GET /notes 401 y redirige al login con el aviso de sesión vencida."
   ]
 }
