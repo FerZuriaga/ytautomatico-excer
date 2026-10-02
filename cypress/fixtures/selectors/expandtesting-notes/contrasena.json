@@ -1,0 +1,31 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "changePasswordPath": "/notes/api/users/change-password"
+  },
+  "tabs": {
+    "changePassword": "[data-testid=\"change-password\"]"
+  },
+  "form": {
+    "current": "[data-testid=\"current-password\"]",
+    "new": "[data-testid=\"new-password\"]",
+    "confirm": "[data-testid=\"confirm-password\"]",
+    "submit": "[data-testid=\"update-password\"]",
+    "error": ".invalid-feedback",
+    "alert": "[data-testid=\"alert-message\"]"
+  },
+  "texts": {
+    "currentRequired": "Current password is required",
+    "currentLength": "Current password should be between 6 and 30 characters",
+    "newRequired": "New password is required",
+    "newLength": "New password should be between 6 and 30 characters",
+    "confirmRequired": "Confirm password is required",
+    "mismatch": "Passwords don't match!"
+  },
+  "hallazgos": [
+    "Profile tiene dos pestañas: Account details (account-details) y Change password (change-password). La segunda muestra current-password, new-password, confirm-password y update-password.",
+    "El front valida antes de enviar (sin request), con .invalid-feedback bajo cada campo: actual obligatoria de 6 a 30; nueva obligatoria de 6 a 30 (6 y 30 se envían); confirmación obligatoria e igual a la nueva ('Passwords don't match!', también con la nueva vacía y la confirmación completa).",
+    "Envío: POST /users/change-password { currentPassword, newPassword }. 200 'The password was successfully updated'; 400 'The current password is incorrect' o 'The new password should be different from the current password'. En los tres casos el message va al toast alert-message y los tres campos quedan vacíos.",
+    "Tras el cambio la sesión sigue iniciada; el login con la contraseña anterior responde 401 y con la nueva entra a My Notes."
+  ]
+}
