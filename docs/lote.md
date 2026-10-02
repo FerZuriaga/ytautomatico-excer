@@ -139,6 +139,16 @@ escenarios que entran o salen), se consulta ANTES de publicar.
   rechaza" son 3 cosas (SCRUM-766). El validador solo ve ";" o "mientras
   que": un ", y" con otro resultado lo tiene que ver quien escribe. Lo que
   es regla de otra HU (ingresar es de SCRUM-745) no va en el texto del CA.
+- **Nunca acomodar una regla al mínimo de TC (D-39).** Si una regla
+  relevada tiene un solo TC a la vista, no se mete en otro CA ("…solo si es
+  distinta de ella"): se busca su segundo TC, casi siempre el borde (qué
+  variante sí se acepta: otras mayúsculas, un espacio, el límite), se
+  explora y queda como CA propio aunque la HU pase de 4 CA. El validador
+  avisa "solo si", "salvo que", "excepto si" y "siempre que".
+- **El CA dice el resultado observable**, no una palabra abstracta: "desde
+  ese momento se ingresa con la nueva y la anterior deja de servir", no "la
+  nueva reemplaza a la actual". Si los TC del CA prueban algo que el texto
+  no nombra, el texto está mal (SCRUM-804).
 
 ### Test Cases
 

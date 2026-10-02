@@ -684,6 +684,21 @@ test('criterio compuesto: "ademas" separa reglas y un fragmento corto tras ";" n
   assert.match(warnings[0], /CA-01 parece combinar 2 reglas/);
 });
 
+test('regresion SCRUM-804 CA-01: una condicion "solo si" que esconde otra regla avisa; la version reescrita no', () => {
+  const compuesto = validateStoryText({ summary: 'Cambiar contraseña', historia: { criterios: [
+    'CA-01: Al cambiar la contraseña, la nueva reemplaza a la actual solo si es distinta de ella.'
+  ] } });
+  assert.equal(compuesto.warnings.length, 1);
+  assert.match(compuesto.warnings[0], /CA-01 parece combinar 2 reglas/);
+  assert.match(compuesto.warnings[0], /D-39/);
+
+  const reescritos = validateStoryText({ summary: 'Cambiar contraseña', historia: { criterios: [
+    'CA-01: Al cambiar la contraseña con la actual correcta y una nueva válida, desde ese momento se ingresa con la nueva y la anterior deja de servir.',
+    'CA-05: Al cambiar la contraseña, una contraseña nueva igual a la actual se rechaza y la contraseña no cambia.'
+  ] } });
+  assert.deepEqual(reescritos.warnings, []);
+});
+
 test('regresion SCRUM-502: "mientras que" y ", y sin" separan reglas; la version reescrita no avisa', () => {
   const compuestos = validateStoryText({ summary: 'Checkout', historia: { criterios: [
     'CA-01: El cliente con la sesión iniciada es saludado por su nombre y avanza a la dirección de facturación sin volver a identificarse, mientras que sin sesión se le pide iniciar sesión o continuar como invitado.',
