@@ -426,6 +426,18 @@ function compoundClauses(text) {
     .length;
 }
 
+// CA abstracto (D-39, lote SCRUM-821 2026-10-02): "ya no se puede ingresar
+// con ella" no dice qué ve el usuario. Avisa una imposibilidad ("no se
+// puede", "no permite") que no nombra el resultado observable: un texto
+// entre comillas, un aviso o mensaje, lo que se muestra o adónde lleva.
+const ABSTRACT_OUTCOME_REGEX = /\bno se (puede|pueden)\b|\bno (permite|permiten)\b/;
+const OBSERVABLE_OUTCOME_REGEX = /\baviso\b|\bmensaje\b|\bse muestra\b|\bmuestra\b|\blleva al?\b|\bse rechaza con\b/;
+
+function abstractOutcome(text) {
+  const normalized = normalize(text);
+  return ABSTRACT_OUTCOME_REGEX.test(normalized) && !/["“”]/.test(String(text)) && !OBSERVABLE_OUTCOME_REGEX.test(normalized);
+}
+
 function contentWords(text) {
   return new Set(normalize(text).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !STOPWORDS.has(w)));
 }
@@ -482,6 +494,9 @@ function validateStoryText(issue) {
     const clauses = compoundClauses(text);
     if (clauses > 1) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";", "ademas", "mientras que", "en cambio", "y si no", ", y sin", "solo si", "salvo que", "excepto si" o "siempre que") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion. Nunca juntar una regla en otro CA para llegar al minimo de 2 TC: buscarle su segundo TC (D-39).`);
+    }
+    if (abstractOutcome(text)) {
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} dice lo que no se puede hacer sin nombrar el resultado observable -- decir que ve el usuario (el aviso, la pantalla a la que lleva); si hay dos caminos que fallan por separado (ej. login y sesion abierta), son dos CA (D-39).`);
     }
     if (DATA_LOSS_REGEX.test(normalize(text))) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);

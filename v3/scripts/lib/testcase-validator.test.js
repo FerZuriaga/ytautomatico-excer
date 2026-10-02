@@ -699,6 +699,21 @@ test('regresion SCRUM-804 CA-01: una condicion "solo si" que esconde otra regla 
   assert.deepEqual(reescritos.warnings, []);
 });
 
+test('regresion SCRUM-821 CA-02: un CA que dice lo que no se puede hacer sin el resultado observable avisa; la version reescrita no', () => {
+  const abstracto = validateStoryText({ summary: 'Borrar mi cuenta', historia: { criterios: [
+    'CA-02: Después de borrar la cuenta, ya no se puede ingresar con ella.'
+  ] } });
+  assert.equal(abstracto.warnings.length, 1);
+  assert.match(abstracto.warnings[0], /CA-02 dice lo que no se puede hacer sin nombrar el resultado observable/);
+
+  const reescritos = validateStoryText({ summary: 'Borrar mi cuenta', historia: { criterios: [
+    'CA-02: Después de borrar la cuenta, ingresar con su email y contraseña se rechaza con el aviso de email o contraseña incorrectos.',
+    'CA-03: Después de borrar la cuenta, una sesión que había quedado abierta en otro dispositivo lleva al login con el aviso "Your session has expired. Please login again to continue." al cargar cualquier pantalla.',
+    'CA-06: Un email que ya tiene cuenta no se puede registrar otra vez y se muestra el aviso del servidor.'
+  ] } });
+  assert.deepEqual(reescritos.warnings, []);
+});
+
 test('regresion SCRUM-502: "mientras que" y ", y sin" separan reglas; la version reescrita no avisa', () => {
   const compuestos = validateStoryText({ summary: 'Checkout', historia: { criterios: [
     'CA-01: El cliente con la sesión iniciada es saludado por su nombre y avanza a la dirección de facturación sin volver a identificarse, mientras que sin sesión se le pide iniciar sesión o continuar como invitado.',
