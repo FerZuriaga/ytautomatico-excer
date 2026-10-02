@@ -65,7 +65,7 @@ describe('[SCRUM-745] Notes App - Iniciar sesión', () => {
         })
     })
 
-    // CA-02: Al iniciar sesión, un email vacío o sin formato válido se avisa debajo del campo y el formulario no se envía.
+    // CA-02: Al iniciar sesión, un email sin formato válido se avisa debajo del campo y el formulario no se envía.
 
     it('[CA-02][TC-02.1][SCRUM-751] No se envía el login sin email', () => {
         openLoginWithAccount().then(user => {
@@ -84,7 +84,7 @@ describe('[SCRUM-745] Notes App - Iniciar sesión', () => {
         })
     })
 
-    // CA-03: Al iniciar sesión, una contraseña vacía o con menos de 6 o más de 30 caracteres se avisa debajo del campo y el formulario no se envía.
+    // CA-03: Al iniciar sesión, una contraseña que no tenga entre 6 y 30 caracteres se avisa debajo del campo y el formulario no se envía.
 
     it('[CA-03][TC-03.1][SCRUM-753] No se envía el login sin contraseña', () => {
         openLoginWithAccount().then(user => {

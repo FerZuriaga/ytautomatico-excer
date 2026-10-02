@@ -265,6 +265,13 @@ agrega una contradictoria.
   un split. Cada TC declara `criterio` y `tipo`.
 - **Por qué:** 19 HU salieron con exactamente 2 CA por inercia
   (2026-09-23).
+- **Redacción por regla (2026-10-01):** un CA se escribe con la regla
+  ("un nombre que no tenga entre 4 y 30 caracteres") y no con la lista de
+  casos ("vacío, de menos de 4 o de más de 30"), que lo hace parecer dos
+  funciones. El vacío es un caso de la regla (largo 0, email sin formato,
+  confirmación distinta) y va como TC. Nació de la pregunta del usuario
+  sobre SCRUM-786 CA-02; se reescribieron 745 CA-02/03, 766 CA-02..05 y
+  786 CA-02/04.
 - **Dónde:** `lib/testcase-validator.js` (PR #94).
 
 ### D-19 · HU en lenguaje de negocio

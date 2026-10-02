@@ -56,7 +56,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         session.verifyNoNotes()
     })
 
-    // CA-02: Al registrarse, un email vacío o sin formato válido se avisa debajo del campo y no se crea la cuenta.
+    // CA-02: Al registrarse, un email sin formato válido se avisa debajo del campo y no se crea la cuenta.
 
     it('[CA-02][TC-02.1][SCRUM-771] No se envía el registro sin email', () => {
         submitAndExpectError(validData({ email: undefined }), 'email', 'emailRequired')
@@ -66,7 +66,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         submitAndExpectError(validData({ email: 'usuario.sin.arroba' }), 'email', 'emailInvalid')
     })
 
-    // CA-03: Al registrarse, un nombre vacío o con menos de 4 o más de 30 caracteres se avisa debajo del campo.
+    // CA-03: Al registrarse, un nombre que no tenga entre 4 y 30 caracteres se avisa debajo del campo y no se crea la cuenta.
 
     it('[CA-03][TC-03.1][SCRUM-773] No se envía el registro sin nombre', () => {
         submitAndExpectError(validData({ name: undefined }), 'name', 'nameRequired')
@@ -88,7 +88,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         submitAndExpectCreated(validData({ name: 'A'.repeat(30) }))
     })
 
-    // CA-04: Al registrarse, una contraseña vacía o con menos de 6 o más de 30 caracteres se avisa debajo del campo.
+    // CA-04: Al registrarse, una contraseña que no tenga entre 6 y 30 caracteres se avisa debajo del campo y no se crea la cuenta.
 
     it('[CA-04][TC-04.1][SCRUM-778] No se envía el registro sin contraseña', () => {
         submitAndExpectError(validData({ password: undefined }), 'password', 'passwordRequired')
@@ -110,7 +110,7 @@ describe('[SCRUM-766] Notes App - Registrarse', () => {
         submitAndExpectCreated(validData({ password: PASSWORD_30, confirmPassword: PASSWORD_30 }))
     })
 
-    // CA-05: Al registrarse, una confirmación vacía o distinta de la contraseña se avisa debajo del campo.
+    // CA-05: Al registrarse, una confirmación distinta de la contraseña se avisa debajo del campo y no se crea la cuenta.
 
     it('[CA-05][TC-05.1][SCRUM-783] No se envía el registro sin confirmar la contraseña', () => {
         submitAndExpectError(validData({ confirmPassword: undefined }), 'confirmPassword', 'confirmRequired')

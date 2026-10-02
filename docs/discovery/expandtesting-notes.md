@@ -237,3 +237,20 @@ ingreso). Selectores en
   `login-view` ("Click here to Log In"). **No inicia sesión.**
 - **Email ya registrado** (también con otras mayúsculas): 409 con el
   `message` del servidor en `alert-message`; el formulario sigue.
+
+## Actualizar el perfil (2026-10-01)
+
+Explorado con 20 escenarios en una corrida (131 s): guardar, recargar y
+cada borde de nombre, teléfono y empresa. Selectores en
+`cypress/fixtures/selectors/expandtesting-notes/perfil.json`.
+
+- **Profile** (`/notes/app/profile`, menú `profile`): `user-id` y
+  `user-email` deshabilitados; `user-name`, `user-phone`, `user-company` y
+  `update-profile`. Los campos se completan con `GET /users/profile`:
+  **esperar el nombre cargado antes de editar**.
+- **Validaciones del front** (sin request, `.invalid-feedback`): nombre
+  obligatorio de 4 a 30; teléfono opcional, si se completa
+  `^\+?\d{8,20}$` (guiones rechazados, "+" inicial aceptado); empresa
+  opcional, si se completa de 4 a 30.
+- **Guardar:** `PATCH /users/profile` 200 y el `message` del servidor en
+  `alert-message`; los datos siguen al recargar.

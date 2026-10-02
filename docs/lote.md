@@ -129,6 +129,11 @@ escenarios que entran o salen), se consulta ANTES de publicar.
   va en la misma oración (no con ";"). Dos comportamientos que fallan por
   separado = dos CA.
 - El negativo de una regla ya cubierta es un TC de ese CA, no un CA nuevo.
+- **Redactar por la regla, no por la lista de casos:** "un nombre que no
+  tenga entre 4 y 30 caracteres…", no "un nombre vacío, de menos de 4 o de
+  más de 30…". El vacío es un caso de la misma regla (0 caracteres, o un
+  email sin formato) aunque la app muestre otro mensaje: va como TC, no en
+  el texto del CA (D-18, caso SCRUM-786).
 - Antes de cerrar un CA, contar sus verbos de resultado: "se crea la
   cuenta, **y** con ella se puede ingresar, **y** un email repetido se
   rechaza" son 3 cosas (SCRUM-766). El validador solo ve ";" o "mientras
