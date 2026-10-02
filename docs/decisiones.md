@@ -486,6 +486,21 @@ agrega una contradictoria.
   (se hubieran perdido 2 escenarios únicos).
 - **Dónde:** `CLAUDE.md` §2, `docs/lote.md`.
 
+### D-40 · Publicidad de terceros: se bloquea por app, no global
+- **Decisión:** la publicidad y la analítica de Google se bloquean solo en
+  la app que las carga, desde su comando de navegación (Notes:
+  `cy.gotoNotesUrl`), y no con `blockHosts` en `cypress.config.js`. Una app
+  nueva con el mismo problema se suma en su propio comando; se pasa a
+  global solo si lo tienen varias apps y una regresión de todas lo valida.
+  Las exploraciones de `explore-page.js` no bloquean: ven la app tal cual.
+- **Por qué:** SCRUM-832 pasó recién en el reintento porque un anuncio de
+  video empujó el formulario de registro (2026-10-02). Medido con 4 specs
+  de Notes (59 tests, una corrida de cada lado): 304 s → 228 s (−25 %),
+  0 fallas en ambas. El usuario eligió el alcance por app: `blockHosts`
+  afecta a todas las apps y solo Notes tiene publicidad relevada.
+- **Dónde:** `cypress/support/commands/expandtesting-notes.js`,
+  `docs/discovery/expandtesting-notes.md`.
+
 ---
 
 ## Arquitectura y portabilidad
