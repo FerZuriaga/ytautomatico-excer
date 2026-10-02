@@ -28,7 +28,9 @@ documentación más la app explorada con `explore-page.js`.
 - **Selectores:** todos los elementos relevantes tienen `data-testid`.
 - **Publicidad y analítica de Google** en todas las páginas: en el
   navegador de pruebas sus requests quedan sin respuesta (esperado, no son
-  de la app). Vigilar que un anuncio no tape un botón.
+  de la app). En los tests se bloquean desde `cy.gotoNotesUrl` (D-40):
+  medido el 2026-10-02 con 4 specs (59 tests), 304 s → 228 s (−25 %).
+  `explore-page.js` no las bloquea: el discovery ve la app tal cual.
 
 ## Crear una nota (2026-09-28)
 
@@ -303,3 +305,4 @@ localStorage). Selectores en
   registrar (201, también con otras mayúsculas).
 - **Publicidad:** en la pantalla de registro un anuncio de video de Google
   empujó el formulario y SCRUM-832 pasó recién en el reintento (2026-10-02).
+  Desde D-40 los tests de Notes bloquean la publicidad.
