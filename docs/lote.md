@@ -108,7 +108,10 @@ Al terminar el discovery, UN mensaje con:
 
 Terminar el turno. Después no se vuelve a preguntar salvo algo nuevo. Si
 al escribir cambia la estructura aprobada (cantidad de HU o CA,
-escenarios que entran o salen), se consulta ANTES de publicar.
+escenarios que entran o salen), se consulta ANTES de publicar. Eso
+incluye sumar un TC que el usuario no pidió cuando fue él quien definió
+los TC de un CA: aunque haga falta para el mínimo de 2, se propone y se
+espera el OK (SCRUM-826, 2026-10-02).
 
 ### Historia
 
@@ -148,7 +151,11 @@ escenarios que entran o salen), se consulta ANTES de publicar.
 - **El CA dice el resultado observable**, no una palabra abstracta: "desde
   ese momento se ingresa con la nueva y la anterior deja de servir", no "la
   nueva reemplaza a la actual". Si los TC del CA prueban algo que el texto
-  no nombra, el texto está mal (SCRUM-804).
+  no nombra, el texto está mal (SCRUM-804). Lo mismo con lo que no se
+  puede hacer: "ya no se puede ingresar" no sirve; se dice el aviso que se
+  ve, y si hay dos caminos que fallan por separado (login con las
+  credenciales y sesión ya abierta) son dos CA (SCRUM-821). El validador
+  avisa "no se puede" o "no permite" sin aviso, mensaje ni texto citado.
 
 ### Test Cases
 

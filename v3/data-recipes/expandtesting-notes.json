@@ -8,6 +8,7 @@
       "vars": {
         "name": "Qa Notes",
         "email": "qa.notes.{{unique}}@example.com",
+        "emailMayusculas": "QA.Notes.{{unique}}@Example.com",
         "password": "Qa!Notes2026"
       },
       "steps": [
@@ -46,6 +47,16 @@
       "steps": [
         {
           "method": "DELETE", "path": "/users/logout", "expect": 200,
+          "headers": { "x-auth-token": "{{token}}" }
+        }
+      ]
+    },
+    "borrar-cuenta": {
+      "description": "Borra en el servidor la cuenta de la receta usuario (la misma llamada que el boton Delete Account). El token queda en localStorage: sirve para probar que la sesion de una cuenta borrada no se puede usar.",
+      "requires": ["token"],
+      "steps": [
+        {
+          "method": "DELETE", "path": "/users/delete-account", "expect": 200,
           "headers": { "x-auth-token": "{{token}}" }
         }
       ]

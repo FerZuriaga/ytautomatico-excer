@@ -288,6 +288,15 @@ agrega una contradictoria.
   CA-05 con su borde explorado (cambiar solo mayúsculas se acepta).
 - **Dónde:** `lib/testcase-validator.js` (warning de CA compuesto con "solo
   si", "salvo que", "excepto si", "siempre que") + test, `docs/lote.md` §2.
+- **Ampliación (SCRUM-821, 2026-10-02):** el usuario corrigió el CA-02
+  "Después de borrar la cuenta, ya no se puede ingresar con ella": abstracto
+  y con dos caminos que fallan por separado (login con las credenciales y
+  sesión ya abierta). Quedó en CA-02 (aviso de credenciales incorrectas) y
+  CA-03 (aviso de sesión vencida). El validador avisa un CA con "no se
+  puede" o "no permite" que no nombra aviso, mensaje, pantalla ni texto
+  citado. En el mismo lote se sumó sin consultar un TC (SCRUM-826) a un CA
+  cuyos TC había definido el usuario: `docs/lote.md` §2 deja explícito que
+  eso también se consulta antes de publicar.
 
 ### D-19 · HU en lenguaje de negocio
 - **Decisión:** "Como" lleva un rol concreto y "Para" un beneficio real. El
