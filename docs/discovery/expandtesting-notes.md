@@ -273,6 +273,33 @@ actual y cada borde y vacío. Selectores en
   tres casos el `message` va a `alert-message` y los campos quedan vacíos.
 - **Después del cambio** la sesión sigue iniciada; la contraseña anterior
   da 401 en el login y la nueva entra.
-- **Bienvenida:** `open-login-view` es el contenedor de "Login" (sin
+- **Bienvenida (vale para todo el módulo Cuenta):** `open-login-view` es el contenedor de "Login" (sin
   atributo de test) y "Create an account": un clic sobre él cae en el
   registro. Ubicar "Login" por su texto dentro del contenedor.
+
+## Borrar la cuenta (2026-10-02)
+
+Explorado con 12 escenarios en 3 corridas: diálogo, confirmar (con y sin
+notas), Cancel, la X, login después del borrado (también con el email en
+otras mayúsculas), token de la cuenta borrada en My Notes y en Profile, y
+volver a registrar el email (también con otras mayúsculas). Receta nueva
+`borrar-cuenta` (borra por API la cuenta de `usuario`; el token queda en
+localStorage). Selectores en
+`cypress/fixtures/selectors/expandtesting-notes/cuenta.json`.
+
+- **"Delete Account"** (`delete-account`) en Profile abre un diálogo que
+  **reusa los `data-testid` del borrado de notas** (`note-delete-dialog`,
+  `note-delete-confirm`, `note-delete-cancel-2` = Cancel,
+  `note-delete-cancel-1` = la X). La pregunta y la advertencia son dos
+  elementos: el texto del diálogo las junta sin espacio, así que se
+  afirman por separado.
+- **Confirmar:** `DELETE /users/delete-account` 200, borra el token y va
+  al login con `Your account has been deleted. You should create a new
+  account to continue.` (texto del front) en `alert-message`.
+- **Cancel y la X** cierran el diálogo sin request.
+- **Después del borrado:** el login (también con otras mayúsculas) da 401;
+  un token de la cuenta borrada da 401 en cualquier pantalla y lleva al
+  login con el aviso de sesión vencida; el email se puede volver a
+  registrar (201, también con otras mayúsculas).
+- **Publicidad:** en la pantalla de registro un anuncio de video de Google
+  empujó el formulario y SCRUM-832 pasó recién en el reintento (2026-10-02).

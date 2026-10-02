@@ -64,6 +64,15 @@ class NotesProfilePage {
         cy.wait('@getProfile', T)
     }
 
+    // Sin sesión válida no se muestran los datos de la cuenta.
+    verifyNotShown() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.get(sel.form.id).should('not.exist')
+            cy.get(sel.form.email).should('not.exist')
+            cy.get(sel.form.name).should('not.exist')
+        })
+    }
+
     verifyValues(values) {
         cy.fixture(FIXTURE).then(sel => {
             Object.entries(values).forEach(([field, value]) => cy.get(sel.form[field], T).should('have.value', value))

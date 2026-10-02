@@ -1,0 +1,31 @@
+{
+  "api": {
+    "host": "practice.expandtesting.com",
+    "deleteAccountPath": "/notes/api/users/delete-account"
+  },
+  "paths": {
+    "profile": "/notes/app/profile",
+    "login": "/notes/app/login"
+  },
+  "profile": {
+    "deleteAccount": "[data-testid=\"delete-account\"]"
+  },
+  "dialog": {
+    "root": "[data-testid=\"note-delete-dialog\"]",
+    "confirm": "[data-testid=\"note-delete-confirm\"]",
+    "close": "[data-testid=\"note-delete-cancel-1\"]",
+    "cancel": "[data-testid=\"note-delete-cancel-2\"]"
+  },
+  "alert": "[data-testid=\"alert-message\"]",
+  "texts": {
+    "question": "Do you really want to delete your account?",
+    "warning": "Once your account is deleted, all of your data will be permanently removed, and we will be unable to restore it",
+    "deleted": "Your account has been deleted. You should create a new account to continue."
+  },
+  "hallazgos": [
+    "Delete Account (delete-account) en Profile abre un diálogo que reusa los data-testid del borrado de notas: note-delete-dialog, note-delete-confirm (Delete), note-delete-cancel-2 (Cancel) y note-delete-cancel-1 (la X). La pregunta y la advertencia son dos elementos: el texto del diálogo las junta sin espacio.",
+    "Confirmar: DELETE /users/delete-account 200, borra localStorage token y va a /notes/app/login con el toast alert-message 'Your account has been deleted. You should create a new account to continue.' (texto del front).",
+    "Cancel y la X cierran el diálogo sin request; se sigue en Profile con la sesión.",
+    "Después del borrado: login con el email (también con otras mayúsculas) 401 'Incorrect email address or password'; un token de la cuenta borrada da 401 en GET /notes y GET /users/profile y lleva al login con 'Your session has expired. Please login again to continue.'; el email se puede volver a registrar (201, también con otras mayúsculas)."
+  ]
+}
