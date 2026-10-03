@@ -12,14 +12,10 @@ fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
 | `expandtesting-notes` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `practicesoftwaretesting` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
 | `restful-booker-platform` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
-| `saucedemo`, `orangehrm`, `argentinagobar`, `rentascordoba`, `disco` | Legado | Tags `[SCRUM-Txx]` de Zephyr (discontinuado) |
-| `automation-exercise`, `blazedemo` | Legado | Sin tags o con keys de la etapa experimental (SCRUM-1 a 42, archivados) |
 
-**Legado** (decisión del 2026-09-24): se conservan como regresión que corre
-con `npm run test:<app>`, pero no se modifican, no se migran a Xray, no
-reportan resultados y no se les corre `check-traceability` (sus keys no
-existen en Xray). Sus Historias y Test Cases son anteriores a las reglas
-de calidad actuales. Una app nueva siempre sigue el pipeline de
+**Legado:** las 7 apps de la etapa Zephyr/experimental y las herramientas
+v1/v2 se sacaron de `main` el 2026-10-03; siguen en la etiqueta git
+`legado-2026-10-03` (D-09). Una app nueva siempre sigue el pipeline de
 `CLAUDE.md` con trazabilidad a Xray.
 
 Cada app activa tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
@@ -39,14 +35,11 @@ desde los comandos custom (`cypress/support/commands/*.js`) con
 
 | Variable              | Sitio              | Default (producción/demo actual)          |
 |------------------------|---------------------|--------------------------------------------|
-| `automationExerciseUrl` | AutomationExercise  | `https://automationexercise.com`          |
-| `blazedemoUrl`          | BlazeDemo           | `https://blazedemo.com`                   |
-| `discoUrl`              | Disco Online        | `https://www.disco.com.ar`                |
+| `automationTestStoreUrl` | Automation Test Store | `https://automationteststore.com`       |
+| `commitqualityUrl`      | CommitQuality       | `https://commitquality.com`               |
 | `expandtestingNotesUrl` | Expand Testing Notes | `https://practice.expandtesting.com`     |
-| `orangehrmUrl`          | OrangeHRM           | `https://opensource-demo.orangehrmlive.com` |
-| `rentascordobaUrl`      | Rentas Córdoba      | `https://www.rentascordoba.gob.ar`        |
+| `practicesoftwaretestingUrl` | Practice Software Testing | `https://practicesoftwaretesting.com` |
 | `restfulBookerPlatformUrl` | Restful Booker Platform | `https://automationintesting.online` |
-| `saucedemoUrl`          | SauceDemo           | `https://www.saucedemo.com`               |
 
 ### Cómo apuntar los tests a otra URL sin tocar código
 
@@ -54,13 +47,13 @@ Para correr la suite (o un spec puntual) contra otro entorno, se pasa la
 variable como `CYPRESS_<nombreDeLaVariable>` antes del comando:
 
 ```bash
-CYPRESS_orangehrmUrl=https://staging.orangehrmlive.com npx cypress run --spec "cypress/e2e/orangehrm/**/*.cy.js"
+CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run --spec "cypress/e2e/expandtesting-notes/**/*.cy.js"
 ```
 
 También funciona con `--env` en vez de la variable de entorno:
 
 ```bash
-npx cypress run --env orangehrmUrl=https://staging.orangehrmlive.com --spec "cypress/e2e/orangehrm/**/*.cy.js"
+npx cypress run --env expandtestingNotesUrl=https://staging.example.com --spec "cypress/e2e/expandtesting-notes/**/*.cy.js"
 ```
 
 Sin overrides, cada comando usa el default de `cypress.config.js` (el
@@ -91,10 +84,7 @@ Decisiones del proyecto y su porqué: `docs/decisiones.md`.
 ## Scripts disponibles
 
 ```bash
-npm run test:automation-exercise
-npm run test:orangehrm
-npm run test:blazedemo
-npm run test:saucedemo
-npm run test:disco
-npm run test:rentascordoba
+npm ci                                  # instala dependencias (node_modules no se versiona)
+npm run test:unit                       # lógica del pipeline, sin navegador
+npm run test:expandtesting-notes        # una app activa (igual con las otras 4)
 ```

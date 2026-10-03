@@ -137,17 +137,25 @@ const REGISTRATION_LINE = {
   'package.json': /^\s*"test:[\w-]+":\s*".*",?\s*$/
 };
 
+// Los comentarios no cambian el comportamiento de ninguna app.
+const isComment = line => /^\s*(\/\/|\/?\*)/.test(line);
+
 /**
  * `diffLines`: salida de `git diff -U0` del archivo. true si el diff solo
- * agrega líneas de registro de una app (sin borrar ni modificar nada).
+ * agrega líneas de registro de una app (alta) o solo las saca (baja), sin
+ * modificar nada más que comentarios. La baja es lo simétrico del alta
+ * (2026-10-03: sacar las 7 apps de legado disparaba 70 specs). Sacar por
+ * error el registro de una app que sigue activa no pasa desapercibido:
+ * `checkAppLayout` (lib/architecture.js) hace fallar `npm run test:unit`.
  */
 function isAppRegistrationDiff(file, diffLines) {
   const pattern = REGISTRATION_LINE[toPosix(file)];
   if (!pattern) return false;
   const body = diffLines.filter(l => !l.startsWith('+++') && !l.startsWith('---'));
-  const added = body.filter(l => l.startsWith('+')).map(l => l.slice(1));
-  const removed = body.filter(l => l.startsWith('-'));
-  return added.length > 0 && removed.length === 0 && added.every(line => pattern.test(line));
+  const added = body.filter(l => l.startsWith('+')).map(l => l.slice(1)).filter(l => !isComment(l));
+  const removed = body.filter(l => l.startsWith('-')).map(l => l.slice(1)).filter(l => !isComment(l));
+  const onlyRegistration = lines => lines.length > 0 && lines.every(line => pattern.test(line));
+  return (onlyRegistration(added) && removed.length === 0) || (onlyRegistration(removed) && added.length === 0);
 }
 
 /**

@@ -106,11 +106,13 @@ function formatViolations(violations, rules = RULES) {
 // Toda carpeta de app en cypress/e2e/ tiene que estar declarada acá. Las
 // activas (trabajo nuevo, trazabilidad a Xray) tienen todas sus piezas en
 // su lugar; las de legado no se tocan (decisión del 2026-09-24, README).
+// Desde el 2026-10-03 no queda legado en main: las 7 apps de la etapa
+// Zephyr viven en la etiqueta git legado-2026-10-03 (D-09).
 // Nace del 2026-09-28: 14 selectores de Automation Test Store estaban
 // sueltos en la raíz de fixtures/selectors/ y nada lo detectaba.
 const APPS = {
   active: ['automation-test-store', 'commitquality', 'expandtesting-notes', 'practicesoftwaretesting', 'restful-booker-platform'],
-  legacy: ['argentinagobar', 'automation-exercise', 'blazedemo', 'disco', 'orangehrm', 'rentascordoba', 'saucedemo']
+  legacy: []
 };
 
 // Piezas obligatorias de una app activa (las recetas de datos por API son

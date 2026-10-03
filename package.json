@@ -6,18 +6,11 @@
   "scripts": {
     "open": "cypress open",
     "test": "cypress run",
-    "test:argentinagobar": "cypress run --spec \"cypress/e2e/argentinagobar/**/*.cy.js\"",
-    "test:automation-exercise": "cypress run --spec \"cypress/e2e/automation-exercise/**/*.cy.js\"",
     "test:automation-test-store": "cypress run --spec \"cypress/e2e/automation-test-store/**/*.cy.js\"",
     "test:commitquality": "cypress run --spec \"cypress/e2e/commitquality/**/*.cy.js\"",
-    "test:orangehrm": "cypress run --spec \"cypress/e2e/orangehrm/**/*.cy.js\"",
     "test:practicesoftwaretesting": "cypress run --spec \"cypress/e2e/practicesoftwaretesting/**/*.cy.js\"",
-    "test:blazedemo": "cypress run --spec \"cypress/e2e/blazedemo/**/*.cy.js\"",
-    "test:saucedemo": "cypress run --spec \"cypress/e2e/saucedemo/**/*.cy.js\"",
-    "test:disco": "cypress run --spec \"cypress/e2e/disco/**/*.cy.js\"",
     "test:expandtesting-notes": "cypress run --spec \"cypress/e2e/expandtesting-notes/**/*.cy.js\"",
     "test:restful-booker-platform": "cypress run --spec \"cypress/e2e/restful-booker-platform/**/*.cy.js\"",
-    "test:rentascordoba": "cypress run --spec \"cypress/e2e/rentascordoba/**/*.cy.js\"",
     "test:unit": "node --test v3/scripts/lib/*.test.js",
     "qa:run-and-report": "node v3/scripts/run-and-report.js",
     "qa:check-traceability": "node v3/scripts/check-traceability.js"

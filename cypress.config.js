@@ -4,20 +4,13 @@ const { defineConfig } = require("cypress");
 module.exports = defineConfig({
   // URLs base por sitio. Default = producción/demo pública actual.
   // Se pueden overridear sin tocar este archivo, ej:
-  // CYPRESS_ORANGEHRM_URL=https://staging.orangehrmlive.com npx cypress run
+  // CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run
   env: {
-    argentinagobarUrl: "https://www.argentina.gob.ar",
-    automationExerciseUrl: "https://automationexercise.com",
     automationTestStoreUrl: "https://automationteststore.com",
-    blazedemoUrl: "https://blazedemo.com",
     commitqualityUrl: "https://commitquality.com",
-    discoUrl: "https://www.disco.com.ar",
     expandtestingNotesUrl: "https://practice.expandtesting.com",
-    orangehrmUrl: "https://opensource-demo.orangehrmlive.com",
     practicesoftwaretestingUrl: "https://practicesoftwaretesting.com",
-    rentascordobaUrl: "https://www.rentascordoba.gob.ar",
     restfulBookerPlatformUrl: "https://automationintesting.online",
-    saucedemoUrl: "https://www.saucedemo.com",
   },
   e2e: {
     setupNodeEvents(on, config) {
