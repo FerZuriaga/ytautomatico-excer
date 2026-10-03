@@ -215,6 +215,11 @@ la sesión de `usuario`). Selectores en
   (`open-login-view`) sin recargar. **El servidor anula el token:**
   reusarlo lleva al login con `Your session has expired. Please login
   again to continue.` (lo mismo con cualquier token inválido).
+- **Un token por cuenta, no por sesión** (verificado 2026-10-03): dos logins
+  de la misma cuenta (otro navegador, otro dispositivo) reciben el mismo
+  token. Por eso el logout de uno cierra todos, y el cambio de contraseña
+  no renueva el token: las sesiones previas siguen activas (Bug SCRUM-833).
+  Para "otra sesión" alcanza con inyectar el token de la receta `usuario`.
 - **Sin token**, `/notes/app` muestra la bienvenida y no pide notas.
 - En el test, un alias de `GET /notes` ya tiene la respuesta 200 de la
   carga anterior: la sesión vencida se afirma por pantalla, no con
@@ -274,7 +279,10 @@ actual y cada borde y vacío. Selectores en
   si la actual es incorrecta o si la nueva es igual a la actual. En los
   tres casos el `message` va a `alert-message` y los campos quedan vacíos.
 - **Después del cambio** la sesión sigue iniciada; la contraseña anterior
-  da 401 en el login y la nueva entra.
+  da 401 en el login y la nueva entra. Las demás sesiones de la cuenta
+  también siguen activas (Bug SCRUM-833; receta `cambiar-contrasena`).
+- La contraseña actual distingue mayúsculas (otras mayúsculas: 400 "The
+  current password is incorrect").
 - **Bienvenida (vale para todo el módulo Cuenta):** `open-login-view` es el contenedor de "Login" (sin
   atributo de test) y "Create an account": un clic sobre él cae en el
   registro. Ubicar "Login" por su texto dentro del contenedor.

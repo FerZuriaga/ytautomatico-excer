@@ -61,6 +61,18 @@
         }
       ]
     },
+    "cambiar-contrasena": {
+      "description": "Cambia en el servidor la contrasena de la receta usuario (la misma llamada que el boton Update password). El token queda en localStorage: sirve para probar que pasa con una sesion abierta antes del cambio.",
+      "requires": ["token", "password"],
+      "params": { "newPassword": "Nueva!2026x" },
+      "steps": [
+        {
+          "method": "POST", "path": "/users/change-password", "expect": 200,
+          "headers": { "x-auth-token": "{{token}}" },
+          "body": { "currentPassword": "{{password}}", "newPassword": "{{newPassword}}" }
+        }
+      ]
+    },
     "nota": {
       "description": "Nota del usuario de la receta usuario. category: Home | Work | Personal.",
       "requires": ["token"],

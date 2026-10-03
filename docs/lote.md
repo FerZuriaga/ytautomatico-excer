@@ -195,6 +195,9 @@ cambia cómo se definen los CA (arriba): solo evita contradicciones.
    también a `fueraDeAlcance` (SCRUM-730).
 4. **`fueraDeAlcance` se escribe al final**, con lo que ningún CA
    nombra; si algo choca con un CA, sale de una de las dos (SCRUM-717).
+   "No se puede observar" no es motivo hasta intentarlo con una receta
+   (otra sesión por API, un cambio hecho por API): en SCRUM-804 se observó
+   después y era el defecto SCRUM-833, el corazón del "Para".
 5. **Lo relevado que contradice el "Para"** va directo a posibles
    defectos, nunca a un CA (SCRUM-338).
 

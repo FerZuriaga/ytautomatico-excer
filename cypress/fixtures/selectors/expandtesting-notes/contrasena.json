@@ -22,10 +22,16 @@
     "confirmRequired": "Confirm password is required",
     "mismatch": "Passwords don't match!"
   },
+  "reasons": {
+    "currentIncorrect": "current password is incorrect",
+    "sameAsCurrent": "different from the current password"
+  },
   "hallazgos": [
     "Profile tiene dos pestañas: Account details (account-details) y Change password (change-password). La segunda muestra current-password, new-password, confirm-password y update-password.",
     "El front valida antes de enviar (sin request), con .invalid-feedback bajo cada campo: actual obligatoria de 6 a 30; nueva obligatoria de 6 a 30 (6 y 30 se envían); confirmación obligatoria e igual a la nueva ('Passwords don't match!', también con la nueva vacía y la confirmación completa).",
     "Envío: POST /users/change-password { currentPassword, newPassword }. 200 'The password was successfully updated'; 400 'The current password is incorrect' o 'The new password should be different from the current password'. En los tres casos el message va al toast alert-message y los tres campos quedan vacíos.",
-    "Tras el cambio la sesión sigue iniciada; el login con la contraseña anterior responde 401 y con la nueva entra a My Notes."
+    "Tras el cambio la sesión sigue iniciada; el login con la contraseña anterior responde 401 y con la nueva entra a My Notes.",
+    "La contraseña actual distingue mayúsculas: escrita con otras mayúsculas da 400 'The current password is incorrect' (2026-10-03).",
+    "Las sesiones abiertas antes del cambio siguen activas (Bug SCRUM-833): dos logins de la misma cuenta reciben el mismo token y el cambio de contraseña no lo renueva (2026-10-03)."
   ]
 }

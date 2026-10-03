@@ -49,14 +49,17 @@ class NotesPasswordPage {
         this.verifyServerAnswer(200)
     }
 
-    verifyRejectedByServer() {
-        this.verifyServerAnswer(400)
+    // reasonKey: currentIncorrect | sameAsCurrent. El motivo distingue los
+    // dos rechazos (los dos son 400).
+    verifyRejectedByServer(reasonKey) {
+        this.verifyServerAnswer(400, reasonKey)
     }
 
-    verifyServerAnswer(status) {
+    verifyServerAnswer(status, reasonKey) {
         cy.fixture(FIXTURE).then(sel => {
             cy.wait('@changePassword', T).then(({ response }) => {
                 expect(response.statusCode, 'respuesta del cambio de contraseña').to.eq(status)
+                if (reasonKey) expect(response.body.message.toLowerCase(), 'motivo del rechazo').to.include(sel.reasons[reasonKey])
                 cy.get(sel.form.alert, T).should('be.visible').and('have.text', response.body.message)
             })
             this.verifyEmptyForm()
