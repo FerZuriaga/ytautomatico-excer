@@ -86,8 +86,9 @@ test('regresion alta de RBP: registrar una app nueva en los archivos globales no
   assert.equal(isAppRegistrationDiff('cypress/support/commands.js', commands), true);
   assert.equal(isAppRegistrationDiff('package.json', pkg), true);
 
-  // Cualquier otra cosa sigue siendo global: una opción nueva, un cambio o un borrado.
+  // Cualquier otra cosa sigue siendo global: una opción nueva, un cambio o el borrado de una opción.
   assert.equal(isAppRegistrationDiff('cypress.config.js', ['@@ -5 +5 @@', '-  defaultCommandTimeout: 4000,', '+  defaultCommandTimeout: 8000,']), false);
+  assert.equal(isAppRegistrationDiff('cypress.config.js', ['@@ -5 +4,0 @@', '-  pageLoadTimeout: 20000,']), false);
   assert.equal(isAppRegistrationDiff('cypress.config.js', ['@@ -5,0 +6 @@', '+  retries: { runMode: 2 },']), false);
   assert.equal(isAppRegistrationDiff('cypress/support/e2e.js', ["+import './commands/x'"]), false);
 
@@ -95,6 +96,20 @@ test('regresion alta de RBP: registrar una app nueva en los archivos globales no
     { registrationOnly: ['cypress.config.js', 'cypress/support/commands.js'] });
   assert.equal(global, false);
   assert.deepEqual(specs, ['cypress/e2e/commitquality/cq_tc_login.cy.js']);
+});
+
+test('regresion legado (2026-10-03): dar de baja apps (solo sacar sus líneas de registro, con comentarios tocados) no es un cambio global', () => {
+  const config = ['@@ -7 +7 @@', '-  // CYPRESS_ORANGEHRM_URL=https://staging.orangehrmlive.com npx cypress run', '+  // CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run',
+    '@@ -9 +8,0 @@', '-    argentinagobarUrl: "https://www.argentina.gob.ar",', '@@ -20 +18,0 @@', '-    saucedemoUrl: "https://www.saucedemo.com",'];
+  const commands = ['@@ -11,2 +10,0 @@', "-import './commands/argentinagobar'", "-import './commands/disco'"];
+  const pkg = ['@@ -9 +8,0 @@', '-    "test:disco": "cypress run --spec \\"cypress/e2e/disco/**/*.cy.js\\"",'];
+  assert.equal(isAppRegistrationDiff('cypress.config.js', config), true);
+  assert.equal(isAppRegistrationDiff('cypress/support/commands.js', commands), true);
+  assert.equal(isAppRegistrationDiff('package.json', pkg), true);
+
+  // Alta y baja mezcladas en el mismo archivo, o un comentario solo: sigue siendo global.
+  assert.equal(isAppRegistrationDiff('cypress/support/commands.js', ["-import './commands/disco'", "+import './commands/nueva'"]), false);
+  assert.equal(isAppRegistrationDiff('cypress.config.js', ['-  // viejo', '+  // nuevo']), false);
 });
 
 test('cambios fuera de cypress/ (scripts, docs) no afectan a ningun spec', () => {

@@ -470,7 +470,10 @@ agrega una contradictoria.
     no hay regresión: alcanza con la corrida del lote.
   - Si **modifica** algo existente (método, selector o texto ya usado,
     comando custom), corre solo los specs que usan eso.
-  - Si es un **cambio global**, `--affected` como en D-33.
+  - Si es un **cambio global**, `--affected` como en D-33. Dar de alta o
+    de baja una app (solo sus líneas de registro en el config, los
+    commands y `package.json`) no es global; en una baja alcanza con
+    `--health` como prueba de que el resto carga (2026-10-03, legado).
   - La regresión no frena el PR: corre en segundo plano después de abrirlo
     y su resultado se agrega al PR; el merge espera a que termine en verde.
   - El chequeo de salud (`--health`) deja de correrse al empezar cada
