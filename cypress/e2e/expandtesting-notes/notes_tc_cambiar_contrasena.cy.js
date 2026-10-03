@@ -1,6 +1,7 @@
 // Modulo: Cuenta - Cambiar mi contraseña
 // Sitio bajo prueba: https://practice.expandtesting.com/notes/app (Expand Testing - Notes App)
-// Ticket Jira: SCRUM-804 (CA-01..CA-05, Test Cycle SCRUM-805)
+// Ticket Jira: SCRUM-804 (CA-01..CA-06, Test Cycle SCRUM-805)
+// Defecto conocido: SCRUM-833 (las sesiones abiertas antes del cambio siguen activas).
 //
 // Cada test registra su propia cuenta por API (contraseña Qa!Notes2026),
 // entra a "My Notes" con la sesión iniciada, abre "Profile" desde el menú
@@ -74,24 +75,19 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
         })
     })
 
-    // CA-02: Al cambiar la contraseña, una contraseña actual que no sea la vigente se avisa y la contraseña no cambia.
+    // CA-02: Al cambiar la contraseña, una contraseña actual que no sea la vigente se rechaza con el aviso de que la contraseña actual es incorrecta y la contraseña no cambia.
 
     it('[CA-02][TC-02.1][SCRUM-810] No se cambia la contraseña con una contraseña actual incorrecta', () => {
         openChangePassword()
         fillAndSubmit({ current: 'Otra!Clave1', new: NEW, confirm: NEW })
-        password.verifyRejectedByServer()
+        password.verifyRejectedByServer('currentIncorrect')
     })
 
-    it('[CA-02][TC-02.2][SCRUM-811] No se cambia la contraseña sin la contraseña actual', () => {
-        openChangePassword()
-        fillAndSubmit({ new: NEW, confirm: NEW })
-        password.verifyFieldError('current', 'currentRequired')
-    })
-
-    it('[CA-02][TC-02.3][SCRUM-812] No se cambia la contraseña con una contraseña actual de 5 caracteres', () => {
-        openChangePassword()
-        fillAndSubmit({ current: 'Qa!No', new: NEW, confirm: NEW })
-        password.verifyFieldError('current', 'currentLength')
+    it('[CA-02][TC-02.2][SCRUM-834] No se cambia la contraseña con la contraseña actual escrita con otras mayúsculas', () => {
+        openChangePassword().then(user => {
+            fillAndSubmit({ current: user.password.toUpperCase(), new: NEW, confirm: NEW })
+            password.verifyRejectedByServer('currentIncorrect')
+        })
     })
 
     // CA-03: Al cambiar la contraseña, una contraseña nueva que no tenga entre 6 y 30 caracteres se avisa debajo del campo y la contraseña no cambia.
@@ -147,12 +143,12 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
         })
     })
 
-    // CA-05: Al cambiar la contraseña, una contraseña nueva igual a la actual se rechaza y la contraseña no cambia.
+    // CA-05: Al cambiar la contraseña, una contraseña nueva igual a la actual se rechaza con el aviso de que la nueva tiene que ser distinta de la actual y la contraseña no cambia.
 
     it('[CA-05][TC-05.1][SCRUM-809] No se acepta una contraseña nueva igual a la actual', () => {
         openChangePassword().then(user => {
             changeFrom(user, user.password)
-            password.verifyRejectedByServer()
+            password.verifyRejectedByServer('sameAsCurrent')
         })
     })
 
@@ -161,5 +157,19 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
             changeFrom(user, user.password.toUpperCase())
             password.verifyChanged()
         })
+    })
+
+    // CA-06: Al cambiar la contraseña, una contraseña actual que no tenga entre 6 y 30 caracteres se avisa debajo del campo y la contraseña no cambia.
+
+    it('[CA-06][TC-06.1][SCRUM-811] No se cambia la contraseña sin la contraseña actual', () => {
+        openChangePassword()
+        fillAndSubmit({ new: NEW, confirm: NEW })
+        password.verifyFieldError('current', 'currentRequired')
+    })
+
+    it('[CA-06][TC-06.2][SCRUM-812] No se cambia la contraseña con una contraseña actual de 5 caracteres', () => {
+        openChangePassword()
+        fillAndSubmit({ current: 'Qa!No', new: NEW, confirm: NEW })
+        password.verifyFieldError('current', 'currentLength')
     })
 })
