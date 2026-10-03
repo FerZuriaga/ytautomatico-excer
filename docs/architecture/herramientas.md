@@ -17,6 +17,7 @@ el mismo commit.
 | **Jira** (issues, HU, Bugs, transiciones) | Gestión de tickets | `v3/scripts/lib/jira.js` (credenciales `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`) | `create-jira-task.js`, `run-and-report.js`, `check-traceability.js`, `lib/xray.js` | `credenciales-jira-xray`, `uso-adapters-jira-xray` |
 | **Xray** (Test Cases, pasos, ciclos, resultados) | Gestión de pruebas | `v3/scripts/lib/xray.js` (credenciales `XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`) | los mismos CLIs | idem |
 | **Cypress** (arranque del runner) | Ejecutar tests y explorar pantallas | `v3/scripts/run-and-report.js` (PASO 3), `v3/scripts/explore-page.js` (PASO 1) | — | `arranque-cypress` |
+| **Cypress en GitHub Actions** | Corrida nocturna de Notes App (D-06) | `.github/workflows/nocturna-notes.yml` | — | — |
 | **Cypress** (formato de resultados) | Leer el reporte JSON de Mocha | `v3/scripts/lib/test-runner.js` | `run-and-report.js`, `create-jira-task.js` | (documentado en el archivo) |
 | **GitHub** (PRs, merge, ramas) | Pull Requests | `v3/scripts/create-pull-request.js` (`GITHUB_TOKEN`, API REST; sin `gh`) | — | `github` |
 | **APIs de las apps bajo prueba** | Preparar datos del discovery | motor general `v3/scripts/lib/data-recipe.js` + una receta JSON por app en `v3/data-recipes/<app>.json` | `explore-page.js` | — |
