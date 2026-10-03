@@ -84,19 +84,29 @@ async function getIssuesByKeys(keys, options = {}) {
   return fetchIssuesByKeys(keys, jiraRequest, options);
 }
 
+// El tipo Bug de esta instancia se muestra como "Error" (herramientas.md).
+const BUG_TYPES = ['Bug', 'Error'];
+
 function issueEntry(issue, withText) {
-  const linkedTests = (issue.fields.issuelinks || [])
-    .map(l => l.outwardIssue || l.inwardIssue)
-    .filter(o => o && o.fields?.issuetype?.name === 'Test')
-    .map(o => o.key);
+  const linked = (issue.fields.issuelinks || []).map(l => l.outwardIssue || l.inwardIssue).filter(Boolean);
+  const linkedTests = linked.filter(o => o.fields?.issuetype?.name === 'Test').map(o => o.key);
   const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
-  if (withText) Object.assign(entry, { summary: issue.fields.summary, description: issue.fields.description });
+  if (withText) {
+    Object.assign(entry, {
+      summary: issue.fields.summary,
+      description: issue.fields.description,
+      status: issue.fields.status?.name || null,
+      // Bugs vinculados (reporte de trazabilidad): el estado viene en el link.
+      linkedBugs: linked.filter(o => BUG_TYPES.includes(o.fields?.issuetype?.name))
+        .map(o => ({ key: o.key, summary: o.fields.summary || '', status: o.fields.status?.name || null }))
+    });
+  }
   return entry;
 }
 
 // `request` es jiraRequest (inyectable para los tests).
 async function fetchIssuesByKeys(keys, request, { withText = false } = {}) {
-  const fields = withText ? ['issuetype', 'labels', 'issuelinks', 'summary', 'description'] : ['issuetype', 'labels', 'issuelinks'];
+  const fields = withText ? ['issuetype', 'labels', 'issuelinks', 'summary', 'description', 'status'] : ['issuetype', 'labels', 'issuelinks'];
   const result = new Map();
   const unique = [...new Set(keys)];
   for (let i = 0; i < unique.length; i += 50) {

@@ -515,6 +515,23 @@ agrega una contradictoria.
 - **Dónde:** `cypress/support/commands/expandtesting-notes.js`,
   `docs/discovery/expandtesting-notes.md`.
 
+### D-41 · Jira sigue privado; la trazabilidad se publica como reporte en el repo
+- **Decisión:** no se hace público el proyecto de Jira. Por app se
+  commitea `docs/trazabilidad/<app>.md`, generado desde Jira/Xray y los
+  specs con `check-traceability.js --report`: HU → CA → Test Cases con sus
+  pasos → `it()` → último resultado del ciclo, más los Bugs vinculados. No
+  se genera si la trazabilidad tiene errores. Se regenera en el PR de cada
+  lote de esa app. Empieza con Notes App; las demás se suman si el formato
+  convence.
+- **Por qué:** 2026-10-03, presentación del proyecto. Quien mira el repo no
+  tiene acceso a Jira y no veía la mitad del trabajo. Hacer público Jira no
+  servía: el proyecto es team-managed (el acceso anónimo pide
+  company-managed), los datos de Xray no se muestran a anónimos y se
+  expondría todo, incluidos los tickets viejos. El reporte muestra solo lo
+  elegido y se regenera con un comando.
+- **Dónde:** `lib/trace-report.js` + test, `check-traceability.js
+  --report`, `docs/lote.md` §4.
+
 ---
 
 ## Arquitectura y portabilidad

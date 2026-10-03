@@ -54,6 +54,7 @@ otro gestor u otro runner. Las reglas `libs-sin-procesos` y
 | `lib/payload-builder.js` | Archivo de lote → payload de publicación (PASO 2) |
 | `lib/bundle-scan.js` | Atributos de test y mensajes de validación del código de la app (discovery) |
 | `lib/concurrency.js` | Llamadas en paralelo con límite (reporte a Xray) |
+| `lib/trace-report.js` | Reporte público de trazabilidad en Markdown (`check-traceability.js --report`, D-41) |
 
 ## Artefactos por aplicación (datos, no código)
 

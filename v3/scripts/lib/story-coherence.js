@@ -103,7 +103,10 @@ function storyFromDescription(adf) {
     objetivo: (sections.Objetivo || []).join(' '),
     criterios: sections['Criterios de aceptación'] || [],
     reglasNegocio: sections['Reglas de negocio relevadas'] || [],
-    fueraDeAlcance: sections['Fuera de alcance'] || []
+    fueraDeAlcance: sections['Fuera de alcance'] || [],
+    defectosConocidos: sections['Defectos conocidos relacionados'] || [],
+    // Lista de "CA-XX: motivo" (en el payload, sinNegativo es un objeto).
+    sinNegativoTexto: sections['Criterios sin caso negativo (justificados)'] || []
   };
 }
 

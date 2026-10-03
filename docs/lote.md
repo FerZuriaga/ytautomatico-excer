@@ -306,6 +306,10 @@ alcance. Lo que falle se corrige antes del commit.
 - Revisar archivos: nada temporal ni ajeno; selectores y discovery sí.
 - Un commit por HU: `Automatizar <funcionalidad> en <app> (SCRUM-<key>)`;
   la infraestructura común va en el de la primera HU.
+- Si la app tiene reporte público (`docs/trazabilidad/<app>.md`), se
+  regenera después de la corrida reportada y va en el mismo PR:
+  `node v3/scripts/check-traceability.js --spec cypress/e2e/<app> --report
+  docs/trazabilidad/<app>.md` (D-41).
 - Push y PR: `node v3/scripts/create-pull-request.js --action create
   --head <rama> --title "..." --body-file <md del scratchpad>` (D-07).
   PR apilado: base = rama de la que depende, avisado en el body.

@@ -428,6 +428,33 @@ async function getTestCase(testCaseKey) {
     };
 }
 
+/**
+ * Pasos de varios Test Cases en pocas llamadas (de a 100 por consulta):
+ * Map key -> [{ action, data, result }]. Lo usa el reporte de
+ * trazabilidad, que con getTestCase hacía una llamada por Test Case.
+ */
+async function getTestStepsByKeys(testCaseKeys) {
+    const query = `
+        query($jql: String!, $limit: Int!) {
+            getTests(jql: $jql, limit: $limit) {
+                results {
+                    jira(fields: ["key"])
+                    steps { action data result }
+                }
+            }
+        }
+    `;
+    const keys = [...new Set(testCaseKeys)];
+    const result = new Map();
+    for (let i = 0; i < keys.length; i += 100) {
+        const chunk = keys.slice(i, i + 100);
+        const res = await xrayRequest(query, { jql: `key in (${chunk.join(',')})`, limit: chunk.length });
+        assertNoErrors(res);
+        for (const test of res.body.data.getTests.results) result.set(test.jira.key, test.steps || []);
+    }
+    return result;
+}
+
 async function getTestCaseLinks(testCaseKey) {
     const res = await jira.getIssue(testCaseKey);
     if (res.status !== 200) {
@@ -770,6 +797,7 @@ module.exports = {
     getTestCase,
     getTestCaseLinks,
     getTestCaseSteps,
+    getTestStepsByKeys,
     getTestCycle,
     getTestExecutions,
     getStatus,
