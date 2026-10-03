@@ -8,15 +8,8 @@
 // ***********************************************
 
 import './commands/shared'
-import './commands/argentinagobar'
-import './commands/automation-exercise'
 import './commands/automation-test-store'
-import './commands/blazedemo'
 import './commands/commitquality'
-import './commands/orangehrm'
 import './commands/practicesoftwaretesting'
-import './commands/saucedemo'
-import './commands/disco'
-import './commands/rentascordoba'
 import './commands/expandtesting-notes'
 import './commands/restful-booker-platform'

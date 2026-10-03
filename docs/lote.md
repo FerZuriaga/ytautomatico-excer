@@ -2,7 +2,7 @@
 
 Único documento de trabajo del asistente para automatizar una
 funcionalidad, de punta a punta. Reemplaza a las 10 skills de la v3
-(archivadas en `v3/.claude/skills-archive/`, ver D-36).
+(archivadas en la etiqueta git `legado-2026-10-03`, ver D-36).
 
 - **Qué hacer y con qué comando:** este documento.
 - **Por qué** de cada regla: `docs/decisiones.md` (se cita como D-xx).

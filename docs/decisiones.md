@@ -143,7 +143,8 @@ agrega una contradictoria.
 - **Decisión:** el asistente trabaja con un solo documento, `docs/lote.md`
   (pasos, comandos exactos y el orden de escritura de los CA que evita
   contradicciones). Las 10 skills de la v3 (3 roles + 7 de fase) se archivaron en
-  `v3/.claude/skills-archive/`. Cada regla vive en un solo lugar: el cómo
+  `v3/.claude/skills-archive/` (desde el 2026-10-03, en la etiqueta git
+  `legado-2026-10-03`, D-09). Cada regla vive en un solo lugar: el cómo
   en `docs/lote.md`, el porqué acá, el control en los validadores. Una
   regla nueva se agrega en uno de esos tres lugares, nunca en dos.
 - **Por qué:** revisión del 2026-09-30. Cada lote cargaba ~2.200 líneas de
@@ -174,15 +175,21 @@ agrega una contradictoria.
 - **Dónde:** este archivo, `docs/discovery/`,
   `docs/architecture/herramientas.md`.
 
-### D-09 · Solo 2 apps activas; el resto es legado intocable
+### D-09 · Solo apps con trazabilidad a Xray en main; el legado, en una etiqueta
 - **Decisión:** el trabajo nuevo va solo en apps con trazabilidad a Xray.
-  SauceDemo, OrangeHRM, Argentina.gob.ar, Rentas Córdoba, Disco, Automation
-  Exercise y BlazeDemo (etapa Zephyr o experimental) corren como regresión
-  con `npm run test:<app>`, pero no se modifican, no se migran y no se
-  reportan.
+  Desde el 2026-10-03 el legado ya no está en main: las apps SauceDemo,
+  OrangeHRM, Argentina.gob.ar, Rentas Córdoba, Disco, Automation Exercise y
+  BlazeDemo (etapa Zephyr o experimental), las herramientas v1/v2 (agentes
+  y skills de `.claude/`, `scripts/` de Zephyr, `mcp-jira`, la arquitectura
+  descartada, los archivos de `v3/.claude`) y `node_modules` (estaba
+  versionado: 6.763 de 7.142 archivos) se sacaron. Todo sigue en la
+  etiqueta git `legado-2026-10-03` (`git checkout legado-2026-10-03 --
+  <ruta>`).
 - **Por qué:** Xray es la única fuente de verdad. Migrar unos 120 `it()`
-  de Zephyr no compensa el costo (2026-09-24).
-- **Dónde:** README, sección "Estado de las apps".
+  de Zephyr no compensa el costo (2026-09-24), y el legado no se tocaba ni
+  se corría: solo confundía a quien mira el repo (plan de simplificación,
+  punto 4, 2026-10-03).
+- **Dónde:** README; `APPS.legacy` vacío en `lib/architecture.js`.
 
 ### D-10 · Jira: no hay estado "Cancelada"
 - **Decisión:** un ticket descartado se pasa a "Finalizada" con un
