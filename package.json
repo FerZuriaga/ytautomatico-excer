@@ -1,8 +1,8 @@
 {
   "name": "ytautomatico-excer",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Automatización E2E con Cypress y trazabilidad verificada contra Jira/Xray (HU -> CA -> Test Case -> it() -> resultado)",
   "scripts": {
     "open": "cypress open",
     "test": "cypress run",
@@ -12,14 +12,20 @@
     "test:expandtesting-notes": "cypress run --spec \"cypress/e2e/expandtesting-notes/**/*.cy.js\"",
     "test:restful-booker-platform": "cypress run --spec \"cypress/e2e/restful-booker-platform/**/*.cy.js\"",
     "test:unit": "node --test v3/scripts/lib/*.test.js",
+    "lint": "eslint .",
     "qa:run-and-report": "node v3/scripts/run-and-report.js",
     "qa:check-traceability": "node v3/scripts/check-traceability.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["cypress", "e2e", "qa", "xray", "jira", "traceability"],
+  "author": "FerZuriaga",
   "license": "ISC",
   "dependencies": {
     "cypress": "^14.5.4",
     "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-cypress": "^7.0.2"
   }
 }

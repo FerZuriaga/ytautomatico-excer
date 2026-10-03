@@ -100,6 +100,7 @@ sacaron de `main` el 2026-10-03 y siguen en la etiqueta git
 ```bash
 npm ci                                  # dependencias
 npm run test:unit                       # lógica del pipeline, sin navegador
+npm run lint                            # ESLint con las reglas de Cypress
 npm run test:expandtesting-notes        # una app (igual con las otras 4)
 ```
 

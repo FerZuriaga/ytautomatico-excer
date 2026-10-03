@@ -532,6 +532,21 @@ agrega una contradictoria.
 - **Dónde:** `lib/trace-report.js` + test, `check-traceability.js
   --report`, `docs/lote.md` §4.
 
+### D-42 · ESLint para el código de Cypress; la deuda previa queda como aviso
+- **Decisión:** `npm run lint` (ESLint con `eslint-plugin-cypress`
+  recomendado) sobre `cypress/` y `cypress.config.js`, en la revisión
+  técnica de cada lote: sin errores y sin avisos nuevos. La regla
+  `unsafe-to-chain-command` queda como aviso: al incorporarla había 27
+  casos, todos `.type(x).should('have.value', x)` en Page Objects de 4
+  apps con tests verdes; corregirlos obligaba a regresiones de esas apps y
+  el usuario priorizó no perder tiempo. `v3/` no entra (tiene sus tests).
+- **Por qué:** revisión del proyecto del 2026-10-03: sin linter, es lo
+  primero que marca alguien técnico. En la misma limpieza salieron
+  `randomNum` (sin uso), `docs/architecture/domain-model.md` (contrato de
+  la etapa Zephyr, en la etiqueta `legado-2026-10-03`) y los campos vacíos
+  de `package.json` (ahora `private`).
+- **Dónde:** `eslint.config.js`, `package.json` (`lint`), `docs/lote.md` §4.
+
 ---
 
 ## Arquitectura y portabilidad

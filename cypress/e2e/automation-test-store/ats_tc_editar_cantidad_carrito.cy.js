@@ -17,7 +17,6 @@ const PRODUCT_A_NAME = 'Absolute Anti-Age Spot Replenishing Unifying TreatmentSP
 const PRODUCT_A_UNIT_PRICE = 42.00
 
 const PRODUCT_B_ID = 50
-const PRODUCT_B_PRICE = '$29.50'
 
 const money = n => `$${n.toFixed(2)}`
 
