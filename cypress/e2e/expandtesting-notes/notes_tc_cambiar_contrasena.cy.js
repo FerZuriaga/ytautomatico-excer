@@ -172,4 +172,10 @@ describe('[SCRUM-804] Notes App - Cambiar mi contraseña', () => {
         fillAndSubmit({ current: 'Qa!No', new: NEW, confirm: NEW })
         password.verifyFieldError('current', 'currentLength')
     })
+
+    it('[CA-06][TC-06.3][SCRUM-835] No se cambia la contraseña con una contraseña actual de 31 caracteres', () => {
+        openChangePassword()
+        fillAndSubmit({ current: `${'A'.repeat(30)}!`, new: NEW, confirm: NEW })
+        password.verifyFieldError('current', 'currentLength')
+    })
 })
