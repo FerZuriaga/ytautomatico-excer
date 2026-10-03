@@ -1,0 +1,30 @@
+# Corrida nocturna de Notes App (D-06): solo la app con datos aislados por
+# usuario (cada test registra su propia cuenta), para que un resultado rojo
+# sea del código o de la app y no de una demo compartida con datos sucios.
+# No es requisito de merge: la evidencia de cada PR sigue siendo la corrida
+# local con run-and-report.js. No reporta a Xray (no usa credenciales).
+name: Nocturna Notes App
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 03:00 de Argentina
+  workflow_dispatch:
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          spec: cypress/e2e/expandtesting-notes/**/*.cy.js
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: capturas
+          path: cypress/screenshots
+          if-no-files-found: ignore

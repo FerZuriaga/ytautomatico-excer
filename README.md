@@ -1,90 +1,109 @@
 # ytautomatico-excer
 
-Suite de pruebas E2E con Cypress para varios sitios. Jira/Xray es la única
-fuente de verdad de Historias y Test Cases (ver `CLAUDE.md`).
+[![Nocturna Notes App](https://github.com/FerZuriaga/ytautomatico-excer/actions/workflows/nocturna-notes.yml/badge.svg)](https://github.com/FerZuriaga/ytautomatico-excer/actions/workflows/nocturna-notes.yml)
 
-## Estado de las apps
+Caso de estudio de automatización E2E con criterio de QA: de una regla de
+negocio relevada en la app a un test de Cypress que reporta su resultado en
+Jira/Xray, con trazabilidad verificada en cada paso. Jira/Xray es la única
+fuente de verdad de Historias y Test Cases.
 
-| Carpeta (`cypress/e2e/`) | Estado | Trazabilidad |
+## Qué muestra este repo
+
+**Trazabilidad de punta a punta, controlada por código:**
+
+```
+Historia (SCRUM-804)                    "Cambiar mi contraseña"
+  └─ Criterio CA-06                     una regla de negocio, en una oración
+       └─ Test Case SCRUM-835           pasos en Xray, label CA-06 / negativo
+            └─ it('[CA-06][TC-06.3][SCRUM-835] ...')   en el spec
+                 └─ ejecución PASSED en el Test Cycle SCRUM-805
+```
+
+Antes de cada corrida, `check-traceability` cruza cada `it()` con Xray: una
+key mal copiada, un TC colgado de otro criterio o un Test sin vincular a la
+Historia frenan la ejecución. Los resultados se reportan solo si la corrida
+pasa al 100%, y se verifican leyendo los ciclos.
+
+**Calidad de la especificación, no solo del código.** Los validadores
+frenan la publicación de Test Cases con pasos que verifican en la acción,
+varios datos en un paso, negativos sin evidencia de haberse ejecutado,
+Historias con criterios que juntan dos reglas o Bugs que especulan sobre el
+código. Cada regla nació de un error real y tiene su test
+(`npm run test:unit`, 235 tests).
+
+**Defectos encontrados en el camino.** Un ejemplo: al revisar la Historia de
+cambio de contraseña, el discovery mostró que dos logins de la misma cuenta
+comparten el token y que cambiar la contraseña no lo renueva: quien ya
+había entrado con la contraseña vieja sigue adentro (Bug SCRUM-833, con
+captura). Lo que contradice el objetivo de la Historia va a Bug, nunca a un
+criterio de aceptación.
+
+## Números (al 2026-10-03)
+
+| | |
+|---|---|
+| Apps activas | 5 (demos públicas de terceros) |
+| Specs / `it()` | 70 / 542 (16 en `it.skip` por bugs conocidos, con su key) |
+| Corridas registradas desde el 2026-09-27 | 42 lotes, 758 tests ejecutados, 6 pasaron recién en el reintento |
+| Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786) |
+| Reporte a Xray por corrida | de 38-49 s a 3-8 s (plan de reporte + escrituras en paralelo, D-29) |
+| Decisiones de trabajo documentadas | 40, con su porqué (`docs/decisiones.md`) |
+
+## Cómo se trabaja
+
+Un lote sigue siempre el mismo documento, `docs/lote.md`:
+
+| Paso | Script | Qué hace |
 |---|---|---|
-| `automation-test-store` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
-| `commitquality` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
-| `expandtesting-notes` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
-| `practicesoftwaretesting` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
-| `restful-booker-platform` | Activa | Xray: `[CA-XX][TC-XX.Y][SCRUM-NNN]`, validada con `check-traceability` |
+| 1. Discovery | `node v3/scripts/explore-page.js --scenarios <archivo.json>` | Explora las pantallas con navegador real en una sola corrida: requests (método y status), atributos de test, idioma, almacenamiento y errores de consola. Los datos se preparan por API con recetas (`v3/data-recipes/<app>.json`). Cada negativo se ejecuta antes de especificarlo. |
+| 2. Jira/Xray | `node v3/scripts/create-jira-task.js --data <lote.json> --dry-run` | Valida Historia, criterios y Test Cases; sin `--dry-run` publica el lote (Historias, Test Cases, Test Cycles). |
+| 3. Ejecución | `node v3/scripts/run-and-report.js --spec <specs> --test-cycle <ciclos>` | Verifica la trazabilidad, corre Cypress y reporta a Xray solo si pasa el 100%. |
+| 3. PR | `node v3/scripts/create-pull-request.js --action create ...` | Abre el Pull Request por la API de GitHub, con una auditoría por Historia (criterio, resultados, TC con pasos, bordes). |
 
-**Legado:** las 7 apps de la etapa Zephyr/experimental y las herramientas
-v1/v2 se sacaron de `main` el 2026-10-03; siguen en la etiqueta git
-`legado-2026-10-03` (D-09). Una app nueva siempre sigue el pipeline de
-`CLAUDE.md` con trazabilidad a Xray.
+- **Por qué** de cada regla: `docs/decisiones.md`.
+- **Hallazgos por app** (comportamientos, gotchas, selectores): `docs/discovery/<app>.md`.
+- **Qué archivo habla con cada herramienta** (Jira, Xray, Cypress, GitHub): `docs/architecture/herramientas.md`; `npm run test:unit` falla si una frontera se cruza.
 
-Cada app activa tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
+## Apps
+
+| Carpeta (`cypress/e2e/`) | Sitio | Datos |
+|---|---|---|
+| `expandtesting-notes` | [Notes App](https://practice.expandtesting.com/notes/app) | Aislados: cada test registra su usuario |
+| `practicesoftwaretesting` | [Toolshop](https://practicesoftwaretesting.com) | Demo compartida |
+| `automation-test-store` | [Automation Test Store](https://automationteststore.com) | Demo compartida |
+| `restful-booker-platform` | [Restful Booker Platform](https://automationintesting.online) | Demo compartida, se re-siembra |
+| `commitquality` | [CommitQuality](https://commitquality.com) | Demo compartida |
+
+Cada app tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
 `cypress/pages/<app>/`, `cypress/fixtures/selectors/<app>/`,
 `cypress/support/commands/<app>.js`, `docs/discovery/<app>.md` y el script
-`test:<app>` (más `v3/data-recipes/<app>.json` si tiene API para preparar
-datos). `npm run test:unit` lo verifica: una carpeta de app sin declarar,
-una pieza faltante o un selector suelto hacen fallar la suite. Al sumar una
-app, declararla en `APPS` de `v3/scripts/lib/architecture.js`.
+`test:<app>`. `npm run test:unit` lo verifica. Al sumar una app, declararla
+en `APPS` de `v3/scripts/lib/architecture.js`.
 
-## Configuración de entorno (URLs por sitio)
+**Corrida nocturna:** GitHub Actions corre Notes App todas las noches (el
+badge de arriba). Solo esa app: las demás son demos compartidas cuyos datos
+cambian por otros testers, y un rojo ajeno al código no aporta (D-06). No es
+requisito de merge.
 
-Las URLs de cada sitio bajo prueba **no están hardcodeadas en el código**:
-viven como defaults en el bloque `env` de `cypress.config.js` y se leen
-desde los comandos custom (`cypress/support/commands/*.js`) con
-`Cypress.env('<nombreDeLaVariable>')`.
+**Legado:** las apps y herramientas de la etapa Zephyr/experimental se
+sacaron de `main` el 2026-10-03 y siguen en la etiqueta git
+`legado-2026-10-03` (D-09).
 
-| Variable              | Sitio              | Default (producción/demo actual)          |
-|------------------------|---------------------|--------------------------------------------|
-| `automationTestStoreUrl` | Automation Test Store | `https://automationteststore.com`       |
-| `commitqualityUrl`      | CommitQuality       | `https://commitquality.com`               |
-| `expandtestingNotesUrl` | Expand Testing Notes | `https://practice.expandtesting.com`     |
-| `practicesoftwaretestingUrl` | Practice Software Testing | `https://practicesoftwaretesting.com` |
-| `restfulBookerPlatformUrl` | Restful Booker Platform | `https://automationintesting.online` |
+## Correrlo
 
-### Cómo apuntar los tests a otra URL sin tocar código
+```bash
+npm ci                                  # dependencias
+npm run test:unit                       # lógica del pipeline, sin navegador
+npm run test:expandtesting-notes        # una app (igual con las otras 4)
+```
 
-Para correr la suite (o un spec puntual) contra otro entorno, se pasa la
-variable como `CYPRESS_<nombreDeLaVariable>` antes del comando:
+Las URLs de cada sitio son defaults del bloque `env` de `cypress.config.js`
+y se cambian sin tocar código:
 
 ```bash
 CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run --spec "cypress/e2e/expandtesting-notes/**/*.cy.js"
 ```
 
-También funciona con `--env` en vez de la variable de entorno:
-
-```bash
-npx cypress run --env expandtestingNotesUrl=https://staging.example.com --spec "cypress/e2e/expandtesting-notes/**/*.cy.js"
-```
-
-Sin overrides, cada comando usa el default de `cypress.config.js` (el
-sitio real/demo pública actual) — no hace falta declarar nada para el uso
-normal.
-
-**Nota:** hoy ninguno de los sitios de este proyecto tiene un entorno de
-staging propio (son demos públicas de terceros o el sitio real de un
-gobierno), así que este mecanismo queda listo para el día en que se use
-este framework contra una aplicación propia con staging real.
-
-## Herramientas del pipeline (v3)
-
-| Paso | Script | Qué hace |
-|---|---|---|
-| 1. Discovery | `node v3/scripts/explore-page.js --scenarios <archivo.json>` (o `--url <url>`) | Explora las pantallas del lote con navegador real en una sola corrida: requests de red (método y status), `data-test` visibles/ocultos, idioma, almacenamiento y errores de consola. Los datos que necesita cada escenario se preparan por API con las recetas de `v3/data-recipes/<app>.json`. Informe fuera del repo. |
-| 2. Jira/Xray | `node v3/scripts/create-jira-task.js --data <lote.json> --dry-run` | Valida HU, criterios y Test Cases; sin `--dry-run` publica el lote (Historias, Test Cases, Test Cycles). |
-| 3. Ejecución | `node v3/scripts/run-and-report.js --spec <specs> --test-cycle <ciclos>` | Verifica la trazabilidad, corre Cypress y reporta a Xray solo si pasa el 100%. |
-| 3. Trazabilidad | `node v3/scripts/check-traceability.js --spec <carpeta>` | Cruza los tags `[CA-XX][TC-XX.Y][SCRUM-NNN]` de los specs contra Jira/Xray. |
-| 3. PR | `node v3/scripts/create-pull-request.js --action create --head <rama> --title "<t>"` | Abre el Pull Request por la API de GitHub. |
-
-Tests unitarios de la lógica del pipeline: `npm run test:unit`. Incluyen el
-chequeo de fronteras de arquitectura: qué archivo puede hablar con Jira/Xray,
-GitHub o Cypress (mapa en `docs/architecture/herramientas.md`).
-
-Decisiones del proyecto y su porqué: `docs/decisiones.md`.
-
-## Scripts disponibles
-
-```bash
-npm ci                                  # instala dependencias (node_modules no se versiona)
-npm run test:unit                       # lógica del pipeline, sin navegador
-npm run test:expandtesting-notes        # una app activa (igual con las otras 4)
-```
+Publicar en Jira/Xray y abrir PRs necesita un `.env` con `JIRA_URL`,
+`JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY`, `XRAY_CLIENT_ID`,
+`XRAY_CLIENT_SECRET` y `GITHUB_TOKEN`; correr los tests no.

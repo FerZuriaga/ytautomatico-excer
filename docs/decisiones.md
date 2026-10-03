@@ -71,14 +71,18 @@ agrega una contradictoria.
 - **Por qué:** los lotes apilados chocan entre sí.
 - **Dónde:** `create-pull-request.js`.
 
-### D-06 · Sin CI; validación local
-- **Decisión:** no hay workflow de GitHub Actions. La evidencia es la
-  corrida local con `run-and-report.js`.
+### D-06 · Validación local; CI solo nocturno y solo con datos aislados
+- **Decisión:** la evidencia de cada PR es la corrida local con
+  `run-and-report.js`; no hay CI como requisito de merge. Desde el
+  2026-10-03 hay una corrida nocturna en GitHub Actions solo de Notes App
+  (cada test registra su propio usuario), sin reporte a Xray ni
+  credenciales.
 - **Por qué:** con un CI de la suite completa como requisito de merge, el
   check falló 3 veces seguidas por demos públicas inestables (datos sucios,
-  timeouts, un 500 del servidor), ajenas al código (2026-07-29). Retomar CI
-  queda para más adelante, excluyendo las demos compartidas del gate.
-- **Dónde:** no hay `.github/workflows`.
+  timeouts, un 500 del servidor), ajenas al código (2026-07-29). La
+  nocturna de Notes da una señal visible (badge del README) sin esas demos;
+  el usuario eligió solo Notes (plan de simplificación, punto 4).
+- **Dónde:** `.github/workflows/nocturna-notes.yml`.
 
 ### D-07 · GitHub por API REST, sin `gh`
 - **Decisión:** los PRs, el merge y el borrado de ramas se hacen con
