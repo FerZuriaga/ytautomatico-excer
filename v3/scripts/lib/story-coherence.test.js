@@ -87,6 +87,18 @@ test('HU que conviven sin pisarse: buscar contra filtrar no avisa', () => {
   assert.deepEqual(checkStoryCoherence(BUSCAR, [FILTRAR]).warnings, []);
 });
 
+test('regresion SCRUM-804 (2026-10-03): la misma regla de largo con disparadores explícitos distintos no avisa; con el mismo disparador, sí', () => {
+  const registro = { key: 'SCRUM-766', summary: 'Notes App - Registrarme', historia: { criterios: [
+    'CA-04: Al registrarse, una contraseña que no tenga entre 6 y 30 caracteres se avisa debajo del campo y la cuenta no se crea.'] } };
+  const cambiar = { key: 'SCRUM-804', summary: 'Notes App - Cambiar mi contraseña', historia: { criterios: [
+    'CA-03: Al cambiar la contraseña, una contraseña nueva que no tenga entre 6 y 30 caracteres se avisa debajo del campo y la contraseña no cambia.'] } };
+  assert.deepEqual(checkStoryCoherence(cambiar, [registro]).warnings, []);
+
+  const otroRegistro = { key: 'SCRUM-900', summary: 'Notes App - Registrarme con Google', historia: { criterios: [
+    'CA-01: Al registrarse, una contraseña que no tenga entre 6 y 30 caracteres se avisa debajo del campo.'] } };
+  assert.match(checkStoryCoherence(otroRegistro, [registro]).warnings.join(' | '), /CA-01 se parece a SCRUM-766 CA-04/);
+});
+
 test('solo compara con HU de la misma app (prefijo del summary)', () => {
   const otraApp = { ...FILTRAR, key: 'SCRUM-586', summary: 'Practice Software Testing - Facturas' };
   assert.deepEqual(checkStoryCoherence(COMPLETAR_ORIGINAL, [otraApp]).siblings, []);

@@ -119,6 +119,16 @@ function storyTexts(historia) {
 
 const criterionId = text => (String(text).match(/^\s*(CA-\d{2})/) || [])[1] || 'un criterio';
 const criterionBody = text => String(text).replace(/^\s*CA-\d{2}\s*:\s*/, '');
+// Disparador explícito al inicio del criterio ("Al registrarse, ..." ->
+// "registrarse"). Dos criterios con disparadores explícitos y distintos son
+// reglas de dueños distintos aunque compartan palabras: es lo que pide el
+// propio aviso. Caso real (2026-10-03): el largo de la contraseña "Al
+// cambiar la contraseña" (SCRUM-804) avisaba contra "Al registrarse"
+// (SCRUM-766) y "Al iniciar sesión" (SCRUM-745) en cada publicación.
+const criterionTrigger = text => {
+  const match = normalize(criterionBody(text)).match(/^\s*al\s+([^,]+),/);
+  return match ? match[1].trim() : null;
+};
 const cut = text => (text.length > 90 ? `${text.slice(0, 87)}...` : text);
 
 /**
@@ -135,7 +145,7 @@ function checkStoryCoherence(story, siblings) {
   const own = storyTexts(story.historia || {});
   const ownQuoted = new Set(own.flatMap(([, text]) => quotedTexts(text)));
   const storyTitle = normalize(String(story.summary || '').split(' - ').slice(1).join(' - ')).trim() || null;
-  const ownCriteria = (story.historia?.criterios || []).map(text => ({ id: criterionId(text), text, words: contentWords(criterionBody(text)) }));
+  const ownCriteria = (story.historia?.criterios || []).map(text => ({ id: criterionId(text), text, words: contentWords(criterionBody(text)), trigger: criterionTrigger(text) }));
 
   for (const sibling of family) {
     const theirs = storyTexts(sibling.historia || {});
@@ -175,7 +185,9 @@ function checkStoryCoherence(story, siblings) {
     // 3. Un criterio muy parecido al de la hermana.
     for (const text of sibling.historia?.criterios || []) {
       const theirWords = contentWords(criterionBody(text));
+      const theirTrigger = criterionTrigger(text);
       for (const criterion of ownCriteria) {
+        if (criterion.trigger && theirTrigger && criterion.trigger !== theirTrigger) continue;
         const common = shared(criterion.words, theirWords);
         const smaller = Math.min(criterion.words.size, theirWords.size) || 1;
         if (common.length >= MIN_SHARED_CRITERIA_WORDS && common.length / smaller >= SIMILAR_CRITERIA_RATIO) {
