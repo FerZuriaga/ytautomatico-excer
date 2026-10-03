@@ -123,7 +123,9 @@ test('storyFromDescription: lee las secciones de la HU publicada (formato de bui
     p('Como persona que organiza sus tareas en Notes App'), p('Quiero buscar mis notas'), p('Para encontrar rápido un pendiente'),
     h('Contexto'), p('En "My Notes"...'), h('Objetivo'), p('Encontrar las notas.'),
     h('Criterios de aceptación'), list(['CA-01: Uno.', 'CA-02: Dos.']),
-    h('Reglas de negocio relevadas'), list(['Regla.']), h('Fuera de alcance'), list(['Afuera.'])
+    h('Reglas de negocio relevadas'), list(['Regla.']), h('Fuera de alcance'), list(['Afuera.']),
+    h('Defectos conocidos relacionados'), list(['SCRUM-833: sesiones activas.']),
+    h('Criterios sin caso negativo (justificados)'), list(['CA-02: no hay camino de error.'])
   ] };
   const story = storyFromDescription(adf);
   assert.equal(story.como, 'persona que organiza sus tareas en Notes App');
@@ -131,6 +133,8 @@ test('storyFromDescription: lee las secciones de la HU publicada (formato de bui
   assert.deepEqual(story.criterios, ['CA-01: Uno.', 'CA-02: Dos.']);
   assert.deepEqual(story.reglasNegocio, ['Regla.']);
   assert.deepEqual(story.fueraDeAlcance, ['Afuera.']);
+  assert.deepEqual(story.defectosConocidos, ['SCRUM-833: sesiones activas.']);
+  assert.deepEqual(story.sinNegativoTexto, ['CA-02: no hay camino de error.']);
 });
 
 test('regresion lote RBP (2026-09-29): dos HU nuevas del mismo lote (sin key) se comparan entre sí y se nombran por su summary', () => {

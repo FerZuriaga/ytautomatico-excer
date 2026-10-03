@@ -19,6 +19,12 @@ Historia (SCRUM-804)                    "Cambiar mi contraseña"
                  └─ ejecución PASSED en el Test Cycle SCRUM-805
 ```
 
+**Ver la trazabilidad completa sin acceso a Jira:**
+[`docs/trazabilidad/expandtesting-notes.md`](docs/trazabilidad/expandtesting-notes.md)
+— las 12 Historias de Notes App con sus 48 criterios, los 143 Test Cases
+con sus pasos tal como están en Xray, el `it()` que automatiza cada uno y su
+último resultado (generado desde Jira/Xray, D-41).
+
 Antes de cada corrida, `check-traceability` cruza cada `it()` con Xray: una
 key mal copiada, un TC colgado de otro criterio o un Test sin vincular a la
 Historia frenan la ejecución. Los resultados se reportan solo si la corrida

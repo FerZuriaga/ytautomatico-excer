@@ -109,3 +109,21 @@ test('fetchIssuesByKeys: lee directo la issue que la búsqueda todavía no index
   assert.deepEqual(result.get('SCRUM-737'), { issuetype: 'Test', labels: ['CA-02'], linkedTests: [] });
   assert.deepEqual(calls, ['POST /rest/api/3/search/jql', 'GET /rest/api/3/issue/SCRUM-737', 'GET /rest/api/3/issue/SCRUM-9999']);
 });
+
+// Reporte de trazabilidad (2026-10-03): con withText trae el estado de la HU
+// y sus Bugs vinculados ("Error" es el nombre visible del tipo Bug).
+test('fetchIssuesByKeys withText: estado y Bugs vinculados; sin withText la forma no cambia', async () => {
+  const link = (key, type, status, summary = '') => ({ inwardIssue: { key, fields: { issuetype: { name: type }, status: { name: status }, summary } } });
+  const story = { key: 'SCRUM-804', fields: {
+    issuetype: { name: 'Historia' }, labels: [], summary: 'Cambiar mi contraseña', description: null, status: { name: 'Finalizada' },
+    issuelinks: [link('SCRUM-806', 'Test', 'Draft'), link('SCRUM-833', 'Error', 'Tareas por hacer', 'Sesiones siguen activas')] } };
+  const request = async () => ({ status: 200, body: { issues: [story] } });
+
+  const full = (await fetchIssuesByKeys(['SCRUM-804'], request, { withText: true })).get('SCRUM-804');
+  assert.equal(full.status, 'Finalizada');
+  assert.deepEqual(full.linkedTests, ['SCRUM-806']);
+  assert.deepEqual(full.linkedBugs, [{ key: 'SCRUM-833', summary: 'Sesiones siguen activas', status: 'Tareas por hacer' }]);
+
+  const plain = (await fetchIssuesByKeys(['SCRUM-804'], request)).get('SCRUM-804');
+  assert.deepEqual(plain, { issuetype: 'Historia', labels: [], linkedTests: ['SCRUM-806'] });
+});
