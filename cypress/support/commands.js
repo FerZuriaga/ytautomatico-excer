@@ -7,7 +7,6 @@
 // cypress/support/commands/<proyecto>.js e importarlo abajo.
 // ***********************************************
 
-import './commands/shared'
 import './commands/automation-test-store'
 import './commands/commitquality'
 import './commands/practicesoftwaretesting'

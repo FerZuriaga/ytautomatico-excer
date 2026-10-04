@@ -1,7 +1,8 @@
 /**
  * Xray Adapter — reemplaza a lib/zephyr.js cumpliendo el mismo contrato
- * documentado en docs/architecture/domain-model.md ("Cómo agregar o
- * reemplazar una herramienta"). Firmas verificadas por introspección real
+ * (qué cambiar si se reemplaza el gestor: docs/architecture/herramientas.md;
+ * el contrato original de la etapa Zephyr está en la etiqueta git
+ * legado-2026-10-03). Firmas verificadas por introspección real
  * del schema GraphQL de Xray Cloud (no adivinadas de la documentación
  * pública, que está fragmentada) — ver detalle de mapeo abajo.
  *

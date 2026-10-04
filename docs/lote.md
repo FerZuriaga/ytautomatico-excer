@@ -296,7 +296,8 @@ merge espera verde. Toda corrida de más de ~5 min se avisa antes (D-34).
 
 ### Revisión técnica (antes del commit, mirando el diff)
 
-Page Objects bien usados y spec sin lógica de más; sin duplicación de
+`npm run lint` sin errores, y sin avisos nuevos en lo que toca la rama
+(D-42). Page Objects bien usados y spec sin lógica de más; sin duplicación de
 métodos, selectores o cadenas; selectores estables; nada de código muerto,
 esperas innecesarias ni falsos positivos posibles; cada `it()` en su
 alcance. Lo que falle se corrige antes del commit.
