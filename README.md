@@ -35,7 +35,7 @@ frenan la publicación de Test Cases con pasos que verifican en la acción,
 varios datos en un paso, negativos sin evidencia de haberse ejecutado,
 Historias con criterios que juntan dos reglas o Bugs que especulan sobre el
 código. Cada regla nació de un error real y tiene su test
-(`npm run test:unit`, 235 tests).
+(`npm run test:unit`).
 
 **Defectos encontrados en el camino.** Un ejemplo: al revisar la Historia de
 cambio de contraseña, el discovery mostró que dos logins de la misma cuenta
@@ -84,7 +84,7 @@ Cada app tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
 `cypress/pages/<app>/`, `cypress/fixtures/selectors/<app>/`,
 `cypress/support/commands/<app>.js`, `docs/discovery/<app>.md` y el script
 `test:<app>`. `npm run test:unit` lo verifica. Al sumar una app, declararla
-en `APPS` de `v3/scripts/lib/architecture.js`.
+en `apps` de `qa.config.json`.
 
 **Corrida nocturna:** GitHub Actions corre Notes App todas las noches (el
 badge de arriba). Solo esa app: las demás son demos compartidas cuyos datos
@@ -113,26 +113,34 @@ CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run --spec
 
 ## Usarlo en otro proyecto
 
-1. **`qa.config.json`**: la clave del proyecto de Jira, los nombres de los
-   tipos de issue tal como aparecen en esa instancia ("Story" o "Historia",
-   "Task" o "Tarea"...), el tipo de vínculo y las palabras clave con que el
-   equipo escribe las Historias y los Test Cases. Para un equipo en inglés,
-   partir de `qa.config.en.example.json`. Si falta una clave, los scripts
-   frenan nombrándola.
-2. **`.env`**: credenciales de Jira, Xray y GitHub (ver abajo).
-3. **La app:** sus URLs en `env` de `cypress.config.js`, sus carpetas
-   (`cypress/e2e/<app>/`, `pages`, `fixtures/selectors`, `support/commands`,
-   `docs/discovery/<app>.md`, script `test:<app>`) y declararla en `APPS`
-   de `v3/scripts/lib/architecture.js`; `npm run test:unit` avisa qué pieza
-   falta. Datos de prueba por API: `v3/data-recipes/<app>.json`.
-4. **CI:** cada PR corre lint y tests unitarios (`.github/workflows/pr.yml`).
-   Con una app propia y un staging estable, prender los E2E afectados del
-   PR con la variable de repositorio `QA_PR_E2E=true`.
+Lo propio de cada proyecto vive en dos archivos; el código del framework
+(`v3/scripts/`) no se toca.
 
-El proceso de cada lote (discovery → Jira/Xray → tests → PR) está en
-`docs/lote.md`. Límite conocido: los textos que el framework escribe en
-Jira y en los reportes están en español (D-43).
+| Archivo | Qué va | Ejemplo |
+|---|---|---|
+| `qa.config.json` | Apps (`apps`), clave del proyecto de Jira, nombres de los tipos de issue en esa instancia ("Story" o "Historia"...), tipo de vínculo, estados iniciales y las palabras clave con que el equipo escribe Historias y Test Cases | `qa.config.en.example.json` (equipo en inglés) |
+| `.env` (no se versiona) | Credenciales: `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`, `GITHUB_TOKEN`. Solo para publicar en Jira/Xray y abrir PRs; correr los tests no las necesita | — |
 
-Publicar en Jira/Xray y abrir PRs necesita un `.env` con `JIRA_URL`,
-`JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY`, `XRAY_CLIENT_ID`,
-`XRAY_CLIENT_SECRET` y `GITHUB_TOKEN`; correr los tests no.
+**Arrancar:**
+
+1. `npm ci`.
+2. Copiar `qa.config.en.example.json` (o el `qa.config.json` actual) y
+   completarlo. Si falta una clave, los scripts frenan nombrándola.
+3. Crear el `.env` con las credenciales.
+4. **Por cada app:** su nombre en `apps`, su URL en `env` de
+   `cypress.config.js` y sus carpetas (`cypress/e2e/<app>/`,
+   `cypress/pages/<app>/`, `cypress/fixtures/selectors/<app>/`,
+   `cypress/support/commands/<app>.js`, `docs/discovery/<app>.md`, script
+   `test:<app>`). `npm run test:unit` dice qué pieza falta. Datos de prueba
+   por API (opcional): `v3/data-recipes/<app>.json`.
+5. `npm run test:unit` en verde, y a trabajar por lotes con `docs/lote.md`
+   (discovery → Jira/Xray → tests → PR).
+
+**CI:** cada PR corre lint y tests unitarios (`.github/workflows/pr.yml`).
+Con una app propia y un staging estable, prender los E2E afectados del PR
+con la variable de repositorio `QA_PR_E2E=true`.
+
+**Límites conocidos:** el gestor de pruebas implementado es Xray (otro es
+un adapter nuevo que cumple `lib/test-manager-contract.js`, D-45), y los
+textos que el framework escribe en Jira y en los reportes están en español
+(D-43).

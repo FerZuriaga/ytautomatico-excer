@@ -1,7 +1,8 @@
 /**
  * Configuración del proyecto: `qa.config.json` en la raíz del repo (D-43).
  *
- * Todo lo que depende de la instancia de Jira/Xray (clave del proyecto,
+ * Las apps que se trabajan (`apps`, una carpeta por app en cypress/e2e/,
+ * D-28) y todo lo que depende de la instancia de Jira/Xray (clave del proyecto,
  * nombres de los tipos de issue, estados iniciales, tipo de vínculo) o del
  * idioma en que se escriben las HU y los Test Cases (las palabras clave de
  * los validadores) vive en ese archivo y no en el código: otro proyecto u
@@ -37,6 +38,7 @@ function normalizeText(text) {
 
 function checkConfig(config, file = CONFIG_FILE) {
   const missing = [];
+  if (!Array.isArray(config && config.apps)) missing.push('apps');
   const jira = config && config.jira;
   if (!jira) missing.push('jira');
   else {

@@ -6,7 +6,7 @@
  *
  * Mismo uso de siempre (se preserva la compatibilidad de esta CLI a
  * propósito). Proyecto, nombres de tipos y vínculos de la instancia:
- * qa.config.json (D-43); JIRA_PROJECT_KEY del .env tiene prioridad:
+ * qa.config.json (D-43):
  *
  * Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]
  *   Sin issueKey  → crea un nuevo issue a partir del JSON
@@ -93,7 +93,7 @@ const storyCoherence = require('./lib/story-coherence');
 const { mapWithLimit } = require('./lib/concurrency');
 const { config } = require('./lib/qa-config');
 
-const PROJECT = process.env.JIRA_PROJECT_KEY || config.jira.projectKey;
+const PROJECT = config.jira.projectKey;
 
 function parseArgs(argv) {
   const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false, dryRun: false, updateSteps: false, expandTo: null };

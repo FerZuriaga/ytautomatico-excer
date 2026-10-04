@@ -11,6 +11,7 @@
  *
  * Nace del 2026-09-28 (punto 2 del plan: portabilidad).
  */
+const { config } = require('./qa-config');
 
 // Rutas relativas a la raíz del repo, con "/".
 const RULES = [
@@ -103,17 +104,10 @@ function formatViolations(violations, rules = RULES) {
 
 // ─── Orden por aplicación ────────────────────────────────────────────────────
 //
-// Toda carpeta de app en cypress/e2e/ tiene que estar declarada acá. Las
-// activas (trabajo nuevo, trazabilidad a Xray) tienen todas sus piezas en
-// su lugar; las de legado no se tocan (decisión del 2026-09-24, README).
-// Desde el 2026-10-03 no queda legado en main: las 7 apps de la etapa
-// Zephyr viven en la etiqueta git legado-2026-10-03 (D-09).
+// Toda carpeta de app en cypress/e2e/ tiene que estar declarada en "apps"
+// de qa.config.json, y cada una tiene todas sus piezas en su lugar (D-28).
 // Nace del 2026-09-28: 14 selectores de Automation Test Store estaban
 // sueltos en la raíz de fixtures/selectors/ y nada lo detectaba.
-const APPS = {
-  active: ['automation-test-store', 'commitquality', 'expandtesting-notes', 'practicesoftwaretesting', 'restful-booker-platform'],
-  legacy: []
-};
 
 // Piezas obligatorias de una app activa (las recetas de datos por API son
 // opcionales: no toda app tiene una API para preparar datos).
@@ -131,14 +125,13 @@ const ACTIVE_APP_PARTS = [
  *   commandFiles, commandImports, discoveryDocs, npmScripts } (listados del
  * repo). Devuelve la lista de problemas encontrados.
  */
-function checkAppLayout(snapshot, apps = APPS) {
+function checkAppLayout(snapshot, apps = config.apps) {
   const problems = [];
-  const declared = [...apps.active, ...apps.legacy];
 
-  snapshot.e2eApps.filter(app => !declared.includes(app)).forEach(app =>
-    problems.push(`cypress/e2e/${app}/: app no declarada -- agregarla a APPS.active en lib/architecture.js (y a la tabla "Estado de las apps" del README).`));
+  snapshot.e2eApps.filter(app => !apps.includes(app)).forEach(app =>
+    problems.push(`cypress/e2e/${app}/: app no declarada -- agregarla a "apps" en qa.config.json (y a la tabla "Apps" del README).`));
 
-  for (const app of apps.active) {
+  for (const app of apps) {
     ACTIVE_APP_PARTS.filter(part => !part.has(snapshot, app)).forEach(part =>
       problems.push(`${app}: faltan ${part.label} en ${part.where(app)}.`));
   }
@@ -152,4 +145,4 @@ function checkAppLayout(snapshot, apps = APPS) {
   return problems;
 }
 
-module.exports = { RULES, stripComments, checkArchitecture, formatViolations, APPS, checkAppLayout };
+module.exports = { RULES, stripComments, checkArchitecture, formatViolations, checkAppLayout };
