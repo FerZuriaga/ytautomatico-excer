@@ -12,7 +12,7 @@
  *     modificado (cy.<comando>).
  * Cambios globales (cypress.config.js, cypress/support/e2e.js o
  * commands.js, package.json) afectan a todos los specs de las apps
- * activas (`activeApps`, ver APPS en lib/architecture.js); los de legado
+ * activas (`activeApps`, "apps" de qa.config.json); los de legado
  * quedan afuera (D-33, 2026-09-29: la suite completa de 89 specs llevaba
  * más de 35 minutos, casi todo en apps de legado rotas contra sitios reales
  * que nadie mantiene). Sin `activeApps`, todos los specs.

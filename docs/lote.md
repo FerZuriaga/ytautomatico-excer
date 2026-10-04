@@ -41,8 +41,8 @@ funcionalidad se marca OBSERVADA o INFERIDA (nunca inventar módulos), se
 ordena de menor a mayor complejidad y se recomienda por dónde empezar.
 Salida: lista numerada (agrupada por módulo si son más de ~10) con
 riesgos del entorno (datos compartidos, cuentas demo). Terminar el turno:
-el usuario elige. Una app nueva se declara en `APPS.active` de
-`v3/scripts/lib/architecture.js` (D-28).
+el usuario elige. Una app nueva se declara en `apps` de
+`qa.config.json` (D-28).
 
 ### Parte B — La funcionalidad elegida
 
@@ -105,7 +105,7 @@ Al terminar el discovery, UN mensaje con:
 - dudas de alcance o datos y posibles defectos;
 - archivos compartidos que se van a tocar: los de patrón conocido se
   informan (URL `<app>Url` en el config, `import './commands/<app>'`,
-  `APPS.active`, `test:<app>`, filas del README); cualquier otro cambio en
+  `apps` de `qa.config.json`, `test:<app>`, filas del README); cualquier otro cambio en
   `cypress/support/`, `cypress.config.js`, `package.json` o fixtures
   globales se pide acá.
 

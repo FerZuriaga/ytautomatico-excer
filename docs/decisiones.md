@@ -136,7 +136,7 @@ agrega una contradictoria.
   una única pregunta al final del discovery. Agregar una línea igual a las
   existentes para una app queda aprobado de antemano: se hace y se informa.
   Esto vale para la URL `<app>Url` en `env` de `cypress.config.js`, el
-  `import './commands/<app>'`, `APPS.active`, el script `test:<app>` y las
+  `import './commands/<app>'`, `apps` de `qa.config.json`, el script `test:<app>` y las
   filas del README. Cualquier otro cambio compartido se sigue aprobando
   (en esa misma pausa si se conoce), y el merge a `main` se confirma
   siempre (D-04).
@@ -195,7 +195,8 @@ agrega una contradictoria.
   de Zephyr no compensa el costo (2026-09-24), y el legado no se tocaba ni
   se corría: solo confundía a quien mira el repo (plan de simplificación,
   punto 4, 2026-10-03).
-- **Dónde:** README; `APPS.legacy` vacío en `lib/architecture.js`.
+- **Dónde:** README. Desde el 2026-10-04 ya no existe la categoría "legado"
+  en el código: toda carpeta de `cypress/e2e/` es una app de `apps` (D-28).
 
 ### D-10 · Jira: no hay estado "Cancelada"
 - **Decisión:** un ticket descartado se pasa a "Finalizada" con un
@@ -557,7 +558,10 @@ agrega una contradictoria.
   `qa.config.json`, con `lib/qa-config.js`. No hay valores por defecto en el
   código: si falta una clave, frena nombrándola. `qa.config.en.example.json`
   es el ejemplo para un equipo en inglés con un Jira de nombres estándar.
-  `JIRA_PROJECT_KEY` del `.env` sigue teniendo prioridad. Además, el
+  La clave del proyecto sale solo de ahí: desde el 2026-10-04 `JIRA_PROJECT_KEY`
+  del `.env` ya no se lee (unos scripts la priorizaban, `run-and-report.js`
+  leía solo esa y los validadores solo la config: con valores distintos,
+  cada script trabajaba sobre otro proyecto). Además, el
   workflow de PR (lint + unitarios siempre; E2E afectados apagados).
 - **Por qué:** 2026-10-03, el usuario quiere usar el framework en cualquier
   app. "Historia", "Draft", "Relates" y "SCRUM" estaban en 7 archivos y los
@@ -605,8 +609,10 @@ agrega una contradictoria.
 - **Dónde:** `lib/architecture.js` + su test.
 
 ### D-28 · Cada app en sus carpetas, verificado por test
-- **Decisión:** toda carpeta de app se declara como activa o legado en
-  `APPS` (`lib/architecture.js`). Una app activa tiene specs, Page Objects,
+- **Decisión:** toda carpeta de app se declara en `apps` de
+  `qa.config.json` (hasta el 2026-10-04 era `APPS` en `lib/architecture.js`:
+  sumar una app en otro proyecto obligaba a editar código del framework).
+  Una app tiene specs, Page Objects,
   selectores, comandos, discovery y script `test:<app>` en carpetas propias.
   No hay selectores sueltos, y cada archivo de comandos está importado.
   `cy.reconPage`, `cy.reconSubmit` y `twoRandomNum` se borraron del código.

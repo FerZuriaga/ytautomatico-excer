@@ -63,11 +63,11 @@ const testRunner = require('./lib/test-runner');
 const xray = require('./lib/xray');
 const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
-const architecture = require('./lib/architecture');
+const { config } = require('./lib/qa-config');
 const runTiming = require('./lib/run-timing');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
-const PROJECT = process.env.JIRA_PROJECT_KEY;
+const PROJECT = config.jira.projectKey;
 const MAX_REGRESSION_SPECS = 20;
 
 function parseArgs(argv) {
@@ -124,10 +124,10 @@ function resolveAffected(base) {
   const registrationOnly = [...affectedSpecs.GLOBAL_FILES].filter(file => changed.includes(file) &&
     affectedSpecs.isAppRegistrationDiff(file, spawnSync('git', ['diff', '-U0', mergeBase, '--', file], { cwd: REPO_ROOT, encoding: 'utf8' }).stdout.split('\n')));
   if (registrationOnly.length) console.log(`  Solo registro de app en: ${registrationOnly.join(', ')} (no es cambio global).`);
-  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed, { activeApps: architecture.APPS.active, registrationOnly });
+  const result = affectedSpecs.findAffectedSpecs(readCypressSources(), changed, { activeApps: config.apps, registrationOnly });
   console.log(`Regresion por impacto (respecto de ${base}): ${new Set(changed).size} archivo(s) cambiado(s), ${result.specs.length} spec(s) afectado(s).`);
   if (result.global) {
-    console.warn(`  Cambio global: se corre la suite de las apps activas (${architecture.APPS.active.join(', ')}).`);
+    console.warn(`  Cambio global: se corre la suite de las apps activas (${config.apps.join(', ')}).`);
     if (result.skipped.length) console.warn(`  Legado sin correr: ${result.skipped.length} spec(s) (D-33).`);
   }
   else result.reasons.forEach((reason, spec) => console.log(`  - ${spec} (${reason})`));
@@ -218,7 +218,7 @@ async function main() {
     return;
   }
   if (health) {
-    const healthList = affectedSpecs.healthSpecs(readCypressSources(), architecture.APPS.active);
+    const healthList = affectedSpecs.healthSpecs(readCypressSources(), config.apps);
     console.log(`Chequeo de salud: un spec por app activa (${healthList.length}), sin reporte a Xray.`);
     healthList.forEach(spec => console.log(`  - ${spec}`));
     if (list) return;

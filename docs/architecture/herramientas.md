@@ -65,7 +65,7 @@ otro gestor u otro runner. Las reglas `libs-sin-procesos` y
 
 ## Artefactos por aplicación (datos, no código)
 
-Cada app activa tiene todas estas piezas en su propia carpeta; `APPS` y
+Cada app activa tiene todas estas piezas en su propia carpeta; `apps` de `qa.config.json` y
 `checkAppLayout` de `lib/architecture.js` lo verifican en `test:unit`
 (app sin declarar, pieza faltante, selector suelto o comandos sin importar
 en `cypress/support/commands.js`).

@@ -1,5 +1,7 @@
 {
-  "_ayuda": "Example for an English-speaking team and a Jira instance with default names (D-43). Copy it as qa.config.json and adjust: projectKey, issue type names as they appear in your Jira, and the keywords your team uses when writing Stories and Test Cases. Words are compared lowercase and without accents; a trailing '*' matches any ending (e.g. 'revert*').",
+  "_ayuda": "Example for an English-speaking team and a Jira instance with default names (D-43). Copy it as qa.config.json and adjust: apps (one folder per app under cypress/e2e/), projectKey, issue type names as they appear in your Jira, and the keywords your team uses when writing Stories and Test Cases. Words are compared lowercase and without accents; a trailing '*' matches any ending (e.g. 'revert*').",
+
+  "apps": ["my-app"],
 
   "jira": {
     "projectKey": "QA",
