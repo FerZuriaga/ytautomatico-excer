@@ -111,6 +111,28 @@ y se cambian sin tocar código:
 CYPRESS_expandtestingNotesUrl=https://staging.example.com npx cypress run --spec "cypress/e2e/expandtesting-notes/**/*.cy.js"
 ```
 
+## Usarlo en otro proyecto
+
+1. **`qa.config.json`**: la clave del proyecto de Jira, los nombres de los
+   tipos de issue tal como aparecen en esa instancia ("Story" o "Historia",
+   "Task" o "Tarea"...), el tipo de vínculo y las palabras clave con que el
+   equipo escribe las Historias y los Test Cases. Para un equipo en inglés,
+   partir de `qa.config.en.example.json`. Si falta una clave, los scripts
+   frenan nombrándola.
+2. **`.env`**: credenciales de Jira, Xray y GitHub (ver abajo).
+3. **La app:** sus URLs en `env` de `cypress.config.js`, sus carpetas
+   (`cypress/e2e/<app>/`, `pages`, `fixtures/selectors`, `support/commands`,
+   `docs/discovery/<app>.md`, script `test:<app>`) y declararla en `APPS`
+   de `v3/scripts/lib/architecture.js`; `npm run test:unit` avisa qué pieza
+   falta. Datos de prueba por API: `v3/data-recipes/<app>.json`.
+4. **CI:** cada PR corre lint y tests unitarios (`.github/workflows/pr.yml`).
+   Con una app propia y un staging estable, prender los E2E afectados del
+   PR con la variable de repositorio `QA_PR_E2E=true`.
+
+El proceso de cada lote (discovery → Jira/Xray → tests → PR) está en
+`docs/lote.md`. Límite conocido: los textos que el framework escribe en
+Jira y en los reportes están en español (D-43).
+
 Publicar en Jira/Xray y abrir PRs necesita un `.env` con `JIRA_URL`,
 `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY`, `XRAY_CLIENT_ID`,
 `XRAY_CLIENT_SECRET` y `GITHUB_TOKEN`; correr los tests no.
