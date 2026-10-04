@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { withRetry, logRetry } = require('./http-retry');
+const { onBody } = require('./http-body');
 const { config } = require('./qa-config');
 
 const JIRA = config.jira;
@@ -43,9 +44,7 @@ function jiraRequestOnce(method, path, body = null) {
         ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {})
       }
     }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
+      onBody(res, data => {
         try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
         catch { resolve({ status: res.statusCode, body: data }); }
       });
@@ -450,9 +449,7 @@ function attachFile(key, filePath, fileName = path.basename(filePath)) {
         'Content-Length': body.length
       }
     }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
+      onBody(res, data => {
         try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
         catch { resolve({ status: res.statusCode, body: data }); }
       });

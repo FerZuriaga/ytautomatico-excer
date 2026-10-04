@@ -43,6 +43,7 @@ const https = require('https');
 const jira = require('./jira');
 const traceability = require('./traceability');
 const { withRetry, logRetry } = require('./http-retry');
+const { onBody } = require('./http-body');
 const { config } = require('./qa-config');
 
 const HOST = 'xray.cloud.getxray.app';
@@ -63,9 +64,7 @@ function xrayAuth() {
                 'Content-Length': Buffer.byteLength(payload)
             }
         }, res => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
+            onBody(res, data => {
                 if (res.statusCode !== 200) {
                     reject(new Error(`Xray authenticate falló (${res.statusCode}): ${data}`));
                     return;
@@ -114,9 +113,7 @@ async function xrayRequestOnce(query, variables = null) {
                 'Content-Length': Buffer.byteLength(payload)
             }
         }, res => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
+            onBody(res, data => {
                 try {
                     resolve({ status: res.statusCode, body: JSON.parse(data) });
                 } catch {

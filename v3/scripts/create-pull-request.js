@@ -75,6 +75,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { safeMerge } = require('./lib/pr-merge');
+const { onBody } = require('./lib/http-body');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const API_HOSTNAME = 'api.github.com';
@@ -188,9 +189,7 @@ function githubRequest(method, apiPath, body = null) {
         ...(bodyStr ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) } : {})
       }
     }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
+      onBody(res, data => {
         try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
         catch { resolve({ status: res.statusCode, body: data }); }
       });
