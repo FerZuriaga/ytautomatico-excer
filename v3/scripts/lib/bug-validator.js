@@ -26,6 +26,7 @@
 const fs = require('fs');
 const { findInternalTool, internalToolMessage } = require('./internal-tools');
 const path = require('path');
+const { config } = require('./qa-config');
 
 const REQUIRED_TEXT = ['resumen', 'precondiciones', 'resultadoActual', 'resultadoEsperado', 'severidad', 'evidencia', 'entorno'];
 const ALLOWED = new Set([...REQUIRED_TEXT, 'pasos', 'prioridad', 'captura']);
@@ -125,7 +126,7 @@ function isBlank(value) {
   return typeof value !== 'string' || !value.trim();
 }
 
-function validateBug(issue, { projectKey = 'SCRUM', inspectCapture = inspectCaptureOnDisk } = {}) {
+function validateBug(issue, { projectKey = config.jira.projectKey, inspectCapture = inspectCaptureOnDisk } = {}) {
   const label = `Bug "${issue.summary || '(sin summary)'}"`;
   const errors = [];
   const bug = issue.bug;

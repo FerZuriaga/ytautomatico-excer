@@ -1,0 +1,59 @@
+# Controles de cada Pull Request (D-06, D-43).
+#
+# - calidad: siempre. Lint del código de Cypress y tests unitarios del
+#   pipeline. No toca ninguna app bajo prueba, así que no depende de demos
+#   públicas inestables (el motivo por el que D-06 sacó el CI de la suite).
+# - e2e-afectados: APAGADO por defecto. Corre solo los specs afectados por el
+#   PR (run-and-report.js --affected, sin reporte a Xray). Pensado para una
+#   app propia con staging estable: se prende con la variable de repositorio
+#   QA_PR_E2E=true (Settings > Secrets and variables > Actions > Variables).
+#   Tope de specs: QA_PR_MAX_SPECS (default 20, D-33).
+name: PR
+
+on:
+  pull_request:
+
+# Los adapters de Jira/Xray se cargan al importar los scripts; en el PR no se
+# habla con Jira (sin --test-cycle no se reporta), así que alcanza con
+# valores de relleno y no hace falta ningún secreto.
+env:
+  JIRA_URL: https://jira.invalid
+  JIRA_EMAIL: ci@example.com
+  JIRA_API_TOKEN: none
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+
+  e2e-afectados:
+    if: vars.QA_PR_E2E == 'true'
+    needs: calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: cypress-io/github-action@v6
+        with:
+          runTests: false
+      - name: Specs afectados por el PR
+        run: node v3/scripts/run-and-report.js --affected --base origin/${{ github.base_ref }} --max-specs ${{ vars.QA_PR_MAX_SPECS || 20 }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: capturas
+          path: cypress/screenshots
+          if-no-files-found: ignore

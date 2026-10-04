@@ -11,6 +11,8 @@
  * Módulo puro: recibe lo leído de Jira/Xray y los specs, devuelve Markdown.
  */
 
+const { config } = require('./qa-config');
+
 const RESULT_LABEL = {
   PASSED: '✅ PASSED',
   FAILED: '❌ FAILED',
@@ -20,7 +22,7 @@ const RESULT_LABEL = {
 
 // Ciclo de la HU en el encabezado del spec ("// Ticket Jira: SCRUM-804
 // (CA-01..CA-06, Test Cycle SCRUM-805)").
-function cycleFromSpec(source, projectKey = 'SCRUM') {
+function cycleFromSpec(source, projectKey = config.jira.projectKey) {
   const line = (String(source || '').match(/Ticket Jira:[^\n]*/) || [''])[0];
   const match = line.match(new RegExp(`Test Cycle\\s+(${projectKey}-\\d+)`));
   return match ? match[1] : null;

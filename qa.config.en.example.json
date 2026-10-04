@@ -1,0 +1,47 @@
+{
+  "_ayuda": "Example for an English-speaking team and a Jira instance with default names (D-43). Copy it as qa.config.json and adjust: projectKey, issue type names as they appear in your Jira, and the keywords your team uses when writing Stories and Test Cases. Words are compared lowercase and without accents; a trailing '*' matches any ending (e.g. 'revert*').",
+
+  "jira": {
+    "projectKey": "QA",
+    "issueTypes": {
+      "Historia": "Story",
+      "Bug": "Bug",
+      "Tarea": "Task",
+      "Test": "Test"
+    },
+    "bugTypeNames": ["Bug"],
+    "linkType": "Relates",
+    "testLinkType": "Test",
+    "testCaseStatus": "Draft",
+    "testCycleStatus": "Not Executed"
+  },
+
+  "validadores": {
+    "palabrasClave": {
+      "verbosDeAccion": ["click", "press", "tap", "delete", "remove", "filter", "navigate", "go to", "go back", "reload", "refresh", "save", "submit", "send", "add", "edit", "expand", "collapse", "open", "close", "log in", "sign in", "upload", "download", "drag", "cancel"],
+      "verbosDeCarga": ["enter", "type", "fill in", "fill", "input", "select", "choose", "check", "uncheck", "attach", "replace"],
+      "verbosDeCargaAlInicio": ["enter", "type", "fill in", "fill", "input", "search"],
+      "negaciones": ["without", "not", "no"],
+      "articulos": ["the", "a", "an", "your", "their", "its"],
+      "conjuncion": "and",
+      "variosDatos": ["the form", "the fields", "all fields", "all the fields", "the data", "your details"],
+      "palabrasDeSecuencia": ["then", "after that", "afterwards", "next"],
+      "frasesDeLogin": ["log in", "login with", "sign in", "sign in with the credentials"],
+      "verbosDeVerificacion": ["verify", "verifies", "validate", "assert", "ensure"],
+      "verbosDeVerificacionConQue": ["check", "confirm", "make sure", "see"],
+      "conector": "that",
+      "pasosQueNoSonAccion": ["observe", "look at", "wait", "watch", "see that"],
+      "pasosRepetidos": ["again", "once more"],
+      "objetivoDePrueba": ["verify", "validate", "check", "test", "ensure that", "assert"],
+      "terminosTecnicos": ["iframe", "localstorage", "sessionstorage", "local storage", "cookie", "backend", "endpoint", "rest api", "selector", "data-testid", "html", "css", "dom", "native alert", "same origin"],
+      "personaGenerica": { "articulos": ["a", "an", "the"], "palabras": ["user"], "preposiciones": ["of", "from"] },
+      "perdidaDeDatos": ["revert*", "is lost", "are lost", "not persist*", "is not saved", "are not saved", "is not kept", "are not kept"],
+      "conectoresDeReglas": [";", "and also", "also,", "whereas", "while", "on the other hand", "and if not", ", and without", "only if", "unless", "except if", "as long as"],
+      "imposibilidad": ["cannot", "can not", "can't", "is not allowed", "does not allow", "doesn't allow"],
+      "resultadoObservable": ["message", "warning", "error", "is shown", "shows", "displays", "redirects to", "takes to", "is rejected with"],
+      "disparador": "when",
+      "palabrasVacias": ["that", "this", "with", "from", "into", "when", "where", "which", "while", "they", "them", "their", "there", "have", "been", "being", "only", "each", "other", "others", "same", "shows", "shown", "story", "user", "can", "cannot", "will", "should", "must"],
+      "palabrasVaciasHistoria": ["that", "this", "with", "from", "into", "when", "where", "which", "want", "able", "order", "so", "can"]
+    }
+  }
+}

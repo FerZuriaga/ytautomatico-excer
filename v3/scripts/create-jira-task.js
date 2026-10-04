@@ -4,9 +4,9 @@
  * resultados de ejecución — orquestando los Adapters de lib/jira.js,
  * lib/xray.js y lib/test-runner.js.
  *
- * Mismo uso de siempre (ver docs/architecture/architecture-v2-phase2-
- * component-design.md, sección 8, punto 8 — se preserva la compatibilidad
- * de esta CLI a propósito):
+ * Mismo uso de siempre (se preserva la compatibilidad de esta CLI a
+ * propósito). Proyecto, nombres de tipos y vínculos de la instancia:
+ * qa.config.json (D-43); JIRA_PROJECT_KEY del .env tiene prioridad:
  *
  * Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]
  *   Sin issueKey  → crea un nuevo issue a partir del JSON
@@ -91,8 +91,9 @@ const traceability = require('./lib/traceability');
 const payloadBuilder = require('./lib/payload-builder');
 const storyCoherence = require('./lib/story-coherence');
 const { mapWithLimit } = require('./lib/concurrency');
+const { config } = require('./lib/qa-config');
 
-const PROJECT = process.env.JIRA_PROJECT_KEY;
+const PROJECT = process.env.JIRA_PROJECT_KEY || config.jira.projectKey;
 
 function parseArgs(argv) {
   const args = { dataPath: null, issueKey: null, transitionName: null, commentText: null, verify: false, verifyTestcase: null, verifyCycle: null, verifyStatus: null, reportResultsPath: null, testCycleKeyArg: null, acceptWarnings: false, dryRun: false, updateSteps: false, expandTo: null };
@@ -241,8 +242,8 @@ async function storyCoherenceWarnings() {
     : [];
   let published = [];
   try {
-    const issues = await jira.getIssuesByKeys(storyCoherence.storyKeysFromSpecs(specs, PROJECT || 'SCRUM'), { withText: true });
-    published = [...issues].filter(([, issue]) => issue.issuetype === 'Historia' && issue.description)
+    const issues = await jira.getIssuesByKeys(storyCoherence.storyKeysFromSpecs(specs, PROJECT), { withText: true });
+    published = [...issues].filter(([, issue]) => issue.issuetype === config.jira.issueTypes.Historia && issue.description)
       .map(([key, issue]) => ({ key, summary: issue.summary, historia: storyCoherence.storyFromDescription(issue.description) }));
   } catch (err) {
     console.warn(`Coherencia entre HU: no se pudieron leer las HU publicadas (${err.message}); se sigue sin este chequeo.`);
@@ -287,7 +288,7 @@ async function validateData() {
   if (!updateSteps) validation.warnings.push(...await storyCoherenceWarnings());
   // Estándar del Bug (lib/bug-validator.js): secciones fijas, sin Test
   // Cases ni keys en el texto y evidencia sin especular sobre el código.
-  const bugs = updateSteps ? { errors: [], bugCount: 0 } : bugValidator.validateBugs(ISSUE, { projectKey: PROJECT || 'SCRUM' });
+  const bugs = updateSteps ? { errors: [], bugCount: 0 } : bugValidator.validateBugs(ISSUE, { projectKey: PROJECT });
   if (bugs.errors.length) {
     console.error(`Validacion de Bugs: ${bugs.errors.length} error(es). No se publica nada.`);
     bugs.errors.forEach(msg => console.error(`  ERROR: ${msg}`));
@@ -533,7 +534,7 @@ async function linkAll(key, issueDef, { skipExisting = false } = {}) {
       console.log(`${key} ya esta vinculado con ${link.key}.`);
       continue;
     }
-    console.log(`Vinculando ${key} con ${link.key} (${link.type || 'Relates'})...`);
+    console.log(`Vinculando ${key} con ${link.key} (${link.type || config.jira.linkType})...`);
     const linkRes = await jira.linkIssue(key, link.key, link.type);
     if (linkRes.status === 201) {
       console.log(`Vinculado correctamente con ${link.key}.`);

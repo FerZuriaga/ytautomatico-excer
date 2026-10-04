@@ -1,0 +1,47 @@
+{
+  "_ayuda": "Configuración del proyecto (D-43). Todo lo que depende de la instancia de Jira/Xray o del idioma en que se escriben las HU y los Test Cases vive acá, no en el código. Para otro proyecto: copiar y editar (ver qa.config.en.example.json). Las palabras se comparan en minúsculas y sin tildes; un '*' final acepta cualquier terminación (ej. 'revert*').",
+
+  "jira": {
+    "projectKey": "SCRUM",
+    "issueTypes": {
+      "Historia": "Historia",
+      "Bug": "Bug",
+      "Tarea": "Tarea",
+      "Test": "Test"
+    },
+    "bugTypeNames": ["Bug", "Error"],
+    "linkType": "Relates",
+    "testLinkType": "Test",
+    "testCaseStatus": "Draft",
+    "testCycleStatus": "Not Executed"
+  },
+
+  "validadores": {
+    "palabrasClave": {
+      "verbosDeAccion": ["presionar", "clickear", "hacer clic", "hacer click", "eliminar", "filtrar", "navegar", "ir a", "volver", "recargar", "guardar", "enviar", "agregar", "editar", "expandir", "colapsar", "abrir", "cerrar", "iniciar sesion", "loguearse", "subir", "descargar", "arrastrar", "cancelar"],
+      "verbosDeCarga": ["ingresar", "escribir", "tipear", "completar", "cargar", "seleccionar", "elegir", "marcar", "desmarcar", "adjuntar", "reemplazar"],
+      "verbosDeCargaAlInicio": ["ingresar", "escribir", "tipear", "completar", "buscar", "cargar"],
+      "negaciones": ["sin", "no"],
+      "articulos": ["el", "la", "los", "las", "su", "sus"],
+      "conjuncion": "y",
+      "variosDatos": ["el formulario", "los campos", "todos los campos", "los datos", "sus datos"],
+      "palabrasDeSecuencia": ["luego", "despues", "a continuacion"],
+      "frasesDeLogin": ["iniciar sesion", "loguearse", "login con", "ingresar con las credenciales"],
+      "verbosDeVerificacion": ["verificar", "verifica", "comprobar", "validar", "chequear", "constatar"],
+      "verbosDeVerificacionConQue": ["revisar", "confirmar", "asegurar", "asegurarse", "controlar"],
+      "conector": "que",
+      "pasosQueNoSonAccion": ["observar", "mirar", "esperar", "contemplar", "ver que"],
+      "pasosRepetidos": ["nuevamente", "otra vez", "de nuevo"],
+      "objetivoDePrueba": ["verificar", "validar", "comprobar", "probar", "testear", "chequear", "asegurar que"],
+      "terminosTecnicos": ["iframe", "localstorage", "sessionstorage", "almacenamiento local", "cookie", "backend", "endpoint", "api rest", "selector", "data-testid", "html", "css", "dom", "alert nativo", "mismo origen"],
+      "personaGenerica": { "articulos": ["un", "el"], "palabras": ["usuario"], "preposiciones": ["de", "del"] },
+      "perdidaDeDatos": ["revert*", "se pierde", "se pierden", "no persist*", "no se guarda", "no se guardan", "no se conserva", "no se conservan", "no se mantiene", "no se mantienen"],
+      "conectoresDeReglas": [";", "y ademas", "ademas,", "mientras que", "en cambio", "y si no", ", y sin", "solo si", "salvo que", "excepto si", "siempre que"],
+      "imposibilidad": ["no se puede", "no se pueden", "no permite", "no permiten"],
+      "resultadoObservable": ["aviso", "mensaje", "se muestra", "muestra", "lleva a", "lleva al", "se rechaza con"],
+      "disparador": "al",
+      "palabrasVacias": ["para", "poder", "quiero", "desde", "hasta", "sobre", "entre", "como", "cuando", "donde", "este", "esta", "esos", "esas", "todos", "todas", "mismo", "misma", "queda", "quedan", "muestra", "muestran", "solo", "solamente", "cada", "otra", "otras", "otro", "otros", "tiene", "tienen", "puede", "pueden", "sin", "con", "que", "los", "las", "del", "una", "uno", "unos", "unas", "historia", "propia", "propias"],
+      "palabrasVaciasHistoria": ["para", "poder", "quiero", "desde", "hasta", "sobre", "entre", "como", "cuando", "donde", "este", "esta", "esos", "esas", "todos", "todas", "mismo", "misma"]
+    }
+  }
+}
