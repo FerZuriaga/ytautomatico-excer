@@ -123,7 +123,7 @@ async function writeReport(specEntries, outPath) {
   const steps = await xray.getTestStepsByKeys(testKeys);
   const results = new Map();
   for (const cycleKey of new Set([...byStory.values()].map(e => e.cycleKey).filter(Boolean))) {
-    for (const run of await xray.getTestExecutions(PROJECT, cycleKey)) results.set(run.test.jira.key, run.status.name);
+    for (const run of await xray.getTestExecutions(PROJECT, cycleKey)) results.set(run.testCaseKey, run.status);
   }
 
   const stories = [...byStory.entries()].map(([key, entry]) => {

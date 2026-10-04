@@ -528,7 +528,15 @@ async function getTestExecutions(projectKey, testCycleKey) {
     const res = await xrayRequest(query, { testExecIssueIds: [testExecIssueId] });
     assertNoErrors(res);
 
-    return res.body.data.getTestRuns.results;
+    return res.body.data.getTestRuns.results.map(toExecution);
+}
+
+/**
+ * Test Run de Xray -> Ejecución del contrato (lib/test-manager-contract.js):
+ * la forma anidada del GraphQL no sale de este archivo.
+ */
+function toExecution(run) {
+    return { id: run.id, testCaseKey: run.test?.jira?.key, status: run.status?.name || null };
 }
 
 /**
@@ -554,7 +562,7 @@ async function findTestExecution(projectKey, testCycleKey, testCaseKey) {
     assertNoErrors(res);
 
     const run = res.body.data.getTestRun;
-    return run ? { id: run.id, key: null, status: run.status?.name || null } : null;
+    return run ? { id: run.id, testCaseKey, status: run.status?.name || null } : null;
 }
 
 /**
@@ -784,8 +792,11 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId, share
     return { keys: succeeded, testCycleKey };
 }
 
+// Las funciones que usan los CLIs son el contrato de
+// lib/test-manager-contract.js; el resto son piezas internas y de pruebas.
 module.exports = {
     isIdempotentQuery,
+    toExecution,
     createTestCase,
     createTestSteps,
     removeAllTestSteps,

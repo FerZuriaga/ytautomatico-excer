@@ -167,8 +167,8 @@ test('isReportable: corrida vacia o con pendientes no se reporta', () => {
 
 test('compareReportedStatuses: detecta keys sin ejecucion y ejecuciones que no quedaron en PASSED', () => {
   const executions = [
-    { status: { name: 'PASSED' }, test: { jira: { key: 'SCRUM-351' } } },
-    { status: { name: 'TO DO' }, test: { jira: { key: 'SCRUM-352' } } }
+    { id: 'r1', testCaseKey: 'SCRUM-351', status: 'PASSED' },
+    { id: 'r2', testCaseKey: 'SCRUM-352', status: 'TO DO' }
   ];
 
   assert.deepEqual(compareReportedStatuses(executions, ['SCRUM-351', 'SCRUM-352', 'SCRUM-999']), {
@@ -240,7 +240,7 @@ test('regresion Checkout 2026-09-26: la pista distingue elemento no encontrado, 
 // parte de los estados ya escritos.
 test('planReport: cada test al primer ciclo que lo tiene, skips a TO DO y faltantes sin escribir nada', () => {
   const { planReport } = require('./test-runner');
-  const run = (id, key, status) => ({ id, status: { name: status }, test: { jira: { key } } });
+  const run = (id, testCaseKey, status) => ({ id, testCaseKey, status });
   const cycles = [
     { cycleKey: 'SCRUM-600', executions: [run('r1', 'SCRUM-601', 'TO DO'), run('r2', 'SCRUM-602', 'FAILED'), run('r5', 'SCRUM-605', 'PASSED')] },
     { cycleKey: 'SCRUM-613', executions: [run('r3', 'SCRUM-614', 'TO DO'), run('r1b', 'SCRUM-601', 'TO DO'), run('r6', 'SCRUM-606', 'TO DO')] }
