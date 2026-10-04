@@ -45,10 +45,15 @@
  * validateStepUpdates cubre la reescritura de pasos de Test Cases ya
  * publicados (`--update-steps`), con las mismas reglas de pasos.
  *
- * Módulo puro: no habla con Jira/Xray ni lee archivos.
+ * Las palabras clave de cada heurística (verbos de acción, de carga, de
+ * verificación, conectores, términos técnicos...) vienen de
+ * `qa.config.json` (D-43): otro idioma es editar ese archivo, no este.
+ *
+ * No habla con Jira/Xray; la única lectura es la de la config del proyecto.
  */
 
 const { findInternalTool, internalToolMessage } = require('./internal-tools');
+const { config, phrasesRegex, phraseSource } = require('./qa-config');
 
 const MIN_STEPS = 2;
 
@@ -75,56 +80,69 @@ const CRITERION_ID_REGEX = /^\s*(CA-\d{2})\b/i;
 // por criterio" (regla de la skill especificacion) como WARNING.
 const TEST_CASE_TYPES = ['positivo', 'negativo'];
 
-// Verbos de ACCIÓN del usuario (infinitivo) que producen un resultado
-// verificable propio. "verificar"/"observar" no cuentan: describen la
-// comprobación del resultado, no una acción nueva.
-const ACTION_VERBS = [
-  'presionar', 'clickear', 'hacer clic', 'hacer click', 'eliminar',
-  'filtrar', 'navegar', 'ir a', 'volver', 'recargar', 'guardar', 'enviar',
-  'agregar', 'editar', 'expandir', 'colapsar', 'abrir', 'cerrar',
-  'iniciar sesion', 'loguearse', 'subir', 'descargar', 'arrastrar',
-  'cancelar'
-];
+/**
+ * Reglas de texto armadas desde las palabras clave de la config (D-43).
+ * Qué es cada lista y por qué existe:
+ * - verbosDeAccion: acciones del usuario que producen un resultado propio.
+ *   "verificar"/"observar" no cuentan: describen la comprobación.
+ * - verbosDeCarga: cargar un dato (ingresar, completar...). No son acciones:
+ *   los controla "un dato por paso" (D-38, 2026-10-01: pasaron "Completar el
+ *   formulario de registro" en SCRUM-766 e "Ingresar con el email y la
+ *   contraseña" en SCRUM-769).
+ * - articulos + conjuncion + variosDatos: varios datos nombrados en la
+ *   acción ("el email y la contraseña", "los campos").
+ * - negaciones: una acción negada no es una acción ("navegar sin iniciar
+ *   sesion"; falso positivo real en SCRUM-302 con "sin filtrar").
+ * - verbosDeVerificacion(ConQue): verificaciones escritas en la Acción
+ *   (SCRUM-477, 2026-09-26). "revisar/confirmar" solos son acciones; con
+ *   "que" pasan a ser verificaciones.
+ * - pasosQueNoSonAccion / pasosRepetidos: pasos de relleno (SCRUM-499/500).
+ */
+function buildKeywordRules(k) {
+  return {
+    actionVerb: phrasesRegex(k.verbosDeAccion, { flags: 'g' }),
+    inputVerb: phrasesRegex(k.verbosDeCarga),
+    inputAtStart: phrasesRegex(k.verbosDeCargaAlInicio, { anchored: true }),
+    negatedAction: new RegExp(`${phrasesRegex(k.negaciones).source}\\s+${phrasesRegex(k.verbosDeAccion).source}`, 'g'),
+    severalInputs: new RegExp(`${phrasesRegex(k.articulos).source}\\s+[a-z]+(\\s+[a-z]+)?\\s+${phraseSource(k.conjuncion)}\\s+${phrasesRegex(k.articulos).source}\\s+[a-z]+|${phrasesRegex(k.variosDatos).source}`),
+    sequence: phrasesRegex(k.palabrasDeSecuencia),
+    login: phrasesRegex(k.frasesDeLogin),
+    verifyInAction: new RegExp(`${phrasesRegex(k.verbosDeVerificacion).source}|${phrasesRegex(k.verbosDeVerificacionConQue).source}\\s+${phraseSource(k.conector)}`),
+    nonActionStep: phrasesRegex(k.pasosQueNoSonAccion, { anchored: true }),
+    repeatedStep: phrasesRegex(k.pasosRepetidos),
+    testObjective: phrasesRegex(k.objetivoDePrueba, { anchored: true }),
+    technicalTerms: phrasesRegex(k.terminosTecnicos, { flags: 'g' }),
+    genericPersona: new RegExp(`^\\s*(${phrasesRegex(k.personaGenerica.articulos).source}\\s+)?${phrasesRegex(k.personaGenerica.palabras).source}(\\s+${phrasesRegex(k.personaGenerica.preposiciones).source}\\s+[^,]+)?\\s*$`),
+    dataLoss: phrasesRegex(k.perdidaDeDatos),
+    ruleConnectors: phrasesRegex(k.conectoresDeReglas),
+    ruleConnectorList: k.conectoresDeReglas,
+    impossibility: phrasesRegex(k.imposibilidad),
+    observableOutcome: phrasesRegex(k.resultadoObservable),
+    stopwords: new Set(k.palabrasVaciasHistoria)
+  };
+}
 
-// Los verbos de CARGA DE DATOS (ingresar, completar, escribir, tipear,
-// reemplazar, seleccionar, marcar) no están en ACTION_VERBS: los controla
-// la regla de "un dato por paso" (ver INPUT_VERBS más abajo).
-//
-// Cambio del 2026-10-01 (pedido del usuario, D-38): antes "completar X y
-// presionar Guardar" se aceptaba como UNA acción. Pasaron así "Completar
-// el formulario de registro" (4 campos en un paso, SCRUM-766) e "Ingresar
-// con el email y la contraseña" (escribir, escribir y clic en un paso,
-// SCRUM-769). Ahora cada dato que se carga y cada botón son un paso.
-const INPUT_VERBS = ['ingresar', 'escribir', 'tipear', 'completar', 'cargar', 'seleccionar', 'elegir', 'marcar', 'desmarcar', 'adjuntar', 'reemplazar'];
-const INPUT_VERB_REGEX = new RegExp(`\\b(${INPUT_VERBS.join('|')})\\b`);
-// Varios datos nombrados en la acción: "el email y la contraseña",
-// "los datos", "el formulario", "los campos".
-const SEVERAL_INPUTS_REGEX = /\b(el|la|los|las|su|sus)\s+[a-z]+(\s+[a-z]+)?\s+y\s+(el|la|los|las|su|sus)\s+[a-z]+|\b(el formulario|los campos|todos los campos|los datos|sus datos)\b/;
+let K = buildKeywordRules(config.validadores.palabrasClave);
 
-const SEQUENCE_WORDS = ['luego', 'despues', 'a continuacion'];
-
-const LOGIN_PATTERN = /\b(iniciar sesion|loguearse|login con|ingresar con las credenciales)\b/;
-
-// Una acción negada no es una acción: "navegar a la Home sin iniciar
-// sesion" o "verificar el listado (sin filtrar)" es UN paso. Cubre TODOS
-// los verbos de acción (la primera versión listaba solo 4 y dio un falso
-// positivo real en SCRUM-302 con "sin filtrar").
-const NEGATED_ACTION_REGEX = new RegExp(`\\b(sin|no)\\s+(${ACTION_VERBS.map(escapeRegExp).join('|')})\\b`, 'g');
+/**
+ * Cambia las palabras clave en uso (tests, u otro idioma en un mismo
+ * proceso). Devuelve las anteriores para restaurarlas.
+ */
+let currentKeywords = config.validadores.palabrasClave;
+function useKeywords(keywords) {
+  const previous = currentKeywords;
+  K = buildKeywordRules(keywords);
+  currentKeywords = keywords;
+  return previous;
+}
 
 function normalize(text) {
   return String(text || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .replace(NEGATED_ACTION_REGEX, '');
+    .replace(K.negatedAction, '');
 }
-
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-const ACTION_VERB_REGEX = new RegExp(`\\b(${ACTION_VERBS.map(escapeRegExp).join('|')})\\b`, 'g');
-const SEQUENCE_REGEX = new RegExp(`\\b(${SEQUENCE_WORDS.map(escapeRegExp).join('|')})\\b`);
 
 /**
  * Devuelve los verbos de acción encontrados en la descripción de un paso,
@@ -132,33 +150,16 @@ const SEQUENCE_REGEX = new RegExp(`\\b(${SEQUENCE_WORDS.map(escapeRegExp).join('
  * 2 acciones).
  */
 function findActionVerbs(description) {
-  return normalize(description).match(ACTION_VERB_REGEX) || [];
+  return normalize(description).match(K.actionVerb) || [];
 }
 
 function isBlank(value) {
   return !String(value || '').trim();
 }
 
-// Verificaciones escritas en la columna Acción: lo que se controla va solo
-// en el resultado esperado (acordado 2026-09-26 tras SCRUM-477, que decía
-// "Hacer clic en el carrito y verificar su contenido"). "revisar/confirmar"
-// solos son acciones del usuario; con "que" pasan a ser verificaciones.
-const VERIFY_IN_ACTION_REGEX = /\b(verificar|verifica|comprobar|validar|chequear|constatar)\b|\b(revisar|confirmar|asegurar|asegurarse|controlar) que\b/;
-
-// Acciones que cargan un dato de entrada (el valor debería ir en Datos).
-const INPUT_ACTION_REGEX = /^\s*(ingresar|escribir|tipear|completar|buscar|cargar)\b/;
-
 function isBlankData(value) {
   return isBlank(value) || String(value).trim() === '-';
 }
-
-// Pasos de relleno (acordado 2026-09-26 tras SCRUM-499/500): un paso que no
-// es una acción del usuario ("Observar el menú") o que repite una acción
-// anterior ("Abrir nuevamente ...") se agrega para llegar al mínimo de 2
-// pasos y no valida nada nuevo. Los casos de una sola acción quedan en 2
-// pasos: entrar a la pantalla y la acción.
-const NON_ACTION_STEP_REGEX = /^\s*(observar|mirar|esperar|contemplar|ver que)\b/;
-const REPEATED_STEP_REGEX = /\b(nuevamente|otra vez|de nuevo)\b/;
 
 /**
  * Valida un único Modelo Canónico de Test Case. `label` identifica al TC
@@ -186,7 +187,7 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
       errors.push(`${label}: el paso ${n} no tiene resultado esperado (expectedResult).`);
     }
 
-    const verification = normalize(step?.description).match(VERIFY_IN_ACTION_REGEX);
+    const verification = normalize(step?.description).match(K.verifyInAction);
     if (verification) {
       errors.push(`${label}: el paso ${n} incluye una verificacion en la accion ("${verification[0]}") -- la accion describe solo lo que hace el usuario; lo que se controla va en el resultado esperado.`);
     }
@@ -194,15 +195,15 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
     // Dato de entrada escrito dentro de la acción: va en la columna Datos
     // (testData), así un cambio del seed se corrige solo en el dato.
     const description = String(step?.description || '');
-    if (INPUT_ACTION_REGEX.test(normalize(description)) && /"[^"]+"/.test(description) && isBlankData(step?.testData)) {
+    if (K.inputAtStart.test(normalize(description)) && /"[^"]+"/.test(description) && isBlankData(step?.testData)) {
       warnings.push(`${label}: el paso ${n} escribe un dato entre comillas en la accion y la columna Datos esta vacia -- mover el dato a testData.`);
     }
 
     const normalizedDescription = normalize(step?.description);
-    if (NON_ACTION_STEP_REGEX.test(normalizedDescription)) {
+    if (K.nonActionStep.test(normalizedDescription)) {
       warnings.push(`${label}: el paso ${n} no describe una accion del usuario ("${String(step.description).trim().split(/\s+/)[0]}...") -- si no agrega un resultado nuevo es relleno; lo observado va en el resultado esperado del paso anterior.`);
-    } else if (REPEATED_STEP_REGEX.test(normalizedDescription)) {
-      warnings.push(`${label}: el paso ${n} repite una accion anterior ("${normalizedDescription.match(REPEATED_STEP_REGEX)[0]}") -- confirmar que produce un resultado nuevo; si no, es relleno.`);
+    } else if (K.repeatedStep.test(normalizedDescription)) {
+      warnings.push(`${label}: el paso ${n} repite una accion anterior ("${normalizedDescription.match(K.repeatedStep)[0]}") -- confirmar que produce un resultado nuevo; si no, es relleno.`);
     }
 
     // Un dato por paso (D-38): los Datos de un paso con varios valores
@@ -213,15 +214,15 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
     }
 
     const verbs = findActionVerbs(step?.description);
-    const loadsData = INPUT_VERB_REGEX.test(normalizedDescription);
+    const loadsData = K.inputVerb.test(normalizedDescription);
     if (verbs.length >= 2) {
       warnings.push(`${label}: el paso ${n} parece encadenar ${verbs.length} acciones (${verbs.join(', ')}) -- separar un paso por accion verificable.`);
     } else if (loadsData && verbs.length === 1) {
       warnings.push(`${label}: el paso ${n} carga un dato y ademas hace otra accion (${verbs[0]}) -- separar: un paso para el dato y otro para la accion.`);
-    } else if (loadsData && SEVERAL_INPUTS_REGEX.test(normalizedDescription)) {
-      warnings.push(`${label}: el paso ${n} parece cargar varios datos a la vez ("${normalizedDescription.match(SEVERAL_INPUTS_REGEX)[0]}") -- un paso por campo.`);
-    } else if (SEQUENCE_REGEX.test(normalize(step?.description))) {
-      warnings.push(`${label}: el paso ${n} usa una palabra de secuencia ("luego"/"despues") -- probablemente son 2 pasos.`);
+    } else if (loadsData && K.severalInputs.test(normalizedDescription)) {
+      warnings.push(`${label}: el paso ${n} parece cargar varios datos a la vez ("${normalizedDescription.match(K.severalInputs)[0]}") -- un paso por campo.`);
+    } else if (K.sequence.test(normalize(step?.description))) {
+      warnings.push(`${label}: el paso ${n} usa una palabra de secuencia ("${normalize(step?.description).match(K.sequence)[0]}") -- probablemente son 2 pasos.`);
     }
   });
 
@@ -233,7 +234,7 @@ function validateTestCaseModel(model, label = model?.name || '(sin nombre)') {
     if (hit) errors.push(internalToolMessage(`${label}: ${where}`, hit));
   }
 
-  if (steps.length && LOGIN_PATTERN.test(normalize(steps[0]?.description)) && isBlank(model?.precondition)) {
+  if (steps.length && K.login.test(normalize(steps[0]?.description)) && isBlank(model?.precondition)) {
     warnings.push(`${label}: el paso 1 incluye el login y la precondicion esta vacia -- mover la sesion iniciada a "precondition".`);
   }
 
@@ -380,30 +381,17 @@ function validateStoryCriteria(issue, existingTestCases = []) {
   return { errors, warnings, criteriaCount: criterios.length, tcCountByCriterion };
 }
 
-// Objetivo de la HU = resultado de negocio. Estos verbos al inicio lo
-// delatan como objetivo de prueba (eso va en el Test Case).
-const TEST_OBJECTIVE_REGEX = /^\s*(verificar|validar|comprobar|probar|testear|chequear|asegurar que)\b/;
+// Palabras clave de la redacción de la HU (config, D-43):
+// - objetivoDePrueba: verbos que delatan un Objetivo escrito como objetivo
+//   de prueba ("Verificar..."); el Objetivo es un resultado de negocio.
+// - terminosTecnicos: detalle de implementación prohibido en la HU (va en
+//   el PR, en docs/discovery o en la precondición del TC).
+// - personaGenerica: "usuario", "usuario de CommitQuality" (sin rol).
+// - perdidaDeDatos: un CA que exige perder datos suele ser un defecto
+//   relevado en el discovery (caso real: SCRUM-338 CA-04).
 
 // Rutas de la app ("/account", "/practice-file-upload") y URLs completas.
 const ROUTE_REGEX = /(^|[\s('"])(\/[a-z0-9][a-z0-9_-]*(\/[a-z0-9_-]+)*)(?=$|[\s)'".,;:])|https?:\/\//;
-
-// Detalle técnico/de implementación (CONTENIDO PROHIBIDO de la plantilla
-// de Historia): va en el PR, en docs/discovery o en la precondición del TC.
-const TECHNICAL_TERMS = [
-  'iframe', 'localstorage', 'sessionstorage', 'almacenamiento local', 'cookie',
-  'backend', 'endpoint', 'api rest', 'selector', 'data-testid', 'html', 'css',
-  'dom', 'alert nativo', 'mismo origen'
-];
-const TECHNICAL_TERMS_REGEX = new RegExp(`\\b(${TECHNICAL_TERMS.map(escapeRegExp).join('|')})\\b`, 'g');
-
-// Persona sin rol: "usuario", "usuario de CommitQuality", "usuario del catalogo".
-const GENERIC_PERSONA_REGEX = /^\s*(un |el )?usuario( (de|del) [^,]+)?\s*$/;
-
-// Un CA que exige perder datos casi nunca es una regla de negocio: suele ser
-// un defecto relevado en el discovery (caso real: SCRUM-338 CA-04).
-const DATA_LOSS_REGEX = /\b(revert\w*|se pierden?|no persist\w*|no se (guardan?|conservan?|mantienen?))\b/;
-
-const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre', 'entre', 'como', 'cuando', 'donde', 'este', 'esta', 'esos', 'esas', 'todos', 'todas', 'mismo', 'misma']);
 
 // CA compuesto (acordado 2026-09-26 tras SCRUM-485 CA-03, que juntaba
 // "bloqueo tras 3 intentos" y "el exito reinicia el conteo" con ";"): cada
@@ -418,28 +406,26 @@ const STOPWORDS = new Set(['para', 'poder', 'quiero', 'desde', 'hasta', 'sobre',
 // que esa regla llegara al mínimo de 2 TC.
 const MIN_CLAUSE_WORDS = 4;
 
+// Conectores en config (conectoresDeReglas).
 function compoundClauses(text) {
   const body = normalize(text).replace(CRITERION_ID_REGEX, '').replace(/^\s*:/, '');
   return body
-    .split(/;|\by ademas\b|\bademas,|\bmientras que\b|\ben cambio\b|\by si no\b|,\s*y sin\b|\bsolo si\b|\bsalvo que\b|\bexcepto si\b|\bsiempre que\b/)
+    .split(new RegExp(K.ruleConnectors.source))
     .filter(part => part.split(/\s+/).filter(Boolean).length >= MIN_CLAUSE_WORDS)
     .length;
 }
 
 // CA abstracto (D-39, lote SCRUM-821 2026-10-02): "ya no se puede ingresar
-// con ella" no dice qué ve el usuario. Avisa una imposibilidad ("no se
-// puede", "no permite") que no nombra el resultado observable: un texto
-// entre comillas, un aviso o mensaje, lo que se muestra o adónde lleva.
-const ABSTRACT_OUTCOME_REGEX = /\bno se (puede|pueden)\b|\bno (permite|permiten)\b/;
-const OBSERVABLE_OUTCOME_REGEX = /\baviso\b|\bmensaje\b|\bse muestra\b|\bmuestra\b|\blleva al?\b|\bse rechaza con\b/;
-
+// con ella" no dice qué ve el usuario. Avisa una imposibilidad (config:
+// imposibilidad) que no nombra el resultado observable (config:
+// resultadoObservable) ni cita un texto entre comillas.
 function abstractOutcome(text) {
   const normalized = normalize(text);
-  return ABSTRACT_OUTCOME_REGEX.test(normalized) && !/["“”]/.test(String(text)) && !OBSERVABLE_OUTCOME_REGEX.test(normalized);
+  return K.impossibility.test(normalized) && !/["“”]/.test(String(text)) && !K.observableOutcome.test(normalized);
 }
 
 function contentWords(text) {
-  return new Set(normalize(text).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !STOPWORDS.has(w)));
+  return new Set(normalize(text).split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !K.stopwords.has(w)));
 }
 
 /**
@@ -456,7 +442,7 @@ function validateStoryText(issue) {
   if (!historia) return { errors: [], warnings };
   const story = issue.summary || '(HU sin summary)';
 
-  if (!isBlank(historia.como) && GENERIC_PERSONA_REGEX.test(normalize(historia.como))) {
+  if (!isBlank(historia.como) && K.genericPersona.test(normalize(historia.como))) {
     warnings.push(`${story}: "Como ${historia.como}" es un usuario generico -- indicar el rol concreto que obtiene el beneficio (ej. "administrador del catalogo").`);
   }
 
@@ -468,7 +454,7 @@ function validateStoryText(issue) {
     }
   }
 
-  if (TEST_OBJECTIVE_REGEX.test(normalize(historia.objetivo))) {
+  if (K.testObjective.test(normalize(historia.objetivo))) {
     warnings.push(`${story}: el Objetivo esta escrito como objetivo de prueba ("${String(historia.objetivo).trim().split(/\s+/)[0]}...") -- describir el resultado de negocio; lo que se verifica va en los Test Cases.`);
   }
 
@@ -484,7 +470,7 @@ function validateStoryText(issue) {
     if (route) {
       warnings.push(`${story}: ${name} menciona una ruta/URL ("${(route[2] || route[0]).trim()}") -- la HU no lleva rutas; van en la precondicion del Test Case o en docs/discovery.`);
     }
-    const terms = [...new Set(normalize(text).match(TECHNICAL_TERMS_REGEX) || [])];
+    const terms = [...new Set(normalize(text).match(K.technicalTerms) || [])];
     if (terms.length) {
       warnings.push(`${story}: ${name} tiene detalle tecnico (${terms.join(', ')}) -- describir el comportamiento en lenguaje de negocio.`);
     }
@@ -493,12 +479,12 @@ function validateStoryText(issue) {
   for (const text of criterios) {
     const clauses = compoundClauses(text);
     if (clauses > 1) {
-      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ";", "ademas", "mientras que", "en cambio", "y si no", ", y sin", "solo si", "salvo que", "excepto si" o "siempre que") -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion. Nunca juntar una regla en otro CA para llegar al minimo de 2 TC: buscarle su segundo TC (D-39).`);
+      warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} parece combinar ${clauses} reglas (separadas por ${K.ruleConnectorList.map(c => `"${c}"`).join(', ')}) -- una regla por criterio; si la segunda parte es el caso negativo o la definicion de la misma regla, redactarla como una sola oracion. Nunca juntar una regla en otro CA para llegar al minimo de 2 TC: buscarle su segundo TC (D-39).`);
     }
     if (abstractOutcome(text)) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} dice lo que no se puede hacer sin nombrar el resultado observable -- decir que ve el usuario (el aviso, la pantalla a la que lleva); si hay dos caminos que fallan por separado (ej. login y sesion abierta), son dos CA (D-39).`);
     }
-    if (DATA_LOSS_REGEX.test(normalize(text))) {
+    if (K.dataLoss.test(normalize(text))) {
       warnings.push(`${story}: ${normalizeCriterionId(text) || 'un criterio'} exige perder o revertir datos -- si contradice el "Para" de la HU es un defecto (Bug o limitacion conocida), no un criterio de aceptacion.`);
     }
   }
@@ -620,6 +606,7 @@ module.exports = {
   MIN_TC_PER_CRITERION,
   MAX_TC_PER_CRITERION,
   findActionVerbs,
+  useKeywords,
   validateTestCaseModel,
   collectTestCases,
   validateStoryCriteria,

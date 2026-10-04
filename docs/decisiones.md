@@ -73,16 +73,18 @@ agrega una contradictoria.
 
 ### D-06 · Validación local; CI solo nocturno y solo con datos aislados
 - **Decisión:** la evidencia de cada PR es la corrida local con
-  `run-and-report.js`; no hay CI como requisito de merge. Desde el
+  `run-and-report.js`; los E2E no son requisito de merge. Desde el
   2026-10-03 hay una corrida nocturna en GitHub Actions solo de Notes App
   (cada test registra su propio usuario), sin reporte a Xray ni
-  credenciales.
+  credenciales. Cada PR corre lint y tests unitarios (no tocan ninguna
+  demo); los E2E afectados del PR existen en el workflow pero apagados
+  (`QA_PR_E2E`), para un proyecto con app propia (D-43).
 - **Por qué:** con un CI de la suite completa como requisito de merge, el
   check falló 3 veces seguidas por demos públicas inestables (datos sucios,
   timeouts, un 500 del servidor), ajenas al código (2026-07-29). La
   nocturna de Notes da una señal visible (badge del README) sin esas demos;
   el usuario eligió solo Notes (plan de simplificación, punto 4).
-- **Dónde:** `.github/workflows/nocturna-notes.yml`.
+- **Dónde:** `.github/workflows/nocturna-notes.yml`, `.github/workflows/pr.yml`.
 
 ### D-07 · GitHub por API REST, sin `gh`
 - **Decisión:** los PRs, el merge y el borrado de ramas se hacen con
@@ -546,6 +548,29 @@ agrega una contradictoria.
   la etapa Zephyr, en la etiqueta `legado-2026-10-03`) y los campos vacíos
   de `package.json` (ahora `private`).
 - **Dónde:** `eslint.config.js`, `package.json` (`lint`), `docs/lote.md` §4.
+
+### D-43 · Lo propio de cada proyecto vive en `qa.config.json`, no en el código
+- **Decisión:** la clave del proyecto, los nombres de la instancia de
+  Jira/Xray (tipos de issue, tipo de vínculo, estados iniciales) y las
+  palabras clave de los validadores (verbos de acción, de carga, de
+  verificación, conectores de reglas, términos técnicos...) se leen de
+  `qa.config.json`, con `lib/qa-config.js`. No hay valores por defecto en el
+  código: si falta una clave, frena nombrándola. `qa.config.en.example.json`
+  es el ejemplo para un equipo en inglés con un Jira de nombres estándar.
+  `JIRA_PROJECT_KEY` del `.env` sigue teniendo prioridad. Además, el
+  workflow de PR (lint + unitarios siempre; E2E afectados apagados).
+- **Por qué:** 2026-10-03, el usuario quiere usar el framework en cualquier
+  app. "Historia", "Draft", "Relates" y "SCRUM" estaban en 7 archivos y los
+  validadores solo entendían español: con un Jira de nombres estándar o un
+  equipo en inglés no servían. El usuario pidió que las palabras clave sean
+  configurables en vez de atarlas a un idioma. Verificado: con la config en
+  español los 243 tests previos dan igual; con la de inglés los validadores
+  detectan los mismos errores en Test Cases en inglés (test).
+- **Límite conocido:** los textos que el framework escribe (secciones de la
+  HU y del Bug en Jira, mensajes de los validadores, el reporte de
+  trazabilidad) siguen en español.
+- **Dónde:** `qa.config.json`, `lib/qa-config.js` + test, README ("Usarlo
+  en otro proyecto").
 
 ---
 

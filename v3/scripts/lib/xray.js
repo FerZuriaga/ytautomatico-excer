@@ -43,6 +43,7 @@ const https = require('https');
 const jira = require('./jira');
 const traceability = require('./traceability');
 const { withRetry, logRetry } = require('./http-retry');
+const { config } = require('./qa-config');
 
 const HOST = 'xray.cloud.getxray.app';
 
@@ -287,14 +288,14 @@ async function replaceTestSteps(testCaseKey, steps) {
 /**
  * Vincula un Test Case existente con un issue de Jira (Historia, Bug, etc.)
  * mediante el issueLink nativo de Jira — Xray no expone mutación propia de
- * linking porque un Test ya ES un issue de Jira. Tipo de link "Test"
- * (outward "tests"), ya presente en el proyecto. issueId es el ID
+ * linking porque un Test ya ES un issue de Jira. Tipo de link de la config
+ * (jira.testLinkType; acá "Test", outward "tests"). issueId es el ID
  * numérico del issue de Jira (no el key), igual que en el contrato
  * original de Zephyr.
  */
 async function linkTestCaseToIssue(testCaseKey, issueId) {
     const res = await jira.jiraRequest('POST', '/rest/api/3/issueLink', {
-        type: { name: 'Test' },
+        type: { name: config.jira.testLinkType },
         inwardIssue: { id: String(issueId) },
         outwardIssue: { key: testCaseKey }
     });

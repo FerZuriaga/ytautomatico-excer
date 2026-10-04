@@ -20,13 +20,12 @@
  * create-jira-task.js.
  */
 
-// Palabras que no distinguen una regla de otra.
-const STOPWORDS = new Set([
-  'para', 'poder', 'quiero', 'desde', 'hasta', 'sobre', 'entre', 'como', 'cuando', 'donde', 'este', 'esta',
-  'esos', 'esas', 'todos', 'todas', 'mismo', 'misma', 'queda', 'quedan', 'muestra', 'muestran', 'solo',
-  'solamente', 'cada', 'otra', 'otras', 'otro', 'otros', 'tiene', 'tienen', 'puede', 'pueden', 'sin', 'con',
-  'que', 'los', 'las', 'del', 'una', 'uno', 'unos', 'unas', 'historia', 'propia', 'propias'
-]);
+const { config, phraseSource } = require('./qa-config');
+
+// Palabras que no distinguen una regla de otra (config: palabrasVacias,
+// D-43) y la palabra que abre un disparador explícito ("Al registrarse,").
+const STOPWORDS = new Set(config.validadores.palabrasClave.palabrasVacias);
+const TRIGGER_REGEX = new RegExp(`^\\s*${phraseSource(config.validadores.palabrasClave.disparador)}\\s+([^,]+),`);
 const MIN_SHARED_WORDS = 3;
 // Entre criterios hace falta más: las palabras del dominio ("notas",
 // "categoría", "elegida") se repiten en casi todos los de una misma app.
@@ -61,7 +60,7 @@ function appPrefix(summary) {
  * Keys de HU en los encabezados de los specs ("// Ticket Jira: SCRUM-635
  * (CA-01..CA-03, Test Cycle SCRUM-636)"): sin los Test Cycles.
  */
-function storyKeysFromSpecs(sources, projectKey = 'SCRUM') {
+function storyKeysFromSpecs(sources, projectKey = config.jira.projectKey) {
   const keys = new Set();
   const keyRe = new RegExp(`\\b${projectKey}-\\d+\\b`, 'g');
   for (const source of sources) {
@@ -129,7 +128,7 @@ const criterionBody = text => String(text).replace(/^\s*CA-\d{2}\s*:\s*/, '');
 // cambiar la contraseña" (SCRUM-804) avisaba contra "Al registrarse"
 // (SCRUM-766) y "Al iniciar sesión" (SCRUM-745) en cada publicación.
 const criterionTrigger = text => {
-  const match = normalize(criterionBody(text)).match(/^\s*al\s+([^,]+),/);
+  const match = normalize(criterionBody(text)).match(TRIGGER_REGEX);
   return match ? match[1].trim() : null;
 };
 const cut = text => (text.length > 90 ? `${text.slice(0, 87)}...` : text);

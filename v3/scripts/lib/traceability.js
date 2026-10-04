@@ -10,8 +10,10 @@
  *      nadie. checkTraceability cruza los tags de los specs contra lo
  *      publicado en Jira/Xray.
  *
- * Módulo puro: no habla con Jira/Xray ni lee archivos.
+ * No habla con Jira/Xray; la única lectura es la de la config del
+ * proyecto (nombre del tipo Test en esta instancia, D-43).
  */
+const { config } = require('./qa-config');
 
 const CRITERION_LABEL_REGEX = /^CA-\d{2}$/;
 const TYPE_LABELS = ['positivo', 'negativo'];
@@ -136,7 +138,7 @@ function checkTraceability(specs, issuesByKey) {
         errors.push(`${where}: ${t.key} no existe en Jira/Xray.`);
         continue;
       }
-      if (issue.issuetype !== 'Test') {
+      if (issue.issuetype !== config.jira.issueTypes.Test) {
         errors.push(`${where}: ${t.key} no es un Test Case (es "${issue.issuetype}").`);
         continue;
       }

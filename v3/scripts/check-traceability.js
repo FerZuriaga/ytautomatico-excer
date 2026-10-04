@@ -30,8 +30,9 @@ const xray = require('./lib/xray');
 const traceability = require('./lib/traceability');
 const traceReport = require('./lib/trace-report');
 const { storyFromDescription } = require('./lib/story-coherence');
+const { config } = require('./lib/qa-config');
 
-const PROJECT = process.env.JIRA_PROJECT_KEY || 'SCRUM';
+const PROJECT = process.env.JIRA_PROJECT_KEY || config.jira.projectKey;
 
 function parseArgs(argv) {
   const args = { specs: [], syncLabels: false, report: null };

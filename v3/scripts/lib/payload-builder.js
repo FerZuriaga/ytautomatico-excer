@@ -17,7 +17,7 @@
  *     "precondicion": "...",            // default de cada TC
  *     "evidencias": "exp-lote",         // carpeta de --out de explore-page
  *                                       // (relativa al archivo del lote)
- *     "projectKey": "SCRUM"             // opcional (default SCRUM)
+ *     "projectKey": "SCRUM"             // opcional (default: jira.projectKey de qa.config.json)
  *   },
  *   "datos": { "D": "Pintura, rodillos y cinta" },   // usables como {{D}}
  *   "pasos": {                                        // pasos con nombre
@@ -54,6 +54,7 @@
  * Lógica pura: no lee archivos ni habla con Jira/Xray.
  */
 const path = require('path');
+const { config } = require('./qa-config');
 
 const STEP_FIELDS = ['description', 'testData', 'expectedResult'];
 const TEMPLATE_REGEX = /\{\{\s*([A-Za-z_][\w]*)\s*\}\}/g;
@@ -188,8 +189,8 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
       if (!precondition) errors.push(`${where}: falta la precondición (en el caso o en "comun.precondicion").`);
 
       const model = {
-        projectKey: comun.projectKey || 'SCRUM',
-        statusName: 'Draft',
+        projectKey: comun.projectKey || config.jira.projectKey,
+        statusName: config.jira.testCaseStatus,
         labels: [],
         folder: caso.folder || comun.folder,
         priorityName: caso.prioridad,
@@ -209,7 +210,7 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
 
     const testCycle = h.cicloKey
       ? { key: h.cicloKey }
-      : { name: h.ciclo || h.summary, description: `Ciclo de ejecución de la HU ${h.summary}`, statusName: 'Not Executed' };
+      : { name: h.ciclo || h.summary, description: `Ciclo de ejecución de la HU ${h.summary}`, statusName: config.jira.testCycleStatus };
     return { issuetype: 'Historia', summary: h.summary, historia: h.historia, testCycle, testcaseModels: models };
   });
 

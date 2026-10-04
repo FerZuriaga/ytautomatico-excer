@@ -2,17 +2,20 @@
  * Jira Adapter — transporte HTTP puro hacia la API de Jira + serialización
  * de contenido de negocio a formato ADF.
  *
- * Extraído de scripts/create-jira-task.js (ver
- * docs/architecture/architecture-v2-phase2-component-design.md, sección 8):
- * este archivo concentra únicamente lo que pertenece a Jira. Ningún Agent
- * ni Skill debería conocer los detalles de autenticación, endpoints o
- * formato ADF que hay acá dentro.
+ * Este archivo concentra únicamente lo que pertenece a Jira (mapa en
+ * docs/architecture/herramientas.md): ningún otro conoce los detalles de
+ * autenticación, endpoints o formato ADF que hay acá dentro. Los nombres
+ * propios de la instancia (tipos de issue, tipo de vínculo) vienen de
+ * qa.config.json (D-43).
  */
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { withRetry, logRetry } = require('./http-retry');
+const { config } = require('./qa-config');
+
+const JIRA = config.jira;
 
 const HOSTNAME = new URL(process.env.JIRA_URL).hostname;
 const AUTH = 'Basic ' + Buffer.from(process.env.JIRA_EMAIL + ':' + process.env.JIRA_API_TOKEN).toString('base64');
@@ -53,12 +56,14 @@ function jiraRequestOnce(method, path, body = null) {
   });
 }
 
+// `issuetype` es el tipo del payload (Historia, Bug, Tarea): en Jira se
+// crea con el nombre que tenga en esta instancia (config jira.issueTypes).
 async function createIssue({ projectKey, summary, issuetype, description }) {
   return jiraRequest('POST', '/rest/api/3/issue', {
     fields: {
       project: { key: projectKey },
       summary,
-      issuetype: { name: issuetype },
+      issuetype: { name: JIRA.issueTypes[issuetype] || issuetype },
       description
     }
   });
@@ -84,12 +89,12 @@ async function getIssuesByKeys(keys, options = {}) {
   return fetchIssuesByKeys(keys, jiraRequest, options);
 }
 
-// El tipo Bug de esta instancia se muestra como "Error" (herramientas.md).
-const BUG_TYPES = ['Bug', 'Error'];
+// Nombres con que la instancia muestra el tipo Bug (acá también "Error").
+const BUG_TYPES = JIRA.bugTypeNames;
 
 function issueEntry(issue, withText) {
   const linked = (issue.fields.issuelinks || []).map(l => l.outwardIssue || l.inwardIssue).filter(Boolean);
-  const linkedTests = linked.filter(o => o.fields?.issuetype?.name === 'Test').map(o => o.key);
+  const linkedTests = linked.filter(o => o.fields?.issuetype?.name === JIRA.issueTypes.Test).map(o => o.key);
   const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
   if (withText) {
     Object.assign(entry, {
@@ -168,11 +173,11 @@ async function changeLabels(key, { remove = [], add = [] }) {
 
 /**
  * Crea un link entre dos issues existentes (ej: Bug -> Historia relacionada).
- * linkTypeName por defecto 'Relates' (tipo de link estándar en Jira Cloud;
- * esta instancia no tiene instalado "Tests"/"is tested by" — verificado
- * contra GET /rest/api/3/issueLinkType).
+ * linkTypeName por defecto el de la config (jira.linkType; acá 'Relates',
+ * el estándar de Jira Cloud — verificado contra GET
+ * /rest/api/3/issueLinkType).
  */
-async function linkIssue(fromKey, toKey, linkTypeName = 'Relates') {
+async function linkIssue(fromKey, toKey, linkTypeName = JIRA.linkType) {
   return jiraRequest('POST', '/rest/api/3/issueLink', {
     type: { name: linkTypeName },
     inwardIssue: { key: fromKey },
