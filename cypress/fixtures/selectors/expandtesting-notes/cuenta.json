@@ -1,22 +1,22 @@
 {
   "api": {
-    "host": "practice.expandtesting.com",
+    "host": "@comun.api.host",
     "deleteAccountPath": "/notes/api/users/delete-account"
   },
   "paths": {
-    "profile": "/notes/app/profile",
-    "login": "/notes/app/login"
+    "profile": "@comun.paths.profile",
+    "login": "@comun.paths.login"
   },
   "profile": {
     "deleteAccount": "[data-testid=\"delete-account\"]"
   },
   "dialog": {
-    "root": "[data-testid=\"note-delete-dialog\"]",
-    "confirm": "[data-testid=\"note-delete-confirm\"]",
-    "close": "[data-testid=\"note-delete-cancel-1\"]",
-    "cancel": "[data-testid=\"note-delete-cancel-2\"]"
+    "root": "@comun.confirmDialog.root",
+    "confirm": "@comun.confirmDialog.confirm",
+    "close": "@comun.confirmDialog.close",
+    "cancel": "@comun.confirmDialog.cancel"
   },
-  "alert": "[data-testid=\"alert-message\"]",
+  "alert": "@comun.alert",
   "texts": {
     "question": "Do you really want to delete your account?",
     "warning": "Once your account is deleted, all of your data will be permanently removed, and we will be unable to restore it",

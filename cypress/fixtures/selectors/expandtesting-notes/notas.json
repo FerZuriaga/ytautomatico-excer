@@ -1,14 +1,14 @@
 {
   "api": {
-    "host": "practice.expandtesting.com",
-    "registerPath": "/notes/api/users/register",
-    "loginPath": "/notes/api/users/login",
-    "notesPath": "/notes/api/notes"
+    "host": "@comun.api.host",
+    "registerPath": "@comun.api.registerPath",
+    "loginPath": "@comun.api.loginPath",
+    "notesPath": "@comun.api.notesPath"
   },
-  "path": "/notes/app",
+  "path": "@comun.paths.notes",
   "tokenKey": "token",
   "list": {
-    "addNote": "[data-testid=\"add-new-note\"]",
+    "addNote": "@comun.myNotes.addNote",
     "notesList": "[data-testid=\"notes-list\"]",
     "progress": "[data-testid=\"progress-info\"]",
     "noNotes": "[data-testid=\"no-notes-message\"]",
@@ -24,10 +24,10 @@
     "description": "[data-testid=\"note-description\"]",
     "submit": "[data-testid=\"note-submit\"]",
     "cancel": "[data-testid=\"note-cancel\"]",
-    "error": ".invalid-feedback"
+    "error": "@comun.fieldError"
   },
   "card": {
-    "root": "[data-testid=\"note-card\"]",
+    "root": "@comun.myNotes.card",
     "title": "[data-testid=\"note-card-title\"]",
     "description": "[data-testid=\"note-card-description\"]",
     "updatedAt": "[data-testid=\"note-card-updated-at\"]",
@@ -52,7 +52,7 @@
     "create": "Create",
     "editFormTitle": "Edit note",
     "save": "Save",
-    "noNotesAll": "You don't have any notes in all categories",
+    "noNotesAll": "@comun.texts.noNotesAll",
     "noNotesInCategory": "You don't have any notes in the {category} category",
     "progressAll": "You have {done}/{total} notes completed in the all categories",
     "progressCategory": "You have {done}/{total} notes completed in the {category} category",
@@ -71,9 +71,9 @@
     "cancel": "Cancel"
   },
   "deleteDialog": {
-    "root": "[data-testid=\"note-delete-dialog\"]",
-    "confirm": "[data-testid=\"note-delete-confirm\"]",
-    "cancel": "[data-testid=\"note-delete-cancel-2\"]",
-    "close": "[data-testid=\"note-delete-cancel-1\"]"
+    "root": "@comun.confirmDialog.root",
+    "confirm": "@comun.confirmDialog.confirm",
+    "cancel": "@comun.confirmDialog.cancel",
+    "close": "@comun.confirmDialog.close"
   }
 }

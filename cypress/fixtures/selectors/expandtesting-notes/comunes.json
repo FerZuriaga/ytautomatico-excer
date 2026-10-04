@@ -1,0 +1,43 @@
+{
+  "_ayuda": "Selectores, rutas y textos de Notes App que usan varias pantallas. Cada valor vive acá una sola vez; los JSON de cada módulo lo referencian con \"@comun.<ruta>\" (ej. \"@comun.alert\") y notesSelectors() lo resuelve al cargar. Un cambio de un elemento compartido se corrige solo en este archivo.",
+  "api": {
+    "host": "practice.expandtesting.com",
+    "registerPath": "/notes/api/users/register",
+    "loginPath": "/notes/api/users/login",
+    "profilePath": "/notes/api/users/profile",
+    "notesPath": "/notes/api/notes"
+  },
+  "paths": {
+    "notes": "/notes/app",
+    "login": "/notes/app/login",
+    "profile": "/notes/app/profile"
+  },
+  "alert": "[data-testid=\"alert-message\"]",
+  "fieldError": ".invalid-feedback",
+  "menu": {
+    "profile": "[data-testid=\"profile\"]"
+  },
+  "confirmDialog": {
+    "root": "[data-testid=\"note-delete-dialog\"]",
+    "confirm": "[data-testid=\"note-delete-confirm\"]",
+    "close": "[data-testid=\"note-delete-cancel-1\"]",
+    "cancel": "[data-testid=\"note-delete-cancel-2\"]"
+  },
+  "myNotes": {
+    "addNote": "[data-testid=\"add-new-note\"]",
+    "card": "[data-testid=\"note-card\"]"
+  },
+  "profile": {
+    "email": "[data-testid=\"user-email\"]"
+  },
+  "texts": {
+    "noNotesAll": "You don't have any notes in all categories",
+    "passwordsDontMatch": "Passwords don't match!",
+    "emailRequired": "Email address is required",
+    "emailInvalid": "Email address is invalid",
+    "passwordRequired": "Password is required",
+    "passwordLength": "Password should be between 6 and 30 characters",
+    "userNameRequired": "User name is required",
+    "userNameLength": "User name should be between 4 and 30 characters"
+  }
+}

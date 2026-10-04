@@ -1,28 +1,28 @@
 {
   "api": {
-    "host": "practice.expandtesting.com",
-    "profilePath": "/notes/api/users/profile"
+    "host": "@comun.api.host",
+    "profilePath": "@comun.api.profilePath"
   },
   "paths": {
-    "profile": "/notes/app/profile"
+    "profile": "@comun.paths.profile"
   },
   "menu": {
-    "profile": "[data-testid=\"profile\"]"
+    "profile": "@comun.menu.profile"
   },
   "form": {
     "id": "[data-testid=\"user-id\"]",
-    "email": "[data-testid=\"user-email\"]",
+    "email": "@comun.profile.email",
     "name": "[data-testid=\"user-name\"]",
     "phone": "[data-testid=\"user-phone\"]",
     "company": "[data-testid=\"user-company\"]",
     "submit": "[data-testid=\"update-profile\"]",
-    "error": ".invalid-feedback",
-    "alert": "[data-testid=\"alert-message\"]"
+    "error": "@comun.fieldError",
+    "alert": "@comun.alert"
   },
   "texts": {
     "title": "Profile settings",
-    "nameRequired": "User name is required",
-    "nameLength": "User name should be between 4 and 30 characters",
+    "nameRequired": "@comun.texts.userNameRequired",
+    "nameLength": "@comun.texts.userNameLength",
     "phoneLength": "Phone number should be between 8 and 20 digits",
     "companyLength": "company name should be between 4 and 30 characters"
   },

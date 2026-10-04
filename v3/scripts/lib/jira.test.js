@@ -10,7 +10,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { buildHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody, fetchIssuesByKeys } = require('./jira');
+const { buildHistoriaDescription, parseHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody, fetchIssuesByKeys } = require('./jira');
 
 const base = {
   como: 'cliente', quiero: 'comparar productos', para: 'elegir mejor',
@@ -110,16 +110,40 @@ test('fetchIssuesByKeys: lee directo la issue que la búsqueda todavía no index
   assert.deepEqual(calls, ['POST /rest/api/3/search/jql', 'GET /rest/api/3/issue/SCRUM-737', 'GET /rest/api/3/issue/SCRUM-9999']);
 });
 
+// Lectura de la HU publicada (antes storyFromDescription en story-coherence;
+// el ADF no sale del adapter desde la revisión del 2026-10-03).
+test('parseHistoriaDescription: lee de vuelta exactamente lo que escribe buildHistoriaDescription', () => {
+  const historia = {
+    como: 'persona que organiza sus tareas en Notes App', quiero: 'buscar mis notas', para: 'encontrar rápido un pendiente',
+    contexto: 'En "My Notes"...', objetivo: 'Encontrar las notas.',
+    criterios: ['CA-01: Uno.', 'CA-02: Dos.'],
+    sinNegativo: { 'CA-02': 'no hay camino de error.' },
+    reglasNegocio: ['Regla.'], fueraDeAlcance: ['Afuera.'], defectosConocidos: ['SCRUM-833: sesiones activas.']
+  };
+  const story = parseHistoriaDescription(buildHistoriaDescription(historia));
+  assert.deepEqual(story, {
+    como: historia.como, quiero: historia.quiero, para: historia.para,
+    contexto: historia.contexto, objetivo: historia.objetivo, criterios: historia.criterios,
+    reglasNegocio: historia.reglasNegocio, fueraDeAlcance: historia.fueraDeAlcance,
+    defectosConocidos: historia.defectosConocidos, sinNegativoTexto: ['CA-02: no hay camino de error.']
+  });
+});
+
 // Reporte de trazabilidad (2026-10-03): con withText trae el estado de la HU
-// y sus Bugs vinculados ("Error" es el nombre visible del tipo Bug).
-test('fetchIssuesByKeys withText: estado y Bugs vinculados; sin withText la forma no cambia', async () => {
+// y sus Bugs vinculados ("Error" es el nombre visible del tipo Bug); la HU
+// llega ya leída (`historia`), nunca como ADF.
+test('fetchIssuesByKeys withText: estado, Bugs vinculados y la HU leída; sin withText la forma no cambia', async () => {
   const link = (key, type, status, summary = '') => ({ inwardIssue: { key, fields: { issuetype: { name: type }, status: { name: status }, summary } } });
+  const description = buildHistoriaDescription({ como: 'usuario registrado', quiero: 'cambiar mi contraseña', para: 'proteger mi cuenta', contexto: 'c', objetivo: 'o', criterios: ['CA-01: Uno.'] });
   const story = { key: 'SCRUM-804', fields: {
-    issuetype: { name: 'Historia' }, labels: [], summary: 'Cambiar mi contraseña', description: null, status: { name: 'Finalizada' },
+    issuetype: { name: 'Historia' }, labels: [], summary: 'Cambiar mi contraseña', description, status: { name: 'Finalizada' },
     issuelinks: [link('SCRUM-806', 'Test', 'Draft'), link('SCRUM-833', 'Error', 'Tareas por hacer', 'Sesiones siguen activas')] } };
   const request = async () => ({ status: 200, body: { issues: [story] } });
 
   const full = (await fetchIssuesByKeys(['SCRUM-804'], request, { withText: true })).get('SCRUM-804');
+  assert.equal(full.historia.quiero, 'cambiar mi contraseña');
+  assert.deepEqual(full.historia.criterios, ['CA-01: Uno.']);
+  assert.equal(full.description, undefined);
   assert.equal(full.status, 'Finalizada');
   assert.deepEqual(full.linkedTests, ['SCRUM-806']);
   assert.deepEqual(full.linkedBugs, [{ key: 'SCRUM-833', summary: 'Sesiones siguen activas', status: 'Tareas por hacer' }]);
