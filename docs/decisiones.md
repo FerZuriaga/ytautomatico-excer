@@ -615,6 +615,23 @@ agrega una contradictoria.
   definidos. Nada lo detectaba (2026-09-28).
 - **Dónde:** `checkAppLayout` + test en `npm run test:unit`.
 
+### D-45 · Contrato del gestor de pruebas, verificado por test
+- **Decisión:** lo que los CLIs le piden al gestor de pruebas está escrito
+  como contrato en `lib/test-manager-contract.js`: 12 funciones con sus
+  formas de entrada y salida, y los estados `TO DO`, `EXECUTING`, `PASSED`
+  y `FAILED`. Las formas son del framework y el adapter traduce las del
+  gestor (una ejecución es `{ id, testCaseKey, status }`). Otro gestor es un
+  archivo nuevo que cumple el contrato, más cambiar el `require` en los 3
+  CLIs.
+- **Por qué:** se pidió dejar listo el cambio de herramienta (2026-10-03).
+  Los nombres de las funciones ya eran genéricos, pero nada lo verificaba, y
+  `getTestExecutions` devolvía la forma del GraphQL de Xray
+  (`test.jira.key`, `status.name`) hasta `lib/test-runner.js`: otro gestor
+  habría tenido que imitar esa forma.
+- **Dónde:** `npm run test:unit` falla si el adapter no cumple el contrato,
+  si un CLI usa una función que no está en él o si una función del contrato
+  no la usa nadie.
+
 ### D-27 · Cypress no se aísla detrás de un adaptador (por ahora)
 - **Decisión:** no se abstrae Cypress. Los specs y los Page Objects lo usan
   directamente.

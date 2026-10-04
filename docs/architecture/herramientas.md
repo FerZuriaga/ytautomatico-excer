@@ -56,6 +56,7 @@ otro gestor u otro runner. Las reglas `libs-sin-procesos` y
 | `lib/run-timing.js` | Tiempos por fase de cada corrida |
 | `lib/explore-scenarios.js` | Formato de los escenarios del discovery |
 | `lib/http-retry.js` | Reintentos ante fallas transitorias de red |
+| `lib/test-manager-contract.js` | Contrato que cumple el adapter del gestor de pruebas: funciones, formas y estados (D-45) |
 | `lib/http-body.js` | Lectura del cuerpo de las respuestas HTTP en UTF-8 (todos los adapters; sin caracteres partidos entre pedazos) |
 | `lib/payload-builder.js` | Archivo de lote → payload de publicación (PASO 2) |
 | `lib/bundle-scan.js` | Atributos de test y mensajes de validación del código de la app (discovery) |
@@ -78,8 +79,12 @@ en `cypress/support/commands.js`).
 
 ## Si mañana cambia una herramienta
 
-- **Otro gestor de pruebas en lugar de Xray:** un adapter nuevo con la misma
-  interfaz que `lib/xray.js`. Los validadores y la trazabilidad no cambian.
+- **Otro gestor de pruebas en lugar de Xray:** un adapter nuevo que cumpla
+  el contrato de `lib/test-manager-contract.js` (12 funciones, formas y
+  estados del framework; D-45), más cambiar el `require` de los 3 CLIs y
+  sus nombres en las reglas de `lib/architecture.js`. `npm run test:unit`
+  dice si al adapter le falta algo. Los validadores y la trazabilidad no
+  cambian.
 - **Playwright en lugar de Cypress:** `lib/test-runner.js` (formato de
   resultados), los comandos de arranque de `run-and-report.js` y
   `explore-page.js`, y los specs y Page Objects. Por decisión del

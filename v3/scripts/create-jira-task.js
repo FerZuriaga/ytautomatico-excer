@@ -368,7 +368,7 @@ async function reportResults(resultsPath, testCycleKeys, projectKey) {
       for (const cycle of cycles) {
         const run = await xray.findTestExecution(projectKey, cycle.cycleKey, key);
         if (run) {
-          cycle.executions.push({ id: run.id, status: { name: run.status }, test: { jira: { key } } });
+          cycle.executions.push(run);
           break;
         }
       }

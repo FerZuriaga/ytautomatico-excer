@@ -293,7 +293,7 @@ function isReportable(summary) {
  * y los que no quedaron en PASSED.
  */
 function compareReportedStatuses(executions, expectedKeys) {
-  const statusByKey = new Map(executions.map(e => [e.test?.jira?.key, e.status?.name]));
+  const statusByKey = new Map(executions.map(e => [e.testCaseKey, e.status]));
   return {
     missing: expectedKeys.filter(k => !statusByKey.has(k)),
     notPassed: expectedKeys
@@ -305,7 +305,8 @@ function compareReportedStatuses(executions, expectedKeys) {
 /**
  * Plan del reporte a Xray, armado ANTES de escribir nada. `cycles`: los
  * Test Runs de cada ciclo, en el orden en que se pasaron:
- * [{ cycleKey, executions: [{ id, status: { name }, test: { jira: { key } } }] }].
+ * [{ cycleKey, executions: [{ id, testCaseKey, status }] }] (Ejecución de
+ * lib/test-manager-contract.js).
  * Cada test va al primer ciclo que tiene su Test Case (un TC pertenece a
  * un solo ciclo en este proyecto). Los salteados por bug conocido vuelven
  * a TO DO si tenían un resultado viejo.
@@ -317,8 +318,8 @@ function compareReportedStatuses(executions, expectedKeys) {
 function planReport(taggedTests, knownBugSkips, cycles) {
   const find = key => {
     for (const cycle of cycles) {
-      const run = cycle.executions.find(e => e.test?.jira?.key === key);
-      if (run) return { cycleKey: cycle.cycleKey, id: run.id, status: run.status?.name || null };
+      const run = cycle.executions.find(e => e.testCaseKey === key);
+      if (run) return { cycleKey: cycle.cycleKey, id: run.id, status: run.status || null };
     }
     return null;
   };
