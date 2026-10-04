@@ -29,7 +29,6 @@ const jira = require('./lib/jira');
 const xray = require('./lib/xray');
 const traceability = require('./lib/traceability');
 const traceReport = require('./lib/trace-report');
-const { storyFromDescription } = require('./lib/story-coherence');
 const { config } = require('./lib/qa-config');
 
 const PROJECT = process.env.JIRA_PROJECT_KEY || config.jira.projectKey;
@@ -132,7 +131,7 @@ async function writeReport(specEntries, outPath) {
     const automated = new Set(entry.tests.map(t => t.key));
     return {
       key, summary: issue.summary, status: issue.status, cycleKey: entry.cycleKey, specFile: entry.specFile,
-      historia: storyFromDescription(issue.description),
+      historia: issue.historia || {},
       bugs: issue.linkedBugs || [],
       notAutomated: (issue.linkedTests || []).filter(k => !automated.has(k)),
       tests: entry.tests.map(t => {

@@ -87,6 +87,9 @@ los datos elegidos. En entornos ajenos, nada irreversible (D-16).
 **Artefactos (se commitean, nunca se borran):** selectores en
 `cypress/fixtures/selectors/<app>/<modulo>.json`; hallazgos que valen para
 2+ módulos en `docs/discovery/<app>.md`. Prohibido adivinar selectores.
+Un selector, ruta o texto que usan 2+ pantallas va una sola vez en
+`<app>/comunes.json` y el módulo lo referencia (`"@comun.<ruta>"`), nunca
+copiado (D-44; hoy en Notes App).
 
 ---
 

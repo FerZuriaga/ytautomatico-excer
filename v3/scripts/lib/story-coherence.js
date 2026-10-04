@@ -72,43 +72,6 @@ function storyKeysFromSpecs(sources, projectKey = config.jira.projectKey) {
   return [...keys];
 }
 
-/**
- * Secciones de una HU publicada a partir de su descripción ADF (el formato
- * de jira.buildHistoriaDescription): encabezado de nivel 2 + párrafo o
- * lista. Devuelve el mismo formato que `historia` en el payload.
- */
-function storyFromDescription(adf) {
-  const sections = {};
-  let current = 'intro';
-  const textOf = node => {
-    const parts = [];
-    (function walk(n) { if (!n) return; if (n.text) parts.push(n.text); (n.content || []).forEach(walk); })(node);
-    return parts.join('');
-  };
-  for (const node of (adf && adf.content) || []) {
-    if (node.type === 'heading') { current = textOf(node).trim(); continue; }
-    const items = node.type === 'bulletList' || node.type === 'orderedList'
-      ? (node.content || []).map(textOf)
-      : [textOf(node)];
-    sections[current] = (sections[current] || []).concat(items.map(t => t.trim()).filter(Boolean));
-  }
-  const intro = sections.intro || [];
-  const line = prefix => (intro.find(t => t.startsWith(prefix)) || '').slice(prefix.length);
-  return {
-    como: line('Como '),
-    quiero: line('Quiero '),
-    para: line('Para '),
-    contexto: (sections.Contexto || []).join(' '),
-    objetivo: (sections.Objetivo || []).join(' '),
-    criterios: sections['Criterios de aceptación'] || [],
-    reglasNegocio: sections['Reglas de negocio relevadas'] || [],
-    fueraDeAlcance: sections['Fuera de alcance'] || [],
-    defectosConocidos: sections['Defectos conocidos relacionados'] || [],
-    // Lista de "CA-XX: motivo" (en el payload, sinNegativo es un objeto).
-    sinNegativoTexto: sections['Criterios sin caso negativo (justificados)'] || []
-  };
-}
-
 function storyTexts(historia) {
   const list = value => (Array.isArray(value) ? value : value ? [value] : []);
   return [
@@ -201,4 +164,4 @@ function checkStoryCoherence(story, siblings) {
   return { warnings, siblings: family.map(s => s.key || `"${s.summary}"`) };
 }
 
-module.exports = { checkStoryCoherence, storyFromDescription, storyKeysFromSpecs, appPrefix, contentWords };
+module.exports = { checkStoryCoherence, storyKeysFromSpecs, appPrefix, contentWords };

@@ -1,3 +1,4 @@
+import { notesSelectors } from './notesSelectors'
 const FIXTURE = 'selectors/expandtesting-notes/contrasena.json'
 
 const T = { timeout: 15000 }
@@ -9,14 +10,14 @@ const FIELDS = ['current', 'new', 'confirm']
 class NotesPasswordPage {
 
     registerAliases() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: sel.api.changePasswordPath }).as('changePassword')
         })
     }
 
     openTab() {
         this.registerAliases()
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.tabs.changePassword, T).click()
             this.verifyEmptyForm()
             cy.get(sel.form.submit).should('be.visible')
@@ -24,14 +25,14 @@ class NotesPasswordPage {
     }
 
     verifyEmptyForm() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             FIELDS.forEach(field => cy.get(sel.form[field], T).should('be.visible').and('have.value', ''))
         })
     }
 
     // field: current | new | confirm. El valor queda oculto.
     type(field, value) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.form[field]).type(value, { log: false })
                 .should('have.value', value)
                 .and('have.attr', 'type', 'password')
@@ -39,7 +40,7 @@ class NotesPasswordPage {
     }
 
     submit() {
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.form.submit).click())
+        notesSelectors(FIXTURE).then(sel => cy.get(sel.form.submit).click())
     }
 
     // Avisos del servidor por significado: es el motivo que devuelve el
@@ -56,7 +57,7 @@ class NotesPasswordPage {
     }
 
     verifyServerAnswer(status, reasonKey) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.wait('@changePassword', T).then(({ response }) => {
                 expect(response.statusCode, 'respuesta del cambio de contraseña').to.eq(status)
                 if (reasonKey) expect(response.body.message.toLowerCase(), 'motivo del rechazo').to.include(sel.reasons[reasonKey])
@@ -69,7 +70,7 @@ class NotesPasswordPage {
     // Validación del formulario: aviso bajo el campo y ningún pedido de
     // cambio al servidor.
     verifyFieldError(field, textKey) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.form[field]).should('have.class', 'is-invalid')
                 .parent().find(sel.form.error).should('be.visible').and('have.text', sel.texts[textKey])
             cy.get('@changePassword.all').should('have.length', 0)

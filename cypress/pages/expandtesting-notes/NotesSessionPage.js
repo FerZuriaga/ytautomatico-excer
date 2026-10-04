@@ -1,3 +1,4 @@
+import { notesSelectors } from './notesSelectors'
 const FIXTURE = 'selectors/expandtesting-notes/sesion.json'
 
 const T = { timeout: 15000 }
@@ -9,7 +10,7 @@ const T = { timeout: 15000 }
 class NotesSessionPage {
 
     registerAliases() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.intercept({ method: 'POST', hostname: sel.api.host, pathname: sel.api.loginPath }).as('login')
             cy.intercept({ method: 'DELETE', hostname: sel.api.host, pathname: sel.api.logoutPath }).as('logout')
             cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.profilePath }).as('profile')
@@ -21,7 +22,7 @@ class NotesSessionPage {
 
     openLogin() {
         this.registerAliases()
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.gotoNotesUrl(sel.paths.login)
             cy.contains('h1', sel.texts.loginTitle, T).should('be.visible')
             cy.get(sel.login.email, T).should('be.visible')
@@ -34,7 +35,7 @@ class NotesSessionPage {
     // tiene atributo de test: open-login-view es el contenedor de "Login" y
     // "Create an account".
     openLoginFromWelcome() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.welcome.actions).contains('a', sel.texts.loginButton).click()
             cy.location('pathname', T).should('eq', sel.paths.login)
             cy.get(sel.login.email, T).should('be.visible')
@@ -44,11 +45,11 @@ class NotesSessionPage {
     }
 
     typeEmail(email) {
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.login.email).type(email).should('have.value', email))
+        notesSelectors(FIXTURE).then(sel => cy.get(sel.login.email).type(email).should('have.value', email))
     }
 
     typePassword(password) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.login.password).type(password, { log: false })
                 .should('have.value', password)
                 .and('have.attr', 'type', 'password')
@@ -56,13 +57,13 @@ class NotesSessionPage {
     }
 
     submit() {
-        cy.fixture(FIXTURE).then(sel => cy.get(sel.login.submit).click())
+        notesSelectors(FIXTURE).then(sel => cy.get(sel.login.submit).click())
     }
 
     // "My Notes" con la sesión iniciada: pestañas de categorías, "+ Add
     // Note", "Logout" en el menú y token guardado.
     verifyLoggedIn() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.location('pathname', T).should('eq', sel.paths.notes)
             cy.get(sel.notes.addNote, T).should('be.visible')
             sel.notes.categoryTabs.forEach(tab => cy.get(tab).should('be.visible'))
@@ -79,7 +80,7 @@ class NotesSessionPage {
 
     // Cuenta recién creada: "My Notes" vacío.
     verifyNoNotes() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.contains(sel.texts.noNotesAll, T).should('be.visible')
             cy.get(sel.notes.card).should('not.exist')
         })
@@ -88,7 +89,7 @@ class NotesSessionPage {
     // Rechazo del servidor: el aviso es el motivo que devuelve el servicio
     // (no se copia el texto) y se sigue en el login, sin sesión.
     loginRejectedByServer() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.wait('@login', T).then(({ response }) => {
                 expect(response.statusCode, 'credenciales rechazadas').to.eq(401)
                 cy.get(sel.login.alert, T).should('be.visible').and('have.text', response.body.message)
@@ -100,7 +101,7 @@ class NotesSessionPage {
     // Validación del formulario: aviso bajo el campo y ningún pedido de
     // ingreso al servidor.
     verifyFieldError(field, textKey) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.login[field]).should('have.class', 'is-invalid')
                 .parent().find(sel.login.error).should('be.visible').and('have.text', sel.texts[textKey])
             cy.get('@login.all').should('have.length', 0)
@@ -112,7 +113,7 @@ class NotesSessionPage {
     // ingreso se intentó (la contraseña no es la de la cuenta, el servidor
     // lo rechaza).
     verifyPasswordAccepted() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.wait('@login', T).its('response.statusCode').should('eq', 401)
             cy.get(sel.login.password).should('not.have.class', 'is-invalid')
             cy.get(sel.login.alert, T).should('be.visible')
@@ -120,7 +121,7 @@ class NotesSessionPage {
     }
 
     verifyStillOnLogin() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.location('pathname').should('eq', sel.paths.login)
             cy.get(sel.login.submit).should('be.visible')
             cy.window().its('localStorage').invoke('getItem', 'token').should('be.null')
@@ -132,11 +133,11 @@ class NotesSessionPage {
     // Entrar a "My Notes" escribiendo la dirección, con o sin token.
     visitNotes({ token } = {}) {
         this.registerAliases()
-        cy.fixture(FIXTURE).then(sel => cy.gotoNotesUrl(sel.paths.notes, token ? { token } : {}))
+        notesSelectors(FIXTURE).then(sel => cy.gotoNotesUrl(sel.paths.notes, token ? { token } : {}))
     }
 
     openProfileFromMenu(email) {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.menu.profile).click()
             cy.wait('@profile', T)
             cy.location('pathname').should('eq', sel.paths.profile)
@@ -146,7 +147,7 @@ class NotesSessionPage {
     }
 
     logout() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.get(sel.menu.logout).click()
             cy.wait('@logout', T).its('response.statusCode').should('eq', 200)
         })
@@ -155,7 +156,7 @@ class NotesSessionPage {
     // Bienvenida: "Welcome to Notes App" con Login y Create an account, sin
     // notas ni "Logout".
     verifyWelcome() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.contains(sel.welcome.heading, sel.texts.welcome, T).should('be.visible')
             cy.get(sel.welcome.actions).should('be.visible')
                 .and('contain.text', sel.texts.loginButton)
@@ -171,7 +172,7 @@ class NotesSessionPage {
     // parten de una sesión iniciada el alias ya tiene el GET /notes 200 de
     // la carga anterior.
     verifySessionExpired() {
-        cy.fixture(FIXTURE).then(sel => {
+        notesSelectors(FIXTURE).then(sel => {
             cy.location('pathname', T).should('eq', sel.paths.login)
             cy.contains(sel.texts.sessionExpired, T).should('be.visible')
             cy.get(sel.notes.card).should('not.exist')

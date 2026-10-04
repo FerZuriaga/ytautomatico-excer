@@ -243,8 +243,8 @@ async function storyCoherenceWarnings() {
   let published = [];
   try {
     const issues = await jira.getIssuesByKeys(storyCoherence.storyKeysFromSpecs(specs, PROJECT), { withText: true });
-    published = [...issues].filter(([, issue]) => issue.issuetype === config.jira.issueTypes.Historia && issue.description)
-      .map(([key, issue]) => ({ key, summary: issue.summary, historia: storyCoherence.storyFromDescription(issue.description) }));
+    published = [...issues].filter(([, issue]) => issue.historia)
+      .map(([key, issue]) => ({ key, summary: issue.summary, historia: issue.historia }));
   } catch (err) {
     console.warn(`Coherencia entre HU: no se pudieron leer las HU publicadas (${err.message}); se sigue sin este chequeo.`);
     return [];

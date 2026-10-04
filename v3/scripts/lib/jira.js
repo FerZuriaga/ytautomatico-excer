@@ -97,9 +97,11 @@ function issueEntry(issue, withText) {
   const linkedTests = linked.filter(o => o.fields?.issuetype?.name === JIRA.issueTypes.Test).map(o => o.key);
   const entry = { issuetype: issue.fields.issuetype.name, labels: issue.fields.labels || [], linkedTests };
   if (withText) {
+    const isStory = entry.issuetype === JIRA.issueTypes.Historia;
     Object.assign(entry, {
       summary: issue.fields.summary,
-      description: issue.fields.description,
+      // Las HU llegan ya leídas (forma del payload): el ADF no sale del adapter.
+      historia: isStory && issue.fields.description ? parseHistoriaDescription(issue.fields.description) : null,
       status: issue.fields.status?.name || null,
       // Bugs vinculados (reporte de trazabilidad): el estado viene en el link.
       linkedBugs: linked.filter(o => BUG_TYPES.includes(o.fields?.issuetype?.name))
@@ -302,42 +304,91 @@ function nonEmptyList(value) {
   return Array.isArray(value) ? value.map(v => String(v || '').trim()).filter(Boolean) : [];
 }
 
+// Secciones de la descripción de una Historia en Jira. Las usan la
+// escritura (buildHistoriaDescription) y la lectura (parseHistoriaDescription):
+// el formato ADF no sale de este adapter.
+const HISTORIA = {
+  como: 'Como ', quiero: 'Quiero ', para: 'Para ',
+  contexto: 'Contexto',
+  objetivo: 'Objetivo',
+  criterios: 'Criterios de aceptación',
+  sinNegativo: 'Criterios sin caso negativo (justificados)',
+  reglasNegocio: 'Reglas de negocio relevadas',
+  fueraDeAlcance: 'Fuera de alcance',
+  defectosConocidos: 'Defectos conocidos relacionados'
+};
+
 /**
  * Descripción ADF para una Historia: Como/Quiero/Para, Contexto, Objetivo,
  * Criterios de aceptación y, si vienen, las secciones opcionales:
  * - sinNegativo: { "CA-03": "motivo" } -> "Criterios sin caso negativo
  *   (justificados)", para que la excepción quede auditada en la HU;
  * - reglasNegocio, fueraDeAlcance, defectosConocidos: listas de texto.
- * El contenido (qué dice cada sección) lo decide ProductAgent — esta
- * función solo lo traduce al formato ADF de Jira.
+ * El contenido (qué dice cada sección) lo decide quien escribe el lote —
+ * esta función solo lo traduce al formato ADF de Jira.
  */
 function buildHistoriaDescription(historia) {
   const content = [
-    p(`Como ${historia.como}`),
-    p(`Quiero ${historia.quiero}`),
-    p(`Para ${historia.para}`),
-    h(2, 'Contexto'), p(historia.contexto),
-    h(2, 'Objetivo'), p(historia.objetivo),
-    h(2, 'Criterios de aceptación'),
+    p(`${HISTORIA.como}${historia.como}`),
+    p(`${HISTORIA.quiero}${historia.quiero}`),
+    p(`${HISTORIA.para}${historia.para}`),
+    h(2, HISTORIA.contexto), p(historia.contexto),
+    h(2, HISTORIA.objetivo), p(historia.objetivo),
+    h(2, HISTORIA.criterios),
     blist(historia.criterios)
   ];
 
   const justified = Object.entries(historia.sinNegativo || {})
     .filter(([, motivo]) => String(motivo || '').trim())
     .map(([id, motivo]) => `${id}: ${String(motivo).trim()}`);
-  if (justified.length) content.push(h(2, 'Criterios sin caso negativo (justificados)'), blist(justified));
+  if (justified.length) content.push(h(2, HISTORIA.sinNegativo), blist(justified));
 
-  const optional = [
-    ['reglasNegocio', 'Reglas de negocio relevadas'],
-    ['fueraDeAlcance', 'Fuera de alcance'],
-    ['defectosConocidos', 'Defectos conocidos relacionados']
-  ];
-  for (const [field, title] of optional) {
+  for (const field of ['reglasNegocio', 'fueraDeAlcance', 'defectosConocidos']) {
     const items = nonEmptyList(historia[field]);
-    if (items.length) content.push(h(2, title), blist(items));
+    if (items.length) content.push(h(2, HISTORIA[field]), blist(items));
   }
 
   return { type: 'doc', version: 1, content };
+}
+
+/**
+ * Lectura de una Historia publicada: la descripción ADF (el formato de
+ * buildHistoriaDescription) vuelve a la forma de `historia` del payload.
+ * Antes vivía en lib/story-coherence.js (storyFromDescription), una lib que
+ * tiene que ser independiente de Jira: cambiar de gestor obligaba a tocarla
+ * (revisión de arquitectura del 2026-10-03). `sinNegativoTexto` es la lista
+ * de "CA-XX: motivo" (en el payload, sinNegativo es un objeto).
+ */
+function parseHistoriaDescription(adf) {
+  const sections = {};
+  let current = 'intro';
+  const textOf = node => {
+    const parts = [];
+    (function walk(n) { if (!n) return; if (n.text) parts.push(n.text); (n.content || []).forEach(walk); })(node);
+    return parts.join('');
+  };
+  for (const node of (adf && adf.content) || []) {
+    if (node.type === 'heading') { current = textOf(node).trim(); continue; }
+    const items = node.type === 'bulletList' || node.type === 'orderedList'
+      ? (node.content || []).map(textOf)
+      : [textOf(node)];
+    sections[current] = (sections[current] || []).concat(items.map(t => t.trim()).filter(Boolean));
+  }
+  const intro = sections.intro || [];
+  const line = prefix => (intro.find(t => t.startsWith(prefix)) || '').slice(prefix.length);
+  const list = title => sections[title] || [];
+  return {
+    como: line(HISTORIA.como),
+    quiero: line(HISTORIA.quiero),
+    para: line(HISTORIA.para),
+    contexto: list(HISTORIA.contexto).join(' '),
+    objetivo: list(HISTORIA.objetivo).join(' '),
+    criterios: list(HISTORIA.criterios),
+    reglasNegocio: list(HISTORIA.reglasNegocio),
+    fueraDeAlcance: list(HISTORIA.fueraDeAlcance),
+    defectosConocidos: list(HISTORIA.defectosConocidos),
+    sinNegativoTexto: list(HISTORIA.sinNegativo)
+  };
 }
 
 /**
@@ -440,5 +491,6 @@ module.exports = {
   buildBugDescription,
   capturesOf,
   buildHistoriaDescription,
+  parseHistoriaDescription,
   buildTareaDescription
 };

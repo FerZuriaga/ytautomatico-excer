@@ -25,7 +25,12 @@ documentación más la app explorada con `explore-page.js`.
 - **Sesión:** `POST /users/login` devuelve `data.token`; el front lo guarda
   en `localStorage["token"]`. Inyectarlo antes de cargar la página deja la
   sesión iniciada. También guarda `activeCategory` (la pestaña elegida).
-- **Selectores:** todos los elementos relevantes tienen `data-testid`.
+- **Selectores:** todos los elementos relevantes tienen `data-testid`. Lo
+  que usan varias pantallas (aviso `alert-message`, error de campo, diálogo
+  de confirmación, menú, rutas y API) está en
+  `selectors/expandtesting-notes/comunes.json`; los módulos lo referencian
+  con `"@comun.<ruta>"` y los Page Objects cargan con `notesSelectors()`
+  (D-44).
 - **Publicidad y analítica de Google** en todas las páginas: en el
   navegador de pruebas sus requests quedan sin respuesta (esperado, no son
   de la app). En los tests se bloquean desde `cy.gotoNotesUrl` (D-40):

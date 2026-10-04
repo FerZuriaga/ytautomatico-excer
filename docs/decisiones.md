@@ -572,6 +572,26 @@ agrega una contradictoria.
 - **Dónde:** `qa.config.json`, `lib/qa-config.js` + test, README ("Usarlo
   en otro proyecto").
 
+### D-44 · Selectores compartidos en un solo archivo; el formato de Jira no sale del adapter
+- **Decisión:** (a) en Notes App, lo que usan varias pantallas (aviso,
+  error de campo, diálogo de confirmación, menú, rutas y API, textos de
+  validación repetidos) vive en `selectors/expandtesting-notes/comunes.json`
+  y cada módulo lo referencia con `"@comun.<ruta>"`; `notesSelectors()`
+  reemplaza a `cy.fixture()` en los Page Objects y frena si una referencia
+  no existe. Una app nueva sigue el mismo criterio (`docs/lote.md` §1).
+  (b) La lectura de la descripción de una HU (formato ADF) vive en
+  `lib/jira.js` (`parseHistoriaDescription`), junto a su escritura y con
+  los mismos nombres de sección; `getIssuesByKeys(..., { withText })`
+  devuelve la HU ya leída (`historia`) y nunca el ADF.
+- **Por qué:** revisión de arquitectura del 2026-10-03. (a) Había 26
+  valores repetidos entre los 6 JSON de Notes (el aviso en 5 archivos):
+  un cambio de UI compartido obligaba a tocar varios y olvidar uno rompía
+  un módulo y no otro. (b) `storyFromDescription` interpretaba ADF dentro de
+  `story-coherence.js`, una lib que tiene que ser independiente del gestor:
+  cambiar Jira por otra herramienta obligaba a tocarla.
+- **Dónde:** `cypress/pages/expandtesting-notes/notesSelectors.js`,
+  `comunes.json`; `lib/jira.js` + test (ida y vuelta escritura/lectura).
+
 ---
 
 ## Arquitectura y portabilidad
