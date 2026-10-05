@@ -24,6 +24,7 @@ cero", 2026-10-04).
 |---|---|---|---|---|
 | 1 | Cuenta | Login | AUTOMATIZADA (SCRUM-846) | Vacío o inexistente: título "Error!" + mensaje |
 | 2 | Cuenta | Registro | AUTOMATIZADA (SCRUM-836, bug SCRUM-857) | 10 campos obligatorios (teléfono opcional), error por campo; al registrarse entra con "Welcome <usuario>" |
+| 2b | Cuenta | Cerrar sesión | AUTOMATIZADA (SCRUM-858, bug SCRUM-865) | Vuelve al inicio; sin sesión, las páginas de la cuenta responden 500 con "An internal error has occurred" |
 | 3 | Cuenta | Recuperar datos de login (Customer Lookup) | OBSERVADA | Por datos personales + SSN |
 | 4 | Cuenta | Actualizar perfil | OBSERVADA | Error por campo (`firstName-error`, ...) |
 | 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
@@ -52,6 +53,15 @@ usuario; deja la receta "usuario nuevo" para el resto).
 - **Páginas con bloques ocultos:** el resumen de cuentas trae un
   `#showError` con su propio `h1.title` "Error!" oculto. Ubicar los
   títulos dentro del bloque visible (`#showOverview`), nunca `h1.title` suelto.
+- **Páginas de la cuenta sin sesión responden HTTP 500** (bug SCRUM-865):
+  `cy.visit` corta ante un estado no-2xx; para afirmar que no hay datos del
+  cliente se visita con `failOnStatusCode: false`.
+- **Caídas del entorno:** el 2026-10-05 desde ~13:00 el servicio que lista
+  las cuentas de un cliente devolvía 500 para todos (también `john`), y el
+  resumen de cuentas mostraba "An internal error has occurred". Antes de
+  tomar una falla del resumen como defecto, consultar
+  `services/bank/customers/<id>/accounts` de `john`. "Update Contact Info"
+  no depende de ese servicio.
 - **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +
   `"/index.htm"` conserva la subruta desde 2026-10-05 (antes la perdía).
 - **Login por API:** `GET services/bank/login/{username}/{password}`
