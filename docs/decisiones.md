@@ -139,10 +139,13 @@ agrega una contradictoria.
   `import './commands/<app>'`, `apps` de `qa.config.json`, el script `test:<app>` y las
   filas del README. Cualquier otro cambio compartido se sigue aprobando
   (en esa misma pausa si se conoce), y el merge a `main` se confirma
-  siempre (D-04).
+  siempre (D-04). El alcance llega a la pausa con cada CA en 2 TC o más:
+  el que tiene uno solo trae su segundo TC explorado y propuesto ahí.
 - **Por qué:** pedido del usuario (2026-09-28). Cada pausa extra es tiempo
   de espera sin trabajo, y esos cambios de una línea se aprobaron igual en
-  todas las apps nuevas.
+  todas las apps nuevas. El conteo de TC por CA lo pidió el usuario el
+  2026-10-05: en ParaBank, CA-05 llegó a la pausa con un solo TC, el
+  dry-run lo frenó y hubo que hacer otra pregunta.
 - **Dónde:** `docs/lote.md` §2.
 
 ### D-36 · Un solo documento de lote en vez de 10 skills
