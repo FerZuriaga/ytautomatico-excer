@@ -26,7 +26,7 @@ cero", 2026-10-04).
 | 2 | Cuenta | Registro | AUTOMATIZADA (SCRUM-836, bug SCRUM-857) | 10 campos obligatorios (teléfono opcional), error por campo; al registrarse entra con "Welcome <usuario>" |
 | 2b | Cuenta | Cerrar sesión | AUTOMATIZADA (SCRUM-858, bug SCRUM-865) | Vuelve al inicio; sin sesión, las páginas de la cuenta responden 500 con "An internal error has occurred" |
 | 3 | Cuenta | Recuperar datos de login (Customer Lookup) | OBSERVADA | Por datos personales + SSN |
-| 4 | Cuenta | Actualizar perfil | OBSERVADA | Error por campo (`firstName-error`, ...) |
+| 4 | Cuenta | Actualizar perfil | AUTOMATIZADA (SCRUM-866, bugs SCRUM-874/875) | Error por campo (`firstName-error`, ...) |
 | 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
 | 6 | Banca | Abrir cuenta nueva | OBSERVADA | Tipo + cuenta origen → `#newAccountId` |
 | 7 | Banca | Transferir fondos | OBSERVADA | `#amount`, `#fromAccountId`, `#toAccountId` |
@@ -61,7 +61,13 @@ usuario; deja la receta "usuario nuevo" para el resto).
   resumen de cuentas mostraba "An internal error has occurred". Antes de
   tomar una falla del resumen como defecto, consultar
   `services/bank/customers/<id>/accounts` de `john`. "Update Contact Info"
-  no depende de ese servicio.
+  no depende de ese servicio. Volvió hacia las 15:13 del mismo día.
+- **Formularios cargados por AJAX** (Update Profile y probablemente las
+  demás pantallas de Banca): los datos llegan después de abrir la pantalla.
+  En la exploración, `{ "action": "waitFor", "selector": "...", "filled": true }`
+  antes de editar; en Cypress, esperar a que el campo tenga valor.
+- **Validación con espacios:** los obligatorios solo controlan que el campo
+  no esté vacío; "   " se acepta (bug SCRUM-874 en el perfil).
 - **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +
   `"/index.htm"` conserva la subruta desde 2026-10-05 (antes la perdía).
 - **Login por API:** `GET services/bank/login/{username}/{password}`

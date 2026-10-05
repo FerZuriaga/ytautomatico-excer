@@ -53,8 +53,30 @@
   },
   "profile": {
     "link": "#leftPanel a[href*=\"updateprofile.htm\"]",
+    "form": "#updateProfileForm",
     "title": "#updateProfileForm h1.title",
-    "firstName": "#updateProfileForm [id=\"customer.firstName\"]"
+    "submit": "#updateProfileForm input[value=\"Update Profile\"]",
+    "updateRequest": "**/services_proxy/bank/customers/update/**",
+    "fields": {
+      "firstName": "#updateProfileForm [id=\"customer.firstName\"]",
+      "lastName": "#updateProfileForm [id=\"customer.lastName\"]",
+      "street": "#updateProfileForm [id=\"customer.address.street\"]",
+      "city": "#updateProfileForm [id=\"customer.address.city\"]",
+      "state": "#updateProfileForm [id=\"customer.address.state\"]",
+      "zipCode": "#updateProfileForm [id=\"customer.address.zipCode\"]",
+      "phone": "#updateProfileForm [id=\"customer.phoneNumber\"]"
+    },
+    "errors": {
+      "firstName": "#firstName-error",
+      "lastName": "#lastName-error",
+      "street": "#street-error",
+      "city": "#city-error",
+      "state": "#state-error",
+      "zipCode": "#zipCode-error"
+    },
+    "visibleErrors": "#updateProfileForm span.error:visible",
+    "resultTitle": "#updateProfileResult h1.title",
+    "resultMessage": "#updateProfileResult p"
   },
   "accountPages": {
     "overview": "/overview.htm",
@@ -67,6 +89,8 @@
     "overview": "Accounts Overview",
     "accountServices": "Account Services",
     "updateProfile": "Update Profile",
+    "profileUpdated": "Profile Updated",
+    "profileUpdatedMessage": "Your updated address and phone number have been added to the system.",
     "errorTitle": "Error!",
     "loginEmpty": "Please enter a username and password.",
     "loginInvalid": "The username and password could not be verified.",
@@ -90,6 +114,7 @@
     "Login (POST login.htm): vacío o con un solo campo -> 'Error!' + 'Please enter a username and password.'; credenciales que no coinciden (también por mayúsculas, usuario y contraseña distinguen) -> 'Error!' + 'The username and password could not be verified.'. Correcto -> overview.htm 'Accounts Overview' (la tabla #accountTable carga después, por AJAX). La página trae además un bloque #showError con otro h1.title 'Error!' oculto (display: none): ubicar el título dentro de #showOverview.",
     "Registro (POST register.htm, necesita la cookie JSESSIONID de un GET previo): aviso span.error con id '<campo>.errors' debajo de cada campo. Teléfono opcional; la contraseña no tiene reglas. Ok -> 'Welcome <usuario>' + mensaje de alta y sesión iniciada.",
     "Usuario repetido idéntico -> 'This username already exists.'; con otras mayúsculas es otro usuario; con un espacio adelante también se crea (bug SCRUM-857).",
+    "Update Profile: los datos se cargan por AJAX después de abrir la pantalla (esperar a que First Name tenga valor antes de editar). Valida en el navegador los 6 obligatorios (span #<campo>-error, mismos textos que el registro) sin enviar nada; guarda con POST services_proxy/bank/customers/update/<id> y muestra #updateProfileResult. Teléfono opcional. Solo espacios se acepta (bug SCRUM-874). El saludo del menú no cambia hasta el próximo login (bug SCRUM-875).",
     "El panel izquierdo tiene un h2 con y sin sesión ('Account Services' / 'Customer Login'): ubicar 'Account Services' por su texto.",
     "Log Out (GET logout.htm) vuelve a index.htm con 'Customer Login' y sin el menú 'Account Services'. Sin sesión, las páginas de la cuenta (overview, transfer, openaccount) muestran el panel de login con 'Error!' + 'An internal error has occurred and has been logged.' (bug SCRUM-865): los tests afirman que no hay datos del cliente, no ese mensaje.",
     "2026-10-05 13:50: el servicio que lista las cuentas de un cliente da 500 para todos (entorno caído): el resumen de cuentas muestra el bloque de error en vez de la tabla. 'Update Contact Info' no depende de él."
