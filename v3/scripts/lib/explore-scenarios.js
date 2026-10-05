@@ -71,6 +71,13 @@ function parseScenarios(file) {
   };
 }
 
+// La url del escenario se agrega a la del baseUrl: con new URL("/index.htm",
+// "https://host/parabank") la subruta se perdía (ParaBank, 2026-10-05).
+function joinUrl(baseUrl, url) {
+  if (!baseUrl || /^https?:\/\//.test(url)) return url;
+  return `${baseUrl.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
+}
+
 // Escenario listo para el navegador: plantillas resueltas con los datos
 // preparados y el estado de sesión de las recetas debajo del propio.
 function resolveScenario(scenario, baseUrl, prepared = { vars: {}, browser: {} }) {
@@ -79,7 +86,7 @@ function resolveScenario(scenario, baseUrl, prepared = { vars: {}, browser: {} }
   const url = fillTemplate(scenario.url, vars);
   return {
     name: scenario.name,
-    url: baseUrl ? new URL(url, baseUrl).href : url,
+    url: joinUrl(baseUrl, url),
     storage: { ...(browser.localStorage || {}), ...fillTemplate(scenario.storage || {}, vars) },
     sessionStorage: { ...(browser.sessionStorage || {}), ...fillTemplate(scenario.sessionStorage || {}, vars) },
     actions: fillTemplate(scenario.actions || [], vars),

@@ -10,6 +10,7 @@
     "test:commitquality": "cypress run --spec \"cypress/e2e/commitquality/**/*.cy.js\"",
     "test:practicesoftwaretesting": "cypress run --spec \"cypress/e2e/practicesoftwaretesting/**/*.cy.js\"",
     "test:expandtesting-notes": "cypress run --spec \"cypress/e2e/expandtesting-notes/**/*.cy.js\"",
+    "test:parabank": "cypress run --spec \"cypress/e2e/parabank/**/*.cy.js\"",
     "test:restful-booker-platform": "cypress run --spec \"cypress/e2e/restful-booker-platform/**/*.cy.js\"",
     "test:unit": "node --test v3/scripts/lib/*.test.js",
     "lint": "eslint .",

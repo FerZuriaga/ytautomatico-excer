@@ -9,6 +9,7 @@ module.exports = defineConfig({
     automationTestStoreUrl: "https://automationteststore.com",
     commitqualityUrl: "https://commitquality.com",
     expandtestingNotesUrl: "https://practice.expandtesting.com",
+    parabankUrl: "https://parabank.parasoft.com/parabank",
     practicesoftwaretestingUrl: "https://practicesoftwaretesting.com",
     restfulBookerPlatformUrl: "https://automationintesting.online",
   },

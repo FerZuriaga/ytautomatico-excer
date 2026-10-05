@@ -79,6 +79,14 @@ test('resolveScenario completa la URL, las plantillas y pone la sesión de las r
   assert.throws(() => resolveScenario(ajena, FILE.baseUrl), /Variable sin definir: \{\{otro.invoiceId\}\}/);
 });
 
+test('regresion ParaBank: un baseUrl con subruta la conserva aunque la url empiece con "/"', () => {
+  const base = 'https://parabank.parasoft.com/parabank';
+  const url = (u, b = base) => resolveScenario({ name: 'x', url: u }, b).url;
+  assert.equal(url('/index.htm'), 'https://parabank.parasoft.com/parabank/index.htm');
+  assert.equal(url('index.htm', `${base}/`), 'https://parabank.parasoft.com/parabank/index.htm');
+  assert.equal(url('https://otro.com/a'), 'https://otro.com/a');
+});
+
 test('summarizeProblems: agrupa las excepciones y errores de consola de toda la corrida (regresion hidratacion RBP)', () => {
   const hydration = 'The following error originated from your application code, not from Cypress.\n\n  > Minified React error #418; visit https://react.dev/errors/418\n\nWhen Cypress detects uncaught errors...';
   const crash = 'The following error originated from your application code, not from Cypress.\n\n  > Cannot read properties of undefined (reading \'length\')\n\nWhen Cypress...';

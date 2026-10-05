@@ -79,6 +79,7 @@ Un lote sigue siempre el mismo documento, `docs/lote.md`:
 | `automation-test-store` | [Automation Test Store](https://automationteststore.com) | Demo compartida |
 | `restful-booker-platform` | [Restful Booker Platform](https://automationintesting.online) | Demo compartida, se re-siembra |
 | `commitquality` | [CommitQuality](https://commitquality.com) | Demo compartida |
+| `parabank` | [ParaBank](https://parabank.parasoft.com/parabank/index.htm) | Demo compartida y borrable: cada test registra su usuario |
 
 Cada app tiene sus piezas en carpetas propias: `cypress/e2e/<app>/`,
 `cypress/pages/<app>/`, `cypress/fixtures/selectors/<app>/`,

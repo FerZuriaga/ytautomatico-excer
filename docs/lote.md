@@ -101,7 +101,11 @@ Al terminar el discovery, UN mensaje con:
 - escenarios positivos, negativos, alternativos y bordes, con prioridad
   (⭐⭐⭐ flujo principal / ⭐⭐ variantes / ⭐ bordes) y una selección
   recomendada;
-- alcance propuesto: HU y sus CA;
+- alcance propuesto: HU y sus CA, con los TC de cada CA contados contra
+  el mínimo de 2 antes de mandar el mensaje. Si un CA queda con uno, su
+  segundo TC se explora y se propone en esta pausa, no después (ParaBank
+  CA-05, 2026-10-05: la falta apareció recién en el dry-run y costó una
+  pregunta extra);
 - dudas de alcance o datos y posibles defectos;
 - archivos compartidos que se van a tocar: los de patrón conocido se
   informan (URL `<app>Url` en el config, `import './commands/<app>'`,
@@ -119,7 +123,9 @@ espera el OK (SCRUM-826, 2026-10-02).
 ### Historia
 
 - Como (rol concreto) / Quiero / Para (beneficio que no repite el
-  Quiero). Objetivo = resultado de negocio. Lenguaje de negocio, sin rutas
+  Quiero). Contexto = la pantalla y lo que ofrece hoy, en una o dos
+  oraciones. Objetivo = resultado de negocio. Las cinco son obligatorias
+  en una HU nueva (el validador frena si falta una). Lenguaje de negocio, sin rutas
   ni términos técnicos; los textos visibles sí (D-19).
 - Una HU = una capacidad; lo destructivo en HU aparte (D-17).
 - Secciones opcionales: `reglasNegocio`, `fueraDeAlcance`,

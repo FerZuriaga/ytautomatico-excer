@@ -1,0 +1,81 @@
+{
+  "paths": {
+    "home": "/index.htm",
+    "register": "/register.htm",
+    "logout": "/logout.htm",
+    "overview": "/overview.htm"
+  },
+  "login": {
+    "panel": "#loginPanel",
+    "username": "#loginPanel input[name=\"username\"]",
+    "password": "#loginPanel input[name=\"password\"]",
+    "submit": "#loginPanel input[type=\"submit\"]",
+    "registerLink": "#loginPanel a[href*=\"register.htm\"]"
+  },
+  "register": {
+    "form": "#customerForm",
+    "firstName": "[id=\"customer.firstName\"]",
+    "lastName": "[id=\"customer.lastName\"]",
+    "street": "[id=\"customer.address.street\"]",
+    "city": "[id=\"customer.address.city\"]",
+    "state": "[id=\"customer.address.state\"]",
+    "zipCode": "[id=\"customer.address.zipCode\"]",
+    "phone": "[id=\"customer.phoneNumber\"]",
+    "ssn": "[id=\"customer.ssn\"]",
+    "username": "[id=\"customer.username\"]",
+    "password": "[id=\"customer.password\"]",
+    "confirm": "#repeatedPassword",
+    "submit": "#customerForm input[type=\"submit\"]",
+    "fieldErrors": "#customerForm span.error",
+    "errors": {
+      "firstName": "[id=\"customer.firstName.errors\"]",
+      "lastName": "[id=\"customer.lastName.errors\"]",
+      "street": "[id=\"customer.address.street.errors\"]",
+      "city": "[id=\"customer.address.city.errors\"]",
+      "state": "[id=\"customer.address.state.errors\"]",
+      "zipCode": "[id=\"customer.address.zipCode.errors\"]",
+      "ssn": "[id=\"customer.ssn.errors\"]",
+      "username": "[id=\"customer.username.errors\"]",
+      "password": "[id=\"customer.password.errors\"]",
+      "confirm": "[id=\"repeatedPassword.errors\"]"
+    }
+  },
+  "result": {
+    "title": "#rightPanel h1.title",
+    "message": "#rightPanel p",
+    "error": "#rightPanel p.error",
+    "overviewTitle": "#showOverview h1.title",
+    "overviewError": "#showError",
+    "accountRow": "#accountTable tbody tr a",
+    "welcome": "#leftPanel p.smallText",
+    "logout": "#leftPanel a[href*=\"logout.htm\"]"
+  },
+  "texts": {
+    "registerTitle": "Signing up is easy!",
+    "registered": "Your account was created successfully. You are now logged in.",
+    "overview": "Accounts Overview",
+    "errorTitle": "Error!",
+    "loginEmpty": "Please enter a username and password.",
+    "loginInvalid": "The username and password could not be verified.",
+    "passwordsMismatch": "Passwords did not match.",
+    "usernameTaken": "This username already exists.",
+    "required": {
+      "firstName": "First name is required.",
+      "lastName": "Last name is required.",
+      "street": "Address is required.",
+      "city": "City is required.",
+      "state": "State is required.",
+      "zipCode": "Zip Code is required.",
+      "ssn": "Social Security Number is required.",
+      "username": "Username is required.",
+      "password": "Password is required.",
+      "confirm": "Password confirmation is required."
+    }
+  },
+  "hallazgos": [
+    "Páginas JSP renderizadas en el servidor: sin data-test; ids estables. Los ids del registro llevan punto (customer.firstName): se ubican con [id=\"...\"].",
+    "Login (POST login.htm): vacío o con un solo campo -> 'Error!' + 'Please enter a username and password.'; credenciales que no coinciden (también por mayúsculas, usuario y contraseña distinguen) -> 'Error!' + 'The username and password could not be verified.'. Correcto -> overview.htm 'Accounts Overview' (la tabla #accountTable carga después, por AJAX). La página trae además un bloque #showError con otro h1.title 'Error!' oculto (display: none): ubicar el título dentro de #showOverview.",
+    "Registro (POST register.htm, necesita la cookie JSESSIONID de un GET previo): aviso span.error con id '<campo>.errors' debajo de cada campo. Teléfono opcional; la contraseña no tiene reglas. Ok -> 'Welcome <usuario>' + mensaje de alta y sesión iniciada.",
+    "Usuario repetido idéntico -> 'This username already exists.'; con otras mayúsculas es otro usuario; con un espacio adelante también se crea (bug SCRUM-857)."
+  ]
+}
