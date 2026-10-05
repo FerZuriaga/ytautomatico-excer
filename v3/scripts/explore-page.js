@@ -35,6 +35,9 @@
  *                { "action": "type", "selector": "...", "value": "..." },
  *                { "action": "clear", "selector": "..." } (vacía un campo),
  *                { "action": "select", "selector": "...", "value": "..." },
+ *                { "action": "select", "selector": "...", "index": 1 } (por
+ *                  posición: opciones que cambian en cada corrida, ej. el
+ *                  número de una cuenta recién creada),
  *                { "action": "attach", "selector": "...", "fileName": "a.txt",
  *                  "content": "", "mimeType": "text/plain" } (archivo generado
  *                en memoria; content "" = archivo vacío),
@@ -354,6 +357,8 @@ describe('explore', () => {
           if (a.action === 'click') cy.get(a.selector, { timeout: 15000 }).first().click();
           else if (a.action === 'type') cy.get(a.selector, { timeout: 15000 }).first().clear().type(a.value);
           else if (a.action === 'clear') cy.get(a.selector, { timeout: 15000 }).first().clear();
+          else if (a.action === 'select' && a.index !== undefined) cy.get(a.selector, { timeout: 15000 }).first().find('option').eq(a.index)
+            .then(option => cy.get(a.selector).first().select(option.val()));
           else if (a.action === 'select') cy.get(a.selector, { timeout: 15000 }).first().select(a.value);
           else if (a.action === 'attach') cy.get(a.selector, { timeout: 15000 }).first().selectFile(
             { contents: Cypress.Buffer.from(a.content), fileName: a.fileName, mimeType: a.mimeType || undefined });
