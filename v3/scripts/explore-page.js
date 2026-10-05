@@ -39,7 +39,11 @@
  *                  "content": "", "mimeType": "text/plain" } (archivo generado
  *                en memoria; content "" = archivo vacío),
  *                { "action": "visit", "value": "/ruta" },
- *                { "action": "waitFor", "selector": "..." }]
+ *                { "action": "waitFor", "selector": "..." },
+ *                { "action": "waitFor", "selector": "...", "filled": true }
+ *                  (espera a que el campo tenga valor: formularios que la
+ *                  pantalla completa por AJAX después de cargar; sin esto
+ *                  un clear/type corre antes y la carga lo pisa)]
  *   --wait-for   (opcional) selector que indica que la pantalla terminó de
  *                renderizar (SPA).
  *   --init-script (opcional) archivo JS con `export default function (win) {}`
@@ -354,6 +358,7 @@ describe('explore', () => {
           else if (a.action === 'attach') cy.get(a.selector, { timeout: 15000 }).first().selectFile(
             { contents: Cypress.Buffer.from(a.content), fileName: a.fileName, mimeType: a.mimeType || undefined });
           else if (a.action === 'visit') cy.visit(new URL(a.value, resolved.url).href, { failOnStatusCode: false });
+          else if (a.action === 'waitFor' && a.filled) cy.get(a.selector, { timeout: 15000 }).first().should('not.have.value', '');
           else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
           settle();
           snapshot(i + 1, a.action + ' ' + (a.selector || a.value || '') + (a.fileName ? ' ' + a.fileName : ''));

@@ -62,6 +62,10 @@ el usuario elige. Una app nueva se declara en `apps` de
 - **Datos por receta** (`v3/data-recipes/<app>.json`, `"data": [...]` en
   el escenario). Si falta una receta, se agrega al JSON y se commitea.
   Nunca scripts sueltos (D-14).
+- **Formulario que se completa después de cargar** (AJAX): antes de
+  borrar o escribir, `waitFor` con `"filled": true` sobre un campo. Si no,
+  la carga pisa lo escrito y el informe muestra un envío que nunca se
+  probó (ParaBank perfil, 2026-10-05: se perdió una corrida).
 - **Explorar el mismo camino que usará el test** (sesión inyectada,
   entrada directa a una pantalla interna), no solo el de la UI (D-12).
 - **Cada negativo se ejecuta antes de especificarlo** y se anota lo

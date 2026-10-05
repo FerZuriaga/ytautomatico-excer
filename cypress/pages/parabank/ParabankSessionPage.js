@@ -1,4 +1,8 @@
+import ParabankProfilePage from './ParabankProfilePage'
+
 const FIXTURE = 'selectors/parabank/cuenta.json'
+
+const profile = new ParabankProfilePage()
 
 const T = { timeout: 15000 }
 
@@ -9,14 +13,7 @@ class ParabankSessionPage {
     // "Update Contact Info": pantalla de la cuenta que no depende del
     // listado de cuentas (caído en el entorno el 2026-10-05).
     openProfile() {
-        cy.fixture(FIXTURE).then(sel => {
-            cy.gotoParabankUrl(sel.paths.home)
-            cy.get(sel.profile.link, T).click()
-            cy.get(sel.profile.title, T).should('have.text', sel.texts.updateProfile)
-            cy.get(sel.profile.firstName, T).should('not.have.value', '')
-            cy.get(sel.result.accountServices).should('have.text', sel.texts.accountServices)
-            cy.get(sel.result.logout).should('be.visible')
-        })
+        profile.open()
     }
 
     logout() {

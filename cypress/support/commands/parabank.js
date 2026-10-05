@@ -18,6 +18,11 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
     const customer = {
         firstName: 'Qa',
         lastName: 'Parabank',
+        street: 'Calle 123',
+        city: 'Montevideo',
+        state: 'MO',
+        zipCode: '11000',
+        phone: '099111222',
         username: newUsername(),
         password: 'Qa!Pb2026'
     }
@@ -29,11 +34,11 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
         body: {
             'customer.firstName': customer.firstName,
             'customer.lastName': customer.lastName,
-            'customer.address.street': 'Calle 123',
-            'customer.address.city': 'Montevideo',
-            'customer.address.state': 'MO',
-            'customer.address.zipCode': '11000',
-            'customer.phoneNumber': '',
+            'customer.address.street': customer.street,
+            'customer.address.city': customer.city,
+            'customer.address.state': customer.state,
+            'customer.address.zipCode': customer.zipCode,
+            'customer.phoneNumber': customer.phone,
             'customer.ssn': '123-45-6789',
             'customer.username': customer.username,
             'customer.password': customer.password,
