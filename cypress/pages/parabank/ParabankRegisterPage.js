@@ -41,6 +41,15 @@ class ParabankRegisterPage {
         Object.entries(PERSONAL).forEach(([field, value]) => this.type(field, value))
     }
 
+    // Alta completa con datos válidos (para los TC que parten de un registro).
+    register(username, password) {
+        this.fillPersonalData()
+        this.type('username', username)
+        this.type('password', password)
+        this.type('confirm', password)
+        this.submit()
+    }
+
     submit() {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.register.submit).click())
     }

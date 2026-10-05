@@ -3,16 +3,17 @@
 // Usuario único por test, con mayúsculas (los casos de mayúsculas lo usan).
 const newUsername = () => `QaPb${Date.now().toString(36)}${Cypress._.random(10, 99)}`
 
-Cypress.Commands.add("gotoParabankUrl", (route) => {
-    cy.visit(`${Cypress.env('parabankUrl')}${route}`)
+Cypress.Commands.add("gotoParabankUrl", (route, options = {}) => {
+    cy.visit(`${Cypress.env('parabankUrl')}${route}`, options)
 })
 
 // Cliente nuevo registrado por el mismo formulario que usa la pantalla (no
 // hay endpoint REST de alta): GET para la cookie de sesión y POST del
 // formulario. La base es compartida y cualquiera la puede borrar, así que
-// cada test crea el suyo. Termina SIN sesión (logout), para probar el login
-// o repetir el usuario.
-Cypress.Commands.add("pbRegisterCustomer", () => {
+// cada test crea el suyo. Por defecto termina SIN sesión (logout), para
+// probar el login o repetir el usuario; con { keepSession: true } el
+// navegador queda con la sesión del cliente iniciada.
+Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
     const base = Cypress.env('parabankUrl')
     const customer = {
         firstName: 'Qa',
@@ -39,7 +40,7 @@ Cypress.Commands.add("pbRegisterCustomer", () => {
             repeatedPassword: customer.password
         }
     }).its('body').should('contain', `Welcome ${customer.username}`)
-    cy.request(`${base}/logout.htm`)
+    if (!keepSession) cy.request(`${base}/logout.htm`)
     return cy.wrap(customer)
 })
 
