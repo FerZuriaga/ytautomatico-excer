@@ -30,7 +30,7 @@ cero", 2026-10-04).
 | 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
 | 6 | Banca | Abrir cuenta nueva | OBSERVADA | Tipo + cuenta origen → `#newAccountId` |
 | 7 | Banca | Transferir fondos | AUTOMATIZADA (SCRUM-876 y SCRUM-883, bugs SCRUM-894 a 899) | `#amount`, `#fromAccountId`, `#toAccountId` |
-| 8 | Banca | Pagar servicios | OBSERVADA | Validaciones de cuenta vacía, inválida y verificación distinta |
+| 8 | Banca | Pagar servicios | AUTOMATIZADA (SCRUM-900 y SCRUM-906, bugs SCRUM-919 a 921) | Validaciones de cuenta vacía, inválida y verificación distinta |
 | 9 | Banca | Buscar transacciones | OBSERVADA | Por id, fecha, rango y monto |
 | 10 | Banca | Pedir préstamo | OBSERVADA | Aprobado / rechazado (`#loanStatus`) |
 | 11 | Otros | Contacto (Customer Care) | OBSERVADA | Sin efecto verificable |
@@ -79,6 +79,12 @@ usuario; deja la receta "usuario nuevo" para el resto).
   casi todo (bugs SCRUM-894 a 898). Un monto con tres decimales deja el
   listado de cuentas del cliente en error para siempre: usarlo solo con
   clientes propios del test, nunca con `john`.
+- **Mismas fallas del servidor en Transferir y en Pagar servicios:** los
+  dos aceptan montos mayores al saldo y negativos (SCRUM-895/919 y
+  SCRUM-896/920). Las pantallas que sí validan en el navegador (Pagar
+  servicios) usan `parseFloat`: "10abc" pasa como 10.
+- **Saldos:** `ParabankOverviewPage` (resumen de cuentas) es común a
+  Transferir y Pagar; los selectores de la tabla están en `cuenta.json`.
 - **Validación con espacios:** los obligatorios solo controlan que el campo
   no esté vacío; "   " se acepta (bug SCRUM-874 en el perfil).
 - **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +

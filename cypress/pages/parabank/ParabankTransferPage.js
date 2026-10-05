@@ -1,5 +1,9 @@
+import ParabankOverviewPage from './ParabankOverviewPage'
+
 const FIXTURE = 'selectors/parabank/transferencia.json'
 const ACCOUNT_FIXTURE = 'selectors/parabank/cuenta.json'
+
+const overview = new ParabankOverviewPage()
 
 const T = { timeout: 15000 }
 
@@ -60,19 +64,11 @@ class ParabankTransferPage {
     }
 
     openOverview() {
-        cy.fixture(FIXTURE).then(sel => {
-            cy.get(sel.overviewLink).click()
-            cy.get(sel.overview.row, T).should('have.length.greaterThan', 1)
-        })
+        overview.open()
     }
 
-    // { númeroDeCuenta: "$315.50" } tal como lo muestra "Accounts Overview".
     verifyBalances(balances) {
-        cy.fixture(FIXTURE).then(sel => {
-            Object.entries(balances).forEach(([account, balance]) => {
-                cy.contains(sel.overview.row, account).find('td').eq(sel.overview.balanceCell).should('have.text', balance)
-            })
-        })
+        overview.verifyBalances(balances)
     }
 }
 

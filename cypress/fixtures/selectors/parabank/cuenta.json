@@ -78,6 +78,11 @@
     "resultTitle": "#updateProfileResult h1.title",
     "resultMessage": "#updateProfileResult p"
   },
+  "overview": {
+    "link": "#leftPanel a[href*=\"overview.htm\"]",
+    "row": "#accountTable tbody tr",
+    "balanceCell": 1
+  },
   "accountPages": {
     "overview": "/overview.htm",
     "transfer": "/transfer.htm",

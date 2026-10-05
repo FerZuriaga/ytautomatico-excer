@@ -1,0 +1,66 @@
+{
+  "menuLink": "#leftPanel a[href*=\"billpay.htm\"]",
+  "billpayRequest": "**/services_proxy/bank/billpay*",
+  "form": {
+    "container": "#billpayForm",
+    "title": "#billpayForm h1.title",
+    "fromAccount": "#billpayForm select[name=\"fromAccountId\"]",
+    "submit": "#billpayForm input[value=\"Send Payment\"]",
+    "fields": {
+      "name": "#billpayForm [name=\"payee.name\"]",
+      "street": "#billpayForm [name=\"payee.address.street\"]",
+      "city": "#billpayForm [name=\"payee.address.city\"]",
+      "state": "#billpayForm [name=\"payee.address.state\"]",
+      "zipCode": "#billpayForm [name=\"payee.address.zipCode\"]",
+      "phone": "#billpayForm [name=\"payee.phoneNumber\"]",
+      "account": "#billpayForm [name=\"payee.accountNumber\"]",
+      "verifyAccount": "#billpayForm [name=\"verifyAccount\"]",
+      "amount": "#billpayForm [name=\"amount\"]"
+    },
+    "errors": {
+      "name": "#validationModel-name",
+      "street": "#validationModel-address",
+      "city": "#validationModel-city",
+      "state": "#validationModel-state",
+      "zipCode": "#validationModel-zipCode",
+      "phone": "#validationModel-phoneNumber",
+      "accountEmpty": "#validationModel-account-empty",
+      "accountInvalid": "#validationModel-account-invalid",
+      "verifyEmpty": "#validationModel-verifyAccount-empty",
+      "verifyInvalid": "#validationModel-verifyAccount-invalid",
+      "verifyMismatch": "#validationModel-verifyAccount-mismatch",
+      "amountEmpty": "#validationModel-amount-empty",
+      "amountInvalid": "#validationModel-amount-invalid"
+    },
+    "visibleErrors": "[id^=\"validationModel\"]:visible"
+  },
+  "result": {
+    "container": "#billpayResult",
+    "title": "#billpayResult h1.title",
+    "message": "#billpayResult p:first-of-type"
+  },
+  "texts": {
+    "title": "Bill Payment Service",
+    "complete": "Bill Payment Complete",
+    "errors": {
+      "name": "Payee name is required.",
+      "street": "Address is required.",
+      "city": "City is required.",
+      "state": "State is required.",
+      "zipCode": "Zip Code is required.",
+      "phone": "Phone number is required.",
+      "accountEmpty": "Account number is required.",
+      "accountInvalid": "Please enter a valid number.",
+      "verifyEmpty": "Account number is required.",
+      "verifyInvalid": "Please enter a valid number.",
+      "verifyMismatch": "The account numbers do not match.",
+      "amountEmpty": "The amount cannot be empty.",
+      "amountInvalid": "Please enter a valid amount."
+    }
+  },
+  "hallazgos": [
+    "El campo Phone # tiene un id aleatorio (UUID) en cada carga: ubicar todos los campos por name.",
+    "La pantalla valida antes de enviar: obligatorios con trim (solo espacios = vacío), cuenta y confirmación con parseFloat e iguales, monto con parseFloat. Por usar parseFloat, '10abc' pasa como válido y el servidor responde 400 -> #billpayError 'An internal error' (bug SCRUM-921).",
+    "Envío: POST services_proxy/bank/billpay?accountId&amount con el beneficiario en JSON. El servidor acepta montos mayores al saldo (SCRUM-919) y negativos, que suman a la cuenta (SCRUM-920)."
+  ]
+}
