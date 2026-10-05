@@ -45,6 +45,7 @@ const traceability = require('./traceability');
 const { withRetry, logRetry } = require('./http-retry');
 const { onBody } = require('./http-body');
 const { config } = require('./qa-config');
+const { runBatch, batchErrorMessage } = require('./batch-publish');
 
 const HOST = 'xray.cloud.getxray.app';
 
@@ -731,6 +732,25 @@ async function publishTestCase(model, { issueKey, issueId, testCycle }) {
  * resolverla contra la API. Sin llamador que lo pase, se crea uno nuevo
  * por invocación (comportamiento de siempre, sin cambios).
  */
+/**
+ * Completa un Test Case creado a medias por un lote: lo vincula a la HU y
+ * le crea la ejecución en el ciclo, solo lo que falte (se puede repetir
+ * sin duplicar nada). Devuelve { linked, executionCreated }.
+ */
+async function completeTestCase(testCaseKey, issueKey, testCycleKey, projectKey) {
+    const links = await getTestCaseLinks(testCaseKey);
+    const alreadyLinked = (links || []).some(l => (l.inwardIssue && l.inwardIssue.key === issueKey) || (l.outwardIssue && l.outwardIssue.key === issueKey));
+    if (!alreadyLinked) {
+        await linkTestCaseToIssue(testCaseKey, await issueIdOf(issueKey));
+    }
+    let executionCreated = false;
+    if (testCycleKey && !(await findTestExecution(projectKey, testCycleKey, testCaseKey))) {
+        await createTestExecution({ projectKey, testCaseKey, testCycleKey });
+        executionCreated = true;
+    }
+    return { linked: !alreadyLinked, executionCreated };
+}
+
 async function publishTestCasesBatch(models, testCycle, issueKey, issueId, sharedFolderCache) {
     let testCycleKey = null;
     if (testCycle) {
@@ -746,50 +766,40 @@ async function publishTestCasesBatch(models, testCycle, issueKey, issueId, share
         }
     }
 
-    const succeeded = [];
-    const failed = [];
-
-    for (const model of models) {
-        try {
+    // Un Test Case creado que falla después (pasos, vínculo o ejecución)
+    // queda "a medias" con su key: se completa, nunca se vuelve a crear
+    // (lib/batch-publish.js, caso SCRUM-911).
+    const result = await runBatch(models, {
+        create: async model => {
             model.folderId = model.folder ? folderIdByPath.get(model.folder) : null;
-
-            const testCase = await createTestCase(model);
-
+            return (await createTestCase(model)).key;
+        },
+        complete: async (testCaseKey, model) => {
             if (model.steps?.length) {
-                await createTestSteps(testCase.key, model.steps);
+                await createTestSteps(testCaseKey, model.steps);
             }
-
-            await linkTestCaseToIssue(testCase.key, issueId);
-
+            await linkTestCaseToIssue(testCaseKey, issueId);
             if (testCycleKey) {
-                await createTestExecution({
-                    projectKey: model.projectKey,
-                    testCaseKey: testCase.key,
-                    testCycleKey
-                });
+                await createTestExecution({ projectKey: model.projectKey, testCaseKey, testCycleKey });
             }
-
-            succeeded.push(testCase.key);
-        } catch (err) {
-            failed.push({ model, err });
         }
-    }
+    });
 
-    if (succeeded.length) {
-        console.log(`Test Cases creados en orden: ${succeeded.join(', ')}`);
+    if (result.succeeded.length) {
+        console.log(`Test Cases creados en orden: ${result.succeeded.join(', ')}`);
         console.log(`Vinculados con ${issueKey} en Xray.`);
         if (testCycleKey) {
             console.log(`Ejecuciones creadas en ${testCycleKey} con estado "TO DO".`);
         }
     }
 
-    if (failed.length) {
-        console.error(`${failed.length} de ${models.length} Test Case(s) fallaron al crearse:`);
-        failed.forEach(({ model, err }) => console.error(`  - "${model.name}": ${err.message}`));
-        throw new Error(`${failed.length} Test Case(s) fallaron. Los ${succeeded.length} que sí se crearon ya quedaron completos (steps + link + ejecución) — no hace falta re-crearlos, solo reintentar los fallidos.`);
+    const error = batchErrorMessage(result, { issueKey, testCycleKey });
+    if (error) {
+        console.error(error);
+        throw new Error(`El lote de ${issueKey} no quedó completo (detalle arriba).`);
     }
 
-    return { keys: succeeded, testCycleKey };
+    return { keys: result.succeeded, testCycleKey };
 }
 
 // Las funciones que usan los CLIs son el contrato de
@@ -819,6 +829,7 @@ module.exports = {
     resolveTestCycle,
     resolveTestCaseFolder,
     publishTestCase,
-    publishTestCasesBatch
+    publishTestCasesBatch,
+    completeTestCase
 
 };

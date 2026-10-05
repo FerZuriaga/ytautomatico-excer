@@ -71,6 +71,11 @@
  * `criterio` (opcional, "CA-XX") mueve el Test Case a otro criterio
  * cambiando su label en Xray.
  *
+ * <HU> --complete-testcase <TestCaseKey> [--test-cycle <ciclo>]: completa un
+ * Test Case que un lote dejó creado a medias (el error del lote lo lista
+ * con su key): lo vincula a la HU y le crea la ejecución, solo lo que
+ * falte. Nunca volver a publicar ese Test Case (se duplicaría).
+ *
  * Este archivo NO conoce endpoints, payloads ni formato ADF — todo eso
  * vive en lib/jira.js, lib/xray.js y lib/test-runner.js. Su única
  * responsabilidad es parsear la línea de comandos y componer, en el orden
@@ -134,6 +139,9 @@ function parseArgs(argv) {
     } else if (argv[i] === '--test-cycle') {
       args.testCycleKeyArg = argv[i + 1];
       i++;
+    } else if (argv[i] === '--complete-testcase') {
+      args.completeTestcase = argv[i + 1];
+      i++;
     } else if (!args.issueKey) {
       args.issueKey = argv[i];
     }
@@ -142,10 +150,15 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo, completeTestcase } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
-if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath) {
+if (completeTestcase && !ISSUE_KEY) {
+  console.error('--complete-testcase necesita la HU: node v3/scripts/create-jira-task.js <HU> --complete-testcase <TestCaseKey> [--test-cycle <ciclo>]');
+  process.exit(1);
+}
+
+if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath && !completeTestcase) {
   console.error('Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]');
   console.error('     node scripts/create-jira-task.js <issueKey> --verify');
   console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
@@ -787,6 +800,11 @@ async function main() {
       summary: res.body.fields.summary,
       description: res.body.fields.description
     }, null, 2));
+  }
+
+  if (completeTestcase) {
+    const done = await xray.completeTestCase(completeTestcase, ISSUE_KEY, testCycleKeyArg || null, PROJECT);
+    console.log(`${completeTestcase}: ${done.linked ? `vinculado con ${ISSUE_KEY}` : `ya estaba vinculado con ${ISSUE_KEY}`}${testCycleKeyArg ? `; ${done.executionCreated ? `ejecución creada en ${testCycleKeyArg} (TO DO)` : `ya tenía ejecución en ${testCycleKeyArg}`}` : ''}.`);
   }
 
   if (verifyTestcase) {

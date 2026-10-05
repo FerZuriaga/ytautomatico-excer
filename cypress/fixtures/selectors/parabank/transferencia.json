@@ -1,6 +1,5 @@
 {
   "menuLink": "#leftPanel a[href*=\"transfer.htm\"]",
-  "overviewLink": "#leftPanel a[href*=\"overview.htm\"]",
   "transferRequest": "**/services_proxy/bank/transfer*",
   "form": {
     "container": "#showForm",
@@ -15,14 +14,9 @@
     "title": "#showResult h1.title",
     "message": "#showResult p:first-of-type"
   },
-  "overview": {
-    "row": "#accountTable tbody tr",
-    "balanceCell": 1
-  },
   "texts": {
     "title": "Transfer Funds",
-    "complete": "Transfer Complete!",
-    "overview": "Accounts Overview"
+    "complete": "Transfer Complete!"
   },
   "hallazgos": [
     "Las cuentas de origen y destino se cargan por AJAX (GET services_proxy/bank/customers/<id>/accounts); ambas arrancan en la primera cuenta, así que sin elegir destino la transferencia es a la misma cuenta.",
