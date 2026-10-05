@@ -10,7 +10,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { buildHistoriaDescription, parseHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody, fetchIssuesByKeys } = require('./jira');
+const { buildHistoriaDescription, parseHistoriaDescription, buildBugDescription, captureFileName, buildMultipartBody, fetchIssuesByKeys, openLinkedBugs } = require('./jira');
 
 const base = {
   como: 'cliente', quiero: 'comparar productos', para: 'elegir mejor',
@@ -150,4 +150,21 @@ test('fetchIssuesByKeys withText: estado, Bugs vinculados y la HU leída; sin wi
 
   const plain = (await fetchIssuesByKeys(['SCRUM-804'], request)).get('SCRUM-804');
   assert.deepEqual(plain, { issuetype: 'Historia', labels: [], linkedTests: ['SCRUM-806'] });
+});
+
+test('regresion SCRUM-883: openLinkedBugs lista los Bugs sin terminar vinculados (en cualquier direccion) y deja afuera los terminados y lo que no es Bug', () => {
+  const link = (dir, key, type, category, status = 'Tareas por hacer') => ({
+    [dir]: { key, fields: { summary: `${key} resumen`, issuetype: { name: type }, status: { name: status, statusCategory: { key: category } } } }
+  });
+  const issuelinks = [
+    link('inwardIssue', 'SCRUM-894', 'Bug', 'new'),
+    link('outwardIssue', 'SCRUM-895', 'Error', 'indeterminate', 'En curso'),
+    link('inwardIssue', 'SCRUM-857', 'Bug', 'done', 'Listo'),
+    link('outwardIssue', 'SCRUM-885', 'Test', 'new')
+  ];
+  assert.deepEqual(openLinkedBugs(issuelinks), [
+    { key: 'SCRUM-894', summary: 'SCRUM-894 resumen', status: 'Tareas por hacer' },
+    { key: 'SCRUM-895', summary: 'SCRUM-895 resumen', status: 'En curso' }
+  ]);
+  assert.deepEqual(openLinkedBugs(undefined), []);
 });

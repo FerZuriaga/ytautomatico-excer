@@ -71,6 +71,10 @@
  * `criterio` (opcional, "CA-XX") mueve el Test Case a otro criterio
  * cambiando su label en Xray.
  *
+ * --transition a un estado terminado (categoría "done", ej. "Listo") frena
+ * si la HU tiene Bugs sin terminar vinculados; --cerrar-con-bugs la cierra
+ * igual, solo cuando el usuario lo decidió (docs/lote.md §5).
+ *
  * <HU> --complete-testcase <TestCaseKey> [--test-cycle <ciclo>]: completa un
  * Test Case que un lote dejó creado a medias (el error del lote lo lista
  * con su key): lo vincula a la HU y le crea la ejecución, solo lo que
@@ -139,6 +143,8 @@ function parseArgs(argv) {
     } else if (argv[i] === '--test-cycle') {
       args.testCycleKeyArg = argv[i + 1];
       i++;
+    } else if (argv[i] === '--cerrar-con-bugs') {
+      args.allowOpenBugs = true;
     } else if (argv[i] === '--complete-testcase') {
       args.completeTestcase = argv[i + 1];
       i++;
@@ -150,7 +156,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo, completeTestcase } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo, completeTestcase, allowOpenBugs } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
 if (completeTestcase && !ISSUE_KEY) {
@@ -772,7 +778,7 @@ async function main() {
 
   if (transitionName) {
     console.log(`Aplicando transición "${transitionName}" en ${targetKey}...`);
-    await jira.transitionIssue(targetKey, transitionName);
+    await jira.transitionIssue(targetKey, transitionName, { allowOpenBugs: Boolean(allowOpenBugs) });
   }
 
   if (commentText) {
