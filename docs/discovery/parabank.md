@@ -11,15 +11,19 @@ cero", 2026-10-04).
 - HTML directo con `curl` (las páginas vienen renderizadas del servidor) y
   la WADL para la lista de endpoints.
 - Las pantallas con sesión se relevaron registrando un usuario por el
-  formulario (`POST register.htm`, cookie `JSESSIONID`). Falta la
-  exploración con `explore-page.js` de la funcionalidad elegida (Parte B).
+  formulario (`POST register.htm`, cookie `JSESSIONID`).
+- Parte B (Login + Registro, 2026-10-05): `explore-page.js --scenarios`
+  sin recetas de datos. Cada escenario registra su usuario con acciones
+  sobre el formulario (las recetas de `v3/data-recipes/` solo mandan JSON,
+  sin formularios ni cookies). Selectores en
+  `cypress/fixtures/selectors/parabank/cuenta.json`.
 
 ## Funcionalidades (de menor a mayor complejidad)
 
 | # | Módulo | Funcionalidad | Estado | Notas |
 |---|---|---|---|---|
-| 1 | Cuenta | Login | OBSERVADA | Vacío o inexistente: título "Error!" + mensaje |
-| 2 | Cuenta | Registro | OBSERVADA | 10 campos obligatorios (teléfono opcional), error por campo; al registrarse entra con "Welcome <nombre> <apellido>" |
+| 1 | Cuenta | Login | AUTOMATIZADA (SCRUM-846) | Vacío o inexistente: título "Error!" + mensaje |
+| 2 | Cuenta | Registro | AUTOMATIZADA (SCRUM-836, bug SCRUM-857) | 10 campos obligatorios (teléfono opcional), error por campo; al registrarse entra con "Welcome <usuario>" |
 | 3 | Cuenta | Recuperar datos de login (Customer Lookup) | OBSERVADA | Por datos personales + SSN |
 | 4 | Cuenta | Actualizar perfil | OBSERVADA | Error por campo (`firstName-error`, ...) |
 | 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
@@ -40,8 +44,16 @@ usuario; deja la receta "usuario nuevo" para el resto).
   `initializeDB` y `setParameter` sin autenticación. Un usuario propio por
   test, creado al empezar; nunca depender de datos previos.
 - **Registro solo por formulario:** no hay endpoint REST de alta de
-  cliente. La receta de usuario tiene que hacer `GET register.htm` (cookie)
-  y `POST register.htm` con los campos `customer.*` y `repeatedPassword`.
+  cliente. En Cypress, `cy.pbRegisterCustomer()` (`cypress/support/commands/parabank.js`)
+  hace `GET register.htm` (cookie) y `POST register.htm` con `form: true`
+  y termina con logout: es la receta "cliente nuevo" de todos los módulos.
+- **Usuario y contraseña distinguen mayúsculas** (login y usuario repetido).
+  Un usuario con un espacio adelante se registra como otro (bug SCRUM-857).
+- **Páginas con bloques ocultos:** el resumen de cuentas trae un
+  `#showError` con su propio `h1.title` "Error!" oculto. Ubicar los
+  títulos dentro del bloque visible (`#showOverview`), nunca `h1.title` suelto.
+- **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +
+  `"/index.htm"` conserva la subruta desde 2026-10-05 (antes la perdía).
 - **Login por API:** `GET services/bank/login/{username}/{password}`
   devuelve el cliente (sirve para obtener el `customerId`).
 - **Selectores:** no hay `data-test`; hay `id` estables en casi todo. En
