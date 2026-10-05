@@ -216,7 +216,7 @@ test('collectTestCases: modo lote, issue unico con testcaseModel y payload sin T
 });
 
 test('payload sin Test Cases (solo actualiza la Historia) con CA validos no genera errores ni warnings', () => {
-  const result = validatePayload({ summary: 'HU', historia: { como: 'x', criterios: ['CA-01: uno', 'CA-02: dos', 'CA-03: tres'] } });
+  const result = validatePayload({ summary: 'HU', issueKey: 'SCRUM-1', historia: { como: 'x', criterios: ['CA-01: uno', 'CA-02: dos', 'CA-03: tres'] } });
 
   assert.deepEqual(result, { errors: [], warnings: [], testCaseCount: 0 });
 });
@@ -264,6 +264,9 @@ const tcFor = (criterio, name = `TC ${criterio}`, tipo = 'positivo') => ({
   steps: [step('Navegar a la Home.'), step('Presionar Delete sobre el ID 11.'), step('Presionar Reset.')]
 });
 
+// Secciones de la plantilla que toda HU nueva trae.
+const HISTORIA_COMPLETA = { como: 'administrador del catalogo', quiero: 'dar de alta productos', para: 'venderlos en la tienda', contexto: 'Alta de productos.', objetivo: 'Catalogo con datos validos.' };
+
 // HU con N criterios y `tcPerCa` Test Cases por criterio; el segundo caso
 // de cada criterio es negativo (como un payload correcto).
 const story = (summary, caCount, tcPerCa = 3) => {
@@ -271,7 +274,7 @@ const story = (summary, caCount, tcPerCa = 3) => {
   const testcaseModels = criterios.flatMap((_, i) =>
     Array.from({ length: tcPerCa }, (_, j) =>
       tcFor(`CA-0${i + 1}`, `TC-0${i + 1}.${j + 1}`, j === 1 ? 'negativo' : 'positivo')));
-  return { summary, historia: { criterios }, testcaseModels };
+  return { summary, historia: { ...HISTORIA_COMPLETA, criterios }, testcaseModels };
 };
 
 test('HU con 3 CA y 3 TC por CA: sin errores ni warnings', () => {
@@ -504,6 +507,13 @@ test('HU SCRUM-338 real: CA que exige perder datos (defecto documentado como req
     'CommitQuality - Mi cuenta: CA-04 tiene detalle tecnico (backend)',
     'CommitQuality - Mi cuenta: CA-04 exige perder o revertir datos'
   ]);
+});
+
+test('HU nueva sin una sección de la plantilla (contexto) es error; sumar TC a una HU publicada no lo exige', () => {
+  const historia = { como: 'cliente registrado del banco', quiero: 'ingresar a la banca', para: 'operar mis cuentas', objetivo: 'Que el cliente entre.', criterios: ['CA-01: Regla.'] };
+  const nueva = validateStoryText({ summary: 'ParaBank - Login', historia });
+  assert.deepEqual(nueva.errors, ['ParaBank - Login: faltan secciones de la Historia: contexto.']);
+  assert.deepEqual(validateStoryText({ summary: 'ParaBank - Login', issueKey: 'SCRUM-1', historia }).errors, []);
 });
 
 test('"Para" que repite el "Quiero" (literal) da warning; "+/-" y "descartar" no dan falsos positivos', () => {
@@ -758,6 +768,7 @@ test('pasos de relleno: una accion real repetida con otro verbo ("Volver a inici
 test('regresion SCRUM-469 TC-02.3: sumar un TC a una HU publicada cuenta los TC que ya tiene vinculados', () => {
   const payload = {
     summary: 'Quitar productos del carrito',
+    issueKey: 'SCRUM-469',
     historia: {
       criterios: ['CA-01: Al quitar un producto se recalcula el total.', 'CA-02: Un carrito sin productos no ofrece continuar con la compra.'],
       sinNegativo: { 'CA-01': 'Quitar no tiene entrada invalida.' }

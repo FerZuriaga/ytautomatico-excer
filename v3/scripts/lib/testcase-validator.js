@@ -435,12 +435,22 @@ function contentWords(text) {
  * Lo que no se puede detectar por texto (ej. un "Para" que repite el
  * "Quiero" con sinónimos) lo cubre la regla de la skill especificacion.
  */
+const STORY_REQUIRED = ['como', 'quiero', 'para', 'contexto', 'objetivo'];
+
 function validateStoryText(issue) {
   const errors = [];
   const warnings = [];
   const historia = issue?.historia;
   if (!historia) return { errors: [], warnings };
   const story = issue.summary || '(HU sin summary)';
+
+  // La plantilla de Jira (jira.buildHistoriaDescription) escribe estas
+  // secciones siempre: una vacía llegaba como texto vacío y Jira rechazaba
+  // la HU recién al publicar (ParaBank, 2026-10-05, sin "contexto").
+  if (!issue.issueKey) {
+    const missing = STORY_REQUIRED.filter(field => isBlank(historia[field]));
+    if (missing.length) errors.push(`${story}: faltan secciones de la Historia: ${missing.join(', ')}.`);
+  }
 
   if (!isBlank(historia.como) && K.genericPersona.test(normalize(historia.como))) {
     warnings.push(`${story}: "Como ${historia.como}" es un usuario generico -- indicar el rol concreto que obtiene el beneficio (ej. "administrador del catalogo").`);
