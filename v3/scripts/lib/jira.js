@@ -91,6 +91,14 @@ async function getIssuesByKeys(keys, options = {}) {
 // Nombres con que la instancia muestra el tipo Bug (acá también "Error").
 const BUG_TYPES = JIRA.bugTypeNames;
 
+// Bugs vinculados a un issue (en cualquier dirección), con su estado. done =
+// categoría de estado "terminado" de Jira, no un nombre de estado.
+function linkedBugsOf(issuelinks) {
+  return (issuelinks || []).map(l => l.outwardIssue || l.inwardIssue).filter(Boolean)
+    .filter(o => BUG_TYPES.includes(o.fields?.issuetype?.name))
+    .map(o => ({ key: o.key, summary: o.fields.summary || '', status: o.fields.status?.name || null, done: o.fields.status?.statusCategory?.key === 'done' }));
+}
+
 function issueEntry(issue, withText) {
   const linked = (issue.fields.issuelinks || []).map(l => l.outwardIssue || l.inwardIssue).filter(Boolean);
   const linkedTests = linked.filter(o => o.fields?.issuetype?.name === JIRA.issueTypes.Test).map(o => o.key);
@@ -103,8 +111,7 @@ function issueEntry(issue, withText) {
       historia: isStory && issue.fields.description ? parseHistoriaDescription(issue.fields.description) : null,
       status: issue.fields.status?.name || null,
       // Bugs vinculados (reporte de trazabilidad): el estado viene en el link.
-      linkedBugs: linked.filter(o => BUG_TYPES.includes(o.fields?.issuetype?.name))
-        .map(o => ({ key: o.key, summary: o.fields.summary || '', status: o.fields.status?.name || null }))
+      linkedBugs: linkedBugsOf(issue.fields.issuelinks).map(({ done, ...bug }) => bug)
     });
   }
   return entry;
@@ -186,13 +193,24 @@ async function linkIssue(fromKey, toKey, linkTypeName = JIRA.linkType) {
   });
 }
 
+/** Bugs sin terminar vinculados (fields.issuelinks de la lectura): [{ key, summary, status }]. */
+function openLinkedBugs(issuelinks) {
+  return linkedBugsOf(issuelinks).filter(bug => !bug.done).map(({ done, ...bug }) => bug);
+}
+
 /**
  * Aplica una transición de estado a un issue existente.
  * Busca por nombre (case-insensitive) entre las transiciones disponibles
  * en el workflow real del issue. Si no hay coincidencia, informa las
  * transiciones disponibles por stderr y termina sin forzar nada.
+ *
+ * Si la transición termina el issue (categoría "done") y el issue no es un
+ * Bug, frena cuando tiene Bugs sin terminar vinculados, salvo
+ * { allowOpenBugs: true } (--cerrar-con-bugs, decisión del usuario).
+ * Nace del 2026-10-05: SCRUM-883 pasó a Listo con 3 Bugs de severidad Alta
+ * que dejaban dos de sus CA sin ningún TC que corra (docs/lote.md §5).
  */
-async function transitionIssue(key, name) {
+async function transitionIssue(key, name, { allowOpenBugs = false } = {}) {
   const res = await jiraRequest('GET', `/rest/api/3/issue/${key}/transitions`);
   if (res.status !== 200) {
     console.error('Error al obtener las transiciones disponibles:', JSON.stringify(res.body, null, 2));
@@ -206,6 +224,22 @@ async function transitionIssue(key, name) {
     console.error(`No existe la transición "${name}" para ${key}.`);
     console.error('Transiciones disponibles:', transitions.map(t => t.name).join(', ') || '(ninguna)');
     process.exit(1);
+  }
+
+  if (match.to?.statusCategory?.key === 'done' && !allowOpenBugs) {
+    const issue = await getIssue(key);
+    if (issue.status !== 200) {
+      console.error('Error al leer el issue antes de cerrarlo:', JSON.stringify(issue.body, null, 2));
+      process.exit(1);
+    }
+    const isBug = BUG_TYPES.includes(issue.body.fields.issuetype?.name);
+    const bugs = isBug ? [] : openLinkedBugs(issue.body.fields.issuelinks);
+    if (bugs.length) {
+      console.error(`${key} tiene ${bugs.length} Bug(s) sin terminar vinculados; no se pasa a "${match.name}" sin decidirlo con el usuario (docs/lote.md §5):`);
+      bugs.forEach(b => console.error(`  - ${b.key} [${b.status}] ${b.summary}`));
+      console.error('Si el usuario decidió cerrarla igual: repetir con --cerrar-con-bugs.');
+      process.exit(1);
+    }
   }
 
   const transRes = await jiraRequest('POST', `/rest/api/3/issue/${key}/transitions`, {
@@ -479,6 +513,7 @@ module.exports = {
   changeLabels,
   linkIssue,
   transitionIssue,
+  openLinkedBugs,
   addComment,
   captureFileName,
   buildMultipartBody,

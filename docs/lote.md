@@ -372,7 +372,9 @@ pisaban y textos de TC que el test no controlaba.
   rama local. Nunca encadenar borrados ni pasar la salida por un pipe
   (D-04).
 - Tras el merge: HU a "Listo". Con un Bug abierto que rompe la HU, no se
-  cierra sin decidirlo con el usuario.
+  cierra sin decidirlo con el usuario: `--transition` a un estado terminado
+  frena y lista los Bugs vinculados sin terminar; `--cerrar-con-bugs` solo
+  después de que el usuario lo decidió (D-46).
 - PR apilado: se mergea primero la base. Con `--delete-branch`, el merge
   re-apunta solo a `main` los PRs apilados ANTES de borrar la rama (si se
   borra antes, GitHub los cierra: caso #143). Sin `--delete-branch`,

@@ -636,7 +636,9 @@ agrega una contradictoria.
   Los nombres de las funciones ya eran genéricos, pero nada lo verificaba, y
   `getTestExecutions` devolvía la forma del GraphQL de Xray
   (`test.jira.key`, `status.name`) hasta `lib/test-runner.js`: otro gestor
-  habría tenido que imitar esa forma.
+  habría tenido que imitar esa forma. El 2026-10-05 se sumó
+  `completeTestCase` (completar un Test Case que un lote dejó a medias,
+  caso SCRUM-911).
 - **Dónde:** `npm run test:unit` falla si el adapter no cumple el contrato,
   si un CLI usa una función que no está en él o si una función del contrato
   no la usa nadie.
@@ -646,3 +648,15 @@ agrega una contradictoria.
   directamente.
 - **Por qué:** es un costo alto sin un cambio de runner a la vista. Si
   llega, el mapa de herramientas dice qué tocar (2026-09-28).
+
+### D-46 · Una HU con Bugs abiertos no se cierra sin decidirlo con el usuario
+- **Decisión:** `create-jira-task.js --transition` a un estado terminado
+  (categoría "done" de Jira, no un nombre como "Listo") frena si el issue
+  tiene Bugs vinculados sin terminar, y los lista. Solo pasa con
+  `--cerrar-con-bugs`, que se usa cuando el usuario ya lo decidió. No se
+  aplica a los Bugs (un Bug vinculado a otro Bug no bloquea su cierre).
+- **Por qué:** pedido del usuario (2026-10-05). SCRUM-883 pasó a Listo con
+  tres Bugs de severidad Alta que dejaban dos de sus CA sin ningún TC que
+  corra; `lote.md` §5 ya lo prohibía, pero nada lo controlaba.
+- **Dónde:** `lib/jira.js` (`transitionIssue`, `openLinkedBugs`) y su test;
+  `docs/lote.md` §5.
