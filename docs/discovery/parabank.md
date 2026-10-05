@@ -31,7 +31,7 @@ cero", 2026-10-04).
 | 6 | Banca | Abrir cuenta nueva | OBSERVADA | Tipo + cuenta origen → `#newAccountId` |
 | 7 | Banca | Transferir fondos | AUTOMATIZADA (SCRUM-876 y SCRUM-883, bugs SCRUM-894 a 899) | `#amount`, `#fromAccountId`, `#toAccountId` |
 | 8 | Banca | Pagar servicios | AUTOMATIZADA (SCRUM-900 y SCRUM-906, bugs SCRUM-919 a 921) | Validaciones de cuenta vacía, inválida y verificación distinta |
-| 9 | Banca | Buscar transacciones | OBSERVADA | Por id, fecha, rango y monto |
+| 9 | Banca | Buscar transacciones | AUTOMATIZADA (SCRUM-922, bugs SCRUM-937 a 939) | Por id, fecha, rango y monto |
 | 10 | Banca | Pedir préstamo | OBSERVADA | Aprobado / rechazado (`#loanStatus`) |
 | 11 | Otros | Contacto (Customer Care) | OBSERVADA | Sin efecto verificable |
 | 12 | Otros | Administración | OBSERVADA | Cambia la configuración del banco para todos: fuera de alcance (D-16) |
@@ -79,6 +79,14 @@ usuario; deja la receta "usuario nuevo" para el resto).
   casi todo (bugs SCRUM-894 a 898). Un monto con tres decimales deja el
   listado de cuentas del cliente en error para siempre: usarlo solo con
   clientes propios del test, nunca con `john`.
+- **Tests que solo leen (búsquedas, consultas):** preparar el cliente y sus
+  datos una vez en `before` y entrar en cada test con `cy.pbLogin(customer)`.
+  Baja mucho la cantidad de pedidos (límite 429). `cy.pbTransfer` y
+  `cy.pbTransactions` preparan y leen movimientos por API; la fecha del
+  movimiento es medianoche UTC (`day`, MM-DD-YYYY).
+- **La API del banco no pide credenciales:** cualquier cliente o cuenta se
+  lee por número (`services/bank/...`), y la pantalla de búsqueda por número
+  hereda eso (bug SCRUM-937).
 - **Mismas fallas del servidor en Transferir y en Pagar servicios:** los
   dos aceptan montos mayores al saldo y negativos (SCRUM-895/919 y
   SCRUM-896/920). Las pantallas que sí validan en el navegador (Pagar

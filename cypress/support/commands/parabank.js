@@ -51,6 +51,33 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
 
 Cypress.Commands.add("pbNewUsername", () => cy.wrap(newUsername()))
 
+// Sesión del cliente en el navegador sin pasar por la pantalla de login (el
+// mismo formulario: GET para la cookie y POST). Para tests que comparten un
+// cliente preparado una sola vez (la demo limita la cantidad de pedidos).
+Cypress.Commands.add("pbLogin", (customer) => {
+    const base = Cypress.env('parabankUrl')
+    cy.request(`${base}/index.htm`)
+    cy.request({ method: 'POST', url: `${base}/login.htm`, form: true, body: { username: customer.username, password: customer.password } })
+        .its('body').should('contain', 'Log Out')
+})
+
+// Transferencia por la API del banco (datos de prueba, no la pantalla).
+Cypress.Commands.add("pbTransfer", (fromAccountId, toAccountId, amount) => {
+    cy.request({ method: 'POST', url: `${Cypress.env('parabankUrl')}/services/bank/transfer`, qs: { fromAccountId, toAccountId, amount } })
+})
+
+// Movimientos de una cuenta por la API: [{ id, type, amount, description,
+// day }] con day = fecha del banco (UTC) en MM-DD-YYYY, el formato de la
+// búsqueda. La pantalla la muestra corrida según la zona horaria (SCRUM-938).
+Cypress.Commands.add("pbTransactions", (accountId) => {
+    cy.request({ url: `${Cypress.env('parabankUrl')}/services/bank/accounts/${accountId}/transactions`, headers: { Accept: 'application/json' } })
+        .its('body').then(transactions => transactions.map(t => {
+            const date = new Date(t.date)
+            const pad = n => String(n).padStart(2, '0')
+            return { ...t, day: `${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}-${date.getUTCFullYear()}` }
+        }))
+})
+
 // Segunda cuenta (CHECKING) del cliente por la API del banco, fondeada con
 // $100.00 desde la inicial (que queda en $415.50). Devuelve los números de
 // ambas: { initial, second }.
