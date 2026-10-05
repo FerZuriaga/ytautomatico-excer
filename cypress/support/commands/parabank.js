@@ -50,3 +50,18 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
 })
 
 Cypress.Commands.add("pbNewUsername", () => cy.wrap(newUsername()))
+
+// Segunda cuenta (CHECKING) del cliente por la API del banco, fondeada con
+// $100.00 desde la inicial (que queda en $415.50). Devuelve los números de
+// ambas: { initial, second }.
+Cypress.Commands.add("pbOpenSecondAccount", (customer) => {
+    const api = `${Cypress.env('parabankUrl')}/services/bank`
+    const json = { Accept: 'application/json' }
+    cy.request({ url: `${api}/login/${encodeURIComponent(customer.username)}/${encodeURIComponent(customer.password)}`, headers: json })
+        .its('body.id').then(customerId => {
+            cy.request({ url: `${api}/customers/${customerId}/accounts`, headers: json }).its('body.0.id').then(initial => {
+                cy.request({ method: 'POST', url: `${api}/createAccount`, headers: json, qs: { customerId, newAccountType: 0, fromAccountId: initial } })
+                    .its('body.id').then(second => cy.wrap({ initial, second }))
+            })
+        })
+})

@@ -29,7 +29,7 @@ cero", 2026-10-04).
 | 4 | Cuenta | Actualizar perfil | AUTOMATIZADA (SCRUM-866, bugs SCRUM-874/875) | Error por campo (`firstName-error`, ...) |
 | 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
 | 6 | Banca | Abrir cuenta nueva | OBSERVADA | Tipo + cuenta origen → `#newAccountId` |
-| 7 | Banca | Transferir fondos | OBSERVADA | `#amount`, `#fromAccountId`, `#toAccountId` |
+| 7 | Banca | Transferir fondos | AUTOMATIZADA (SCRUM-876 y SCRUM-883, bugs SCRUM-894 a 899) | `#amount`, `#fromAccountId`, `#toAccountId` |
 | 8 | Banca | Pagar servicios | OBSERVADA | Validaciones de cuenta vacía, inválida y verificación distinta |
 | 9 | Banca | Buscar transacciones | OBSERVADA | Por id, fecha, rango y monto |
 | 10 | Banca | Pedir préstamo | OBSERVADA | Aprobado / rechazado (`#loanStatus`) |
@@ -66,6 +66,19 @@ usuario; deja la receta "usuario nuevo" para el resto).
   demás pantallas de Banca): los datos llegan después de abrir la pantalla.
   En la exploración, `{ "action": "waitFor", "selector": "...", "filled": true }`
   antes de editar; en Cypress, esperar a que el campo tenga valor.
+- **Límite de pedidos (HTTP 429):** la demo bloquea por exceso de pedidos
+  con `Retry-After` de ~5 minutos, pero el 2026-10-05 el bloqueo real
+  duró de 16:41 a 18:03. Lo disparó una corrida de 14 tests después de una
+  tarde de exploraciones. Correr los specs de ParaBank de a uno o dos por
+  corrida; ante un 429, esperar a que `index.htm` responda 200 antes de
+  volver a correr (no cuenta como falla del código).
+- **Clientes con dos cuentas:** `cy.pbOpenSecondAccount(customer)` abre la
+  segunda por API (`services/bank/createAccount`); la inicial queda en
+  $415.50 y la segunda en $100.00.
+- **Transferencias:** la pantalla no valida el monto y el servidor acepta
+  casi todo (bugs SCRUM-894 a 898). Un monto con tres decimales deja el
+  listado de cuentas del cliente en error para siempre: usarlo solo con
+  clientes propios del test, nunca con `john`.
 - **Validación con espacios:** los obligatorios solo controlan que el campo
   no esté vacío; "   " se acepta (bug SCRUM-874 en el perfil).
 - **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +
