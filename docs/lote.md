@@ -228,9 +228,14 @@ REST a mano, ni scripts por ticket.
    Errores: se corrigen siempre. Warnings: se corrigen; `--accept-warnings`
    solo tras revisar cada uno y confirmar falso positivo (o superposición
    aceptada entre HU, D-32).
-3. Publicar sin `--dry-run`. Queda: HU, un TC por cada TC-XX.Y (nunca
+3. Publicar sin `--dry-run`, guardando la salida completa en un archivo
+   del scratchpad (no filtrarla). Queda: HU, un TC por cada TC-XX.Y (nunca
    agrupados), un Test Cycle por HU, TC vinculados a la HU con labels
-   `CA-XX` y `positivo/negativo`. Guardar keys de TC y ciclos.
+   `CA-XX` y `positivo/negativo`. Guardar keys de TC y ciclos. Si el lote
+   termina en error, la salida separa los TC **creados a medias** (con su
+   key: se completan con `<HU> --complete-testcase <key> --test-cycle
+   <ciclo>`, nunca se vuelven a publicar) de los **no creados** (esos sí se
+   publican de nuevo). Caso SCRUM-911, 2026-10-05.
 4. Corregir pasos de TC ya publicados: `--update-steps --data <archivo>`
    (`{ "testcases": [ { key, precondition, steps } ] }`, también
    `criterio`). Sumar TC a una HU publicada: `issueKey` + `historia` +

@@ -30,7 +30,8 @@ const STATUSES = ['TO DO', 'EXECUTING', 'PASSED', 'FAILED'];
 const METHODS = [
   // PASO 2: publicar
   { name: 'publishTestCase', signature: '(modelo, { issueKey, issueId, testCycle: Ciclo|null }) -> { testCaseKey, testCycleKey }', does: 'Crea un Test Case con sus pasos, lo vincula a la HU y, con ciclo, le agrega su ejecución en TO DO.' },
-  { name: 'publishTestCasesBatch', signature: '([modelo], Ciclo|null, issueKey, issueId, folderCache?: Map) -> { keys: [testCaseKey], testCycleKey }', does: 'Lo mismo para varios, en orden correlativo; uno que falla no frena a los demás pero el lote termina en error.' },
+  { name: 'publishTestCasesBatch', signature: '([modelo], Ciclo|null, issueKey, issueId, folderCache?: Map) -> { keys: [testCaseKey], testCycleKey }', does: 'Lo mismo para varios, en orden correlativo; uno que falla no frena a los demás pero el lote termina en error, separando los creados a medias (con key) de los no creados (lib/batch-publish.js).' },
+  { name: 'completeTestCase', signature: '(testCaseKey, issueKey, testCycleKey|null, projectKey) -> { linked, executionCreated }', does: 'Completa un Test Case creado a medias: vínculo con la HU y ejecución en el ciclo, solo lo que falte (--complete-testcase).' },
   { name: 'replaceTestSteps', signature: '(testCaseKey, [Paso]) -> void', does: 'Reemplaza todos los pasos de un Test Case publicado (--update-steps).' },
   // PASO 3: reportar y verificar
   { name: 'getTestExecutions', signature: '(projectKey, testCycleKey) -> [Ejecución]', does: 'Ejecuciones de un ciclo (primera página, hasta 100).' },
