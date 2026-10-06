@@ -347,6 +347,9 @@ describe('explore', () => {
       cy.task('prepareScenario', scenario, { timeout: 60000, log: false }).then(({ resolved, data }) => {
         CUR.resolved = resolved;
         CUR.data = data;
+        // Sesión por cookie preparada por una receta (ej. ParaBank).
+        const domain = new URL(resolved.url).hostname;
+        Object.entries(resolved.cookies || {}).forEach(([name, value]) => cy.setCookie(name, String(value), { domain, path: '/' }));
         cy.visit(resolved.url, { onBeforeLoad: win => applyStorage(win, resolved), failOnStatusCode: false });
         cy.document({ timeout: 15000 }).its('readyState').should('eq', 'complete');
         if (resolved.waitFor) cy.get(resolved.waitFor, { timeout: 15000 });

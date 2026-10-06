@@ -79,7 +79,12 @@ usuario; deja la receta "usuario nuevo" para el resto).
   casi todo (bugs SCRUM-894 a 898). Un monto con tres decimales deja el
   listado de cuentas del cliente en error para siempre: usarlo solo con
   clientes propios del test, nunca con `john`.
-- **Tests que solo leen (búsquedas, consultas):** preparar el cliente y sus
+- **Recetas para explorar** (`v3/data-recipes/parabank.json`): `cliente`
+  (registro por formulario, deja la sesión en el navegador por cookie),
+  `segunda-cuenta` y `transferencia`. Un escenario con
+  `"data": ["cliente", "segunda-cuenta", "transferencia"]` arranca logueado
+  con movimientos, sin acciones de registro.
+- **Tests que solo leen (búsquedas, consultas, login):** preparar el cliente y sus
   datos una vez en `before` y entrar en cada test con `cy.pbLogin(customer)`.
   Baja mucho la cantidad de pedidos (límite 429). `cy.pbTransfer` y
   `cy.pbTransactions` preparan y leen movimientos por API; la fecha del

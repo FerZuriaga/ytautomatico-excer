@@ -89,6 +89,7 @@ function resolveScenario(scenario, baseUrl, prepared = { vars: {}, browser: {} }
     url: joinUrl(baseUrl, url),
     storage: { ...(browser.localStorage || {}), ...fillTemplate(scenario.storage || {}, vars) },
     sessionStorage: { ...(browser.sessionStorage || {}), ...fillTemplate(scenario.sessionStorage || {}, vars) },
+    cookies: { ...(browser.cookies || {}) },
     actions: fillTemplate(scenario.actions || [], vars),
     waitFor: scenario.waitFor ? fillTemplate(scenario.waitFor, vars) : null
   };

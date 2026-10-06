@@ -73,6 +73,7 @@ test('resolveScenario completa la URL, las plantillas y pone la sesión de las r
     url: 'https://practicesoftwaretesting.com/account/invoices/INV-9',
     storage: { language: 'es', 'auth-token': 'tk' },
     sessionStorage: { cart_id: 'C1' },
+    cookies: {},
     actions: [{ action: 'click', selector: '[data-test="details"]' }],
     waitFor: null
   });

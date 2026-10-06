@@ -1,0 +1,61 @@
+{
+  "description": "ParaBank (demo de Parasoft). El alta de cliente es solo por formulario con sesion por cookie (form + cookies, ver v3/scripts/lib/data-recipe.js); el resto por la API REST del banco, que no pide credenciales. Formato y uso en v3/scripts/lib/data-recipe.js.",
+  "api": "https://parabank.parasoft.com/parabank",
+  "recipes": {
+    "cliente": {
+      "description": "Cliente nuevo registrado por el formulario, con la sesion iniciada en el navegador (cookie JSESSIONID). Una cuenta con $515.50 (initialAccount).",
+      "vars": {
+        "username": "QaPb{{unique}}",
+        "password": "Qa!Pb2026",
+        "firstName": "Qa",
+        "lastName": "Parabank"
+      },
+      "steps": [
+        { "method": "GET", "path": "/register.htm" },
+        {
+          "method": "POST", "path": "/register.htm",
+          "form": {
+            "customer.firstName": "{{firstName}}", "customer.lastName": "{{lastName}}",
+            "customer.address.street": "Calle 123", "customer.address.city": "Montevideo",
+            "customer.address.state": "MO", "customer.address.zipCode": "11000",
+            "customer.phoneNumber": "099111222", "customer.ssn": "123-45-6789",
+            "customer.username": "{{username}}", "customer.password": "{{password}}",
+            "repeatedPassword": "{{password}}"
+          },
+          "expectText": "Welcome {{username}}"
+        },
+        {
+          "method": "GET", "path": "/services/bank/login/{{username}}/{{password}}",
+          "headers": { "Accept": "application/json" }, "save": { "customerId": "id" }
+        },
+        {
+          "method": "GET", "path": "/services/bank/customers/{{customerId}}/accounts",
+          "headers": { "Accept": "application/json" }, "save": { "initialAccount": "0.id" }
+        }
+      ],
+      "browser": { "cookies": { "JSESSIONID": "{{cookies.JSESSIONID}}" } }
+    },
+    "segunda-cuenta": {
+      "description": "Segunda cuenta (CHECKING) del cliente, fondeada con $100.00 desde la inicial (que queda en $415.50).",
+      "requires": ["customerId", "initialAccount"],
+      "steps": [
+        {
+          "method": "POST", "path": "/services/bank/createAccount",
+          "query": { "customerId": "{{customerId}}", "newAccountType": "0", "fromAccountId": "{{initialAccount}}" },
+          "headers": { "Accept": "application/json" }, "save": { "secondAccount": "id" }
+        }
+      ]
+    },
+    "transferencia": {
+      "description": "Transferencia de la cuenta inicial a la segunda (default $25.50).",
+      "requires": ["initialAccount", "secondAccount"],
+      "params": { "monto": "25.50" },
+      "steps": [
+        {
+          "method": "POST", "path": "/services/bank/transfer",
+          "query": { "fromAccountId": "{{initialAccount}}", "toAccountId": "{{secondAccount}}", "amount": "{{monto}}" }
+        }
+      ]
+    }
+  }
+}

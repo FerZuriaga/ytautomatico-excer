@@ -61,7 +61,10 @@ el usuario elige. Una app nueva se declara en `apps` de
   `--init-script` (ver el encabezado del script).
 - **Datos por receta** (`v3/data-recipes/<app>.json`, `"data": [...]` en
   el escenario). Si falta una receta, se agrega al JSON y se commitea.
-  Nunca scripts sueltos (D-14).
+  Nunca scripts sueltos (D-14). Las apps de formularios con sesión por
+  cookie también van por receta (`"form"`, cookies y `"expectText"`, ver
+  `lib/data-recipe.js`): nunca repetir en cada escenario las acciones de
+  registro (ParaBank, 2026-10-05: se copiaron 8 veces).
 - **Formulario que se completa después de cargar** (AJAX): antes de
   borrar o escribir, `waitFor` con `"filled": true` sobre un campo. Si no,
   la carga pisa lo escrito y el informe muestra un envío que nunca se
@@ -374,7 +377,9 @@ pisaban y textos de TC que el test no controlaba.
 - Tras el merge: HU a "Listo". Con un Bug abierto que rompe la HU, no se
   cierra sin decidirlo con el usuario: `--transition` a un estado terminado
   frena y lista los Bugs vinculados sin terminar; `--cerrar-con-bugs` solo
-  después de que el usuario lo decidió (D-46).
+  después de que el usuario lo decidió (D-46). En apps de terceros el
+  criterio ya está decidido: se cierra con `--cerrar-con-bugs` y un
+  `--comment` que dice qué CA no se cumplen y qué Bugs lo explican.
 - PR apilado: se mergea primero la base. Con `--delete-branch`, el merge
   re-apunta solo a `main` los PRs apilados ANTES de borrar la rama (si se
   borra antes, GitHub los cierra: caso #143). Sin `--delete-branch`,
