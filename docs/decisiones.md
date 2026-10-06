@@ -683,3 +683,32 @@ agrega una contradictoria.
   pausas no se había distinguido una cosa de la otra.
 - **Dónde:** `docs/lote.md` §2 (pausa) y §6 (Bugs); `lib/bug-validator.js`
   y su test; `create-jira-task.js` (label al publicar).
+
+### D-48 · Los gestores se eligen en la config y el 429 es falla del entorno
+- **Decisión:**
+  1. Cada gestor se elige en `herramientas` de `qa.config.json`
+     (`gestorDePruebas: "xray"`, `gestorDeTickets: "jira"`). Los CLIs piden
+     el adapter a `lib/tools.js` y no lo importan (regla
+     `uso-adapters-jira-xray`); al cargarlo se valida contra su contrato:
+     `lib/test-manager-contract.js` (D-45) y el nuevo
+     `lib/issue-tracker-contract.js` para el gestor de tickets. Otro gestor
+     es **un archivo nuevo en `lib/` y una línea de config**. Excepción:
+     `lib/xray.js` usa `lib/jira.js` porque Xray es un complemento de Jira.
+  2. Una corrida en la que **todas** las fallas son un 429 de la app (límite
+     de pedidos) es una falla del entorno: `run-and-report.js` lo dice con
+     su propia pista, no reporta y la registra en modo `entorno`, que no
+     cuenta como iteración del lote. Con `--esperar-limite` espera a que la
+     URL que respondió 429 vuelva a responder (hasta 20 min) y repite la
+     corrida **una** vez; si se corta de nuevo, frena y avisa. Con una sola
+     falla de otro tipo, es una falla común y se diagnostica (D-24).
+- **Por qué:** pedido del usuario (2026-10-06) al preguntar si cambiar una
+  herramienta era "crear un archivo nuevo y enlazarlo": con Xray había que
+  escribir el adapter y además tocar el `require` de 3 CLIs, y Jira no tenía
+  contrato. El mismo día ParaBank cortó 6 corridas con un 429 (Cloudflare);
+  la pista mandaba a revisar la precondición, contaban como iteraciones y el
+  diagnóstico se hizo a mano cada vez.
+- **Dónde:** `qa.config.json` y el ejemplo en inglés; `lib/tools.js`,
+  `lib/issue-tracker-contract.js`, `lib/qa-config.js`, `lib/architecture.js`
+  y sus tests; `lib/test-runner.js` (`rateLimitInfo`, pista), `lib/run-timing.js`
+  (modo `entorno`) y `run-and-report.js` (`--esperar-limite`);
+  `docs/architecture/herramientas.md`.

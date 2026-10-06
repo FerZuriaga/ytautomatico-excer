@@ -59,10 +59,25 @@ test('detecta cada tipo de violación en el archivo equivocado', () => {
 test('los usos en su lugar, en tests o en comentarios no cuentan', () => {
   assert.deepEqual(checkArchitecture({
     'v3/scripts/lib/jira.js': 'const url = process.env.JIRA_URL;',
-    'v3/scripts/run-and-report.js': "const xray = require('./lib/xray');\nspawnSync('npx', ['cypress', 'run']);",
+    'v3/scripts/run-and-report.js': "const xray = require('./lib/tools').testManager();\nspawnSync('npx', ['cypress', 'run']);",
+    'v3/scripts/lib/xray.js': "const jira = require('./jira');",
     'v3/scripts/lib/jira.test.js': "process.env.JIRA_URL = 'x';",
     'cypress/e2e/app/login.cy.js': "// ver https://empresa.atlassian.net/browse/SCRUM-45\n/* process.env.JIRA_API_TOKEN */\ncy.visit('https://app.test')"
   }), []);
+});
+
+// D-48 (2026-10-06): los CLIs piden el adapter a lib/tools.js; importarlo
+// directo ataría el CLI a Xray/Jira y cambiar de gestor volvería a ser
+// tocar cada CLI.
+test('un CLI que importa el adapter de Xray o de Jira directo es una violación', () => {
+  const violations = checkArchitecture({
+    'v3/scripts/create-jira-task.js': "const jira = require('./lib/jira');\nconst xray = require('./lib/xray.js');",
+    'v3/scripts/lib/nueva.js': "const xray = require('./xray');"
+  });
+  assert.deepEqual(violations.map(v => `${v.file}:${v.line} ${v.rule}`), [
+    'v3/scripts/create-jira-task.js:1 uso-adapters-jira-xray',
+    'v3/scripts/lib/nueva.js:1 uso-adapters-jira-xray'
+  ]);
 });
 
 test('stripComments conserva strings con // y los números de línea', () => {

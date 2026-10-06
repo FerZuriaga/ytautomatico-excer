@@ -237,9 +237,29 @@ function collectKnownBugSkips(results) {
 const ELEMENT_NOT_FOUND_REGEX = /Expected to find (element|content)|never found it|element is detached|is being covered|not visible because/;
 const ASSERTION_REGEX = /\bexpected\b[\s\S]*\bto (not )?(have|be|equal|eq|contain|include|match|exist)/;
 const API_STATUS_REGEX = /cy\.request\(\)|statusCode|status code/i;
+// Límite de pedidos de la app (ParaBank detrás de Cloudflare, 2026-10-06:
+// 6 corridas cortadas el mismo día; la pista de la API mandaba a revisar
+// la precondición y la falla era del entorno).
+const RATE_LIMIT_REGEX = /\b429\b\s*[:-]\s*Too Many Requests/i;
+const RATE_LIMIT_HINT = 'entorno: la app respondio 429 (limite de pedidos). No es una falla del codigo ni cuenta como iteracion: esperar a que vuelva a responder y repetir (--esperar-limite lo hace solo).';
+
+/**
+ * Datos de una falla por límite de pedidos: { url, retryAfterSeconds }, o
+ * null si el mensaje no es un 429. `url` es la del pedido que se cortó (para
+ * saber cuándo la app vuelve a responder); `retryAfterSeconds` sale del
+ * encabezado retry-after si vino.
+ */
+function rateLimitInfo(message) {
+  const text = String(message || '');
+  if (!RATE_LIMIT_REGEX.test(text)) return null;
+  const url = (text.match(/^URL:\s*(https?:\/\/\S+)/m) || text.match(/(https?:\/\/[^\s`'"]+)/) || [])[1] || null;
+  const retryAfter = text.match(/"retry-after":\s*"(\d+)"/i);
+  return { url, retryAfterSeconds: retryAfter ? Number(retryAfter[1]) : null };
+}
 
 function classifyFailure(message) {
   const text = String(message || '');
+  if (RATE_LIMIT_REGEX.test(text)) return RATE_LIMIT_HINT;
   if (ELEMENT_NOT_FOUND_REGEX.test(text)) {
     return 'no encontro el elemento: revisar selector, espera o el camino previo del test (captura).';
   }
@@ -265,10 +285,15 @@ function classifyFailure(message) {
 function summarizeResults(results) {
   const all = collectTestsWithState(results);
   const passes = results.passes || [];
+  const failures = results.failures || [];
+  const limits = failures.map(t => rateLimitInfo(t.err?.message));
   return {
     total: all.length,
     passed: passes.length,
-    failed: (results.failures || []).map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '', hint: classifyFailure(t.err?.message) })),
+    failed: failures.map(t => ({ fullTitle: t.fullTitle, message: t.err?.message || '', hint: classifyFailure(t.err?.message) })),
+    // Todas las fallas son 429: la corrida la cortó el entorno, no el código.
+    // Con una sola falla de otro tipo es una falla común (se diagnostica).
+    rateLimit: limits.length && limits.every(Boolean) ? limits[0] : null,
     pending: (results.pending || []).filter(t => !extractKnownBug(t.fullTitle)).map(t => t.fullTitle),
     knownBugSkips: (results.pending || []).filter(t => extractKnownBug(t.fullTitle)).map(t => ({ fullTitle: t.fullTitle, bug: extractKnownBug(t.fullTitle) })),
     retriedPasses: passes.filter(t => (t.currentRetry || 0) > 0).map(t => t.fullTitle),
@@ -357,5 +382,6 @@ module.exports = {
   collectTaggedTests,
   collectKnownBugSkips,
   classifyFailure,
+  rateLimitInfo,
   extractKnownBug
 };

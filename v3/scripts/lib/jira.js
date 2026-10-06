@@ -500,7 +500,13 @@ async function getAttachmentNames(key) {
   return (res.body.fields.attachment || []).map(a => a.filename);
 }
 
+/** Link para abrir el issue en el navegador (los CLIs lo imprimen). */
+function issueUrl(key) {
+  return `https://${HOSTNAME}/browse/${key}`;
+}
+
 module.exports = {
+  issueUrl,
   fetchIssuesByKeys,
   isIdempotent,
   HOSTNAME,

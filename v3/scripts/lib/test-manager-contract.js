@@ -48,11 +48,16 @@ const METHODS = [
 
 const METHOD_NAMES = METHODS.map(m => m.name);
 
-/** Problemas de un adapter contra el contrato: [] si lo cumple. */
-function checkAdapter(adapter) {
-  return METHOD_NAMES
+/** Funciones de `names` que le faltan a un adapter (común a los contratos de lib/tools.js). */
+function missingFunctions(adapter, names) {
+  return names
     .filter(name => typeof (adapter || {})[name] !== 'function')
     .map(name => `falta la función "${name}" del contrato`);
+}
+
+/** Problemas de un adapter contra el contrato: [] si lo cumple. */
+function checkAdapter(adapter) {
+  return missingFunctions(adapter, METHOD_NAMES);
 }
 
 /** Funciones que un archivo llama sobre `variable` (ej. "xray.getTestCase(" -> getTestCase). */
@@ -69,4 +74,4 @@ function isExecution(value) {
     && (value.status === null || STATUSES.includes(value.status));
 }
 
-module.exports = { STATUSES, METHODS, METHOD_NAMES, checkAdapter, methodsCalledOn, isExecution };
+module.exports = { STATUSES, METHODS, METHOD_NAMES, checkAdapter, missingFunctions, methodsCalledOn, isExecution };

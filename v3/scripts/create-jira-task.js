@@ -89,8 +89,9 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const fs = require('fs');
 const path = require('path');
 
-const jira = require('./lib/jira');
-const xray = require('./lib/xray');
+const tools = require('./lib/tools');
+const jira = tools.issueTracker();
+const xray = tools.testManager();
 const testRunner = require('./lib/test-runner');
 const testcaseValidator = require('./lib/testcase-validator');
 const bugValidator = require('./lib/bug-validator');
@@ -470,7 +471,7 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
 
   const key = res.body.key;
   console.log(`Creado: ${key}`);
-  console.log(`URL: https://${jira.HOSTNAME}/browse/${key}`);
+  console.log(`URL: ${jira.issueUrl(key)}`);
 
   if (testcaseModel) {
     console.log('Se detectó un Modelo Canónico de Test Case.');
@@ -713,7 +714,7 @@ async function main() {
       console.log(`Actualizando ${ISSUE_KEY}...`);
       const res = await jira.updateIssue(ISSUE_KEY, { summary, description });
       if (res.status === 204) {
-        console.log(`Actualizado: https://${jira.HOSTNAME}/browse/${ISSUE_KEY}`);
+        console.log(`Actualizado: ${jira.issueUrl(ISSUE_KEY)}`);
         await finishBug(ISSUE_KEY, ISSUE);
         await linkAll(ISSUE_KEY, ISSUE, { skipExisting: true });
       } else {
@@ -754,7 +755,7 @@ async function main() {
       if (res.status === 201) {
         const key = res.body.key;
         console.log(`Creado: ${key}`);
-        console.log(`URL: https://${jira.HOSTNAME}/browse/${key}`);
+        console.log(`URL: ${jira.issueUrl(key)}`);
         targetKey = key;
 
         if (testcaseModel) {

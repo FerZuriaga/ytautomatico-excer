@@ -26,10 +26,10 @@ const RULES = [
   {
     id: 'uso-adapters-jira-xray',
     tool: 'Jira / Xray',
-    description: 'Los adapters de Jira/Xray solo los usan los CLIs del PASO 2/3 (las libs de reglas quedan independientes del gestor).',
+    description: 'Nadie importa los adapters de Jira/Xray: se piden a lib/tools.js, que elige el de qa.config.json (D-48). Excepción: lib/xray.js usa lib/jira.js porque Xray es un complemento de Jira.',
     pattern: /require\(\s*['"][./]*(lib\/)?(jira|xray)(\.js)?['"]\s*\)/,
     scope: /^v3\/scripts\//,
-    allowed: ['v3/scripts/create-jira-task.js', 'v3/scripts/run-and-report.js', 'v3/scripts/check-traceability.js', 'v3/scripts/lib/xray.js']
+    allowed: ['v3/scripts/lib/xray.js']
   },
   {
     id: 'github',

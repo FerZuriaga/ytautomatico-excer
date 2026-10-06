@@ -23,10 +23,11 @@ test('la config del repo y el ejemplo en inglés están completos', () => {
 test('una config incompleta frena nombrando exactamente lo que falta', () => {
   const broken = JSON.parse(JSON.stringify(config));
   delete broken.apps;
+  delete broken.herramientas.gestorDeTickets;
   delete broken.jira.linkType;
   delete broken.jira.issueTypes.Test;
   delete broken.validadores.palabrasClave.verbosDeAccion;
-  assert.throws(() => checkConfig(broken), /falta: apps, jira\.linkType, jira\.issueTypes\.Test, validadores\.palabrasClave\.verbosDeAccion\./);
+  assert.throws(() => checkConfig(broken), /falta: apps, herramientas\.gestorDeTickets, jira\.linkType, jira\.issueTypes\.Test, validadores\.palabrasClave\.verbosDeAccion\./);
 });
 
 test('una config inexistente explica cómo crearla', () => {

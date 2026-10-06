@@ -79,7 +79,10 @@ usuario; deja la receta "usuario nuevo" para el resto).
   duró de 16:41 a 18:03. Lo disparó una corrida de 14 tests después de una
   tarde de exploraciones. Correr los specs de ParaBank de a uno o dos por
   corrida; ante un 429, esperar a que `index.htm` responda 200 antes de
-  volver a correr (no cuenta como falla del código).
+  volver a correr (no cuenta como falla del código). Desde 2026-10-06
+  `run-and-report.js` lo detecta solo y con `--esperar-limite` espera y
+  repite una vez (D-48). El spec que más pedidos hace es
+  `parabank_tc_prestamos_rechazados` (8 logins y 8 consultas del resumen).
 - **Clientes con dos cuentas:** `cy.pbOpenSecondAccount(customer)` abre la
   segunda por API (`services/bank/createAccount`); la inicial queda en
   $415.50 y la segunda en $100.00.

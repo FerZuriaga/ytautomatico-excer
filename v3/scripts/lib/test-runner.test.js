@@ -13,6 +13,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  rateLimitInfo,
   splitConcatenatedJsonObjects,
   mergeResultsDocs,
   parseResultsText,
@@ -265,4 +266,31 @@ test('planReport: cada test al primer ciclo que lo tiene, skips a TO DO y faltan
   const broken = planReport([...tagged, { testCaseKey: 'SCRUM-999', state: 'passed' }, { testCaseKey: 'SCRUM-601', state: 'pending', fullTitle: 'p' }], [], cycles);
   assert.deepEqual(broken.missing, ['SCRUM-999']);
   assert.equal(broken.unknownStates.length, 1);
+});
+
+// Caso real (2026-10-06, ParaBank detrás de Cloudflare): 6 corridas cortadas
+// por el límite de pedidos y la pista mandaba a revisar la precondición.
+// Mensaje de Cypress recortado (el original trae además el HTML de la página).
+const RATE_LIMITED = [
+  '`cy.request()` failed on:', '', 'https://parabank.parasoft.com/parabank/index.htm', '',
+  'The response we received from your web server was:', '', '  > 429: Too Many Requests', '',
+  'The request we sent was:', '', 'Method: GET', 'URL: https://parabank.parasoft.com/parabank/index.htm', '',
+  'The response we got was:', '', 'Status: 429 - Too Many Requests', 'Headers: {', '  "retry-after": "300",', '  "server": "cloudflare"', '}'
+].join('\n');
+const failure = (fullTitle, message) => ({ title: fullTitle, fullTitle, state: 'failed', err: { message } });
+
+test('un 429 es falla del entorno: pista propia, URL y retry-after', () => {
+  assert.match(classifyFailure(RATE_LIMITED), /^entorno: la app respondio 429/);
+  assert.deepEqual(rateLimitInfo(RATE_LIMITED), { url: 'https://parabank.parasoft.com/parabank/index.htm', retryAfterSeconds: 300 });
+  // Otro error de API sigue con la pista de siempre.
+  assert.equal(rateLimitInfo('`cy.request()` failed on: ... > 500: Internal Server Error'), null);
+  assert.match(classifyFailure('`cy.request()` failed on: ... > 500: Internal Server Error'), /^fallo una llamada por API/);
+});
+
+test('rateLimit solo cuando TODAS las fallas son 429 (una falla de otro tipo se diagnostica)', () => {
+  const run = failures => summarizeResults({ stats: {}, tests: failures, passes: [], pending: [], failures });
+  assert.deepEqual(run([failure('[SCRUM-1] a', RATE_LIMITED), failure('[SCRUM-2] b', RATE_LIMITED)]).rateLimit,
+    { url: 'https://parabank.parasoft.com/parabank/index.htm', retryAfterSeconds: 300 });
+  assert.equal(run([failure('[SCRUM-1] a', RATE_LIMITED), failure('[SCRUM-2] b', 'expected 1 to equal 2')]).rateLimit, null);
+  assert.equal(run([]).rateLimit, null);
 });
