@@ -1,11 +1,7 @@
-import ParabankOverviewPage from './ParabankOverviewPage'
-
 const FIXTURE = 'selectors/parabank/prestamo.json'
 const ACCOUNT_FIXTURE = 'selectors/parabank/cuenta.json'
 
 const T = { timeout: 15000 }
-
-const overview = new ParabankOverviewPage()
 
 // "Request Loan": monto, pie y cuenta de origen. La pantalla no valida; la
 // aprobación la decide el banco y la respuesta reemplaza al formulario.
@@ -71,13 +67,6 @@ class ParabankLoanPage {
             cy.get(sel.result.approved).should('not.be.visible')
             cy.get(sel.result.newAccount).should('have.text', '')
         })
-    }
-
-    // Saldos en "Accounts Overview": { cuenta: "$415.50" } y cantidad de cuentas.
-    verifyOverview(balances, accountCount) {
-        overview.open()
-        overview.verifyAccountCount(accountCount)
-        overview.verifyBalances(balances)
     }
 }
 

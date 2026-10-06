@@ -13,6 +13,18 @@ class ParabankOverviewPage {
         })
     }
 
+    // Desde la página de inicio con la sesión ya iniciada.
+    openFromHome() {
+        cy.fixture(FIXTURE).then(sel => cy.gotoParabankUrl(sel.paths.home))
+        this.open()
+    }
+
+    // Inicia la sesión del cliente (preparado en before) y abre el resumen.
+    openAs(customer) {
+        cy.pbLogin(customer)
+        this.openFromHome()
+    }
+
     // Cantidad de cuentas del cliente (filas con número de cuenta; la de
     // "Total" no cuenta).
     verifyAccountCount(count) {
