@@ -19,6 +19,13 @@ class ParabankOverviewPage {
         cy.fixture(FIXTURE).then(sel => cy.get(sel.overview.accountLink).should('have.length', count))
     }
 
+    // Abre el resumen y controla cantidad de cuentas y saldos.
+    verifyAccounts(balances, count) {
+        this.open()
+        this.verifyAccountCount(count)
+        this.verifyBalances(balances)
+    }
+
     // { númeroDeCuenta: "$315.50" } tal como lo muestra la tabla.
     verifyBalances(balances) {
         cy.fixture(FIXTURE).then(sel => {
