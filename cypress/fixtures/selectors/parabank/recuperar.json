@@ -1,0 +1,53 @@
+{
+  "link": "#loginPanel a[href*=\"lookup.htm\"]",
+  "form": {
+    "container": "#lookupForm",
+    "intro": "#rightPanel p:first-of-type",
+    "firstName": "#firstName",
+    "lastName": "#lastName",
+    "street": "[id=\"address.street\"]",
+    "city": "[id=\"address.city\"]",
+    "state": "[id=\"address.state\"]",
+    "zipCode": "[id=\"address.zipCode\"]",
+    "ssn": "#ssn",
+    "submit": "#lookupForm input[value=\"Find My Login Info\"]",
+    "fieldErrors": "#lookupForm span.error",
+    "errors": {
+      "firstName": "[id=\"firstName.errors\"]",
+      "lastName": "[id=\"lastName.errors\"]",
+      "street": "[id=\"address.street.errors\"]",
+      "city": "[id=\"address.city.errors\"]",
+      "state": "[id=\"address.state.errors\"]",
+      "zipCode": "[id=\"address.zipCode.errors\"]",
+      "ssn": "[id=\"ssn.errors\"]"
+    }
+  },
+  "result": {
+    "title": "#rightPanel h1.title",
+    "message": "#rightPanel p:first-of-type",
+    "credentials": "#rightPanel p:nth-of-type(2)",
+    "error": "#rightPanel p.error"
+  },
+  "texts": {
+    "title": "Customer Lookup",
+    "intro": "Please fill out the following information in order to validate your account.",
+    "located": "Your login information was located successfully. You are now logged in.",
+    "errorTitle": "Error!",
+    "notFound": "The customer information provided could not be found.",
+    "required": {
+      "firstName": "First name is required.",
+      "lastName": "Last name is required.",
+      "street": "Address is required.",
+      "city": "City is required.",
+      "state": "State is required.",
+      "zipCode": "Zip Code is required.",
+      "ssn": "Social Security Number is required."
+    }
+  },
+  "hallazgos": [
+    "Formulario de servidor (POST lookup.htm), sin sesión. Cada campo vacío: span.error con id '<campo>.errors' debajo del campo; los textos son los del registro más 'Social Security Number is required.'.",
+    "Encontrado: 'Customer Lookup' + 'Your login information was located successfully. You are now logged in.' + Username y Password en texto (bug probable SCRUM-1001) y la sesión queda iniciada (menú 'Account Services' con 'Log Out').",
+    "Solo compara el SSN: con el SSN de un cliente y otros datos personales igual lo encuentra (bug seguro SCRUM-1000). Un SSN que tienen dos clientes no encuentra a ninguno (bug probable SCRUM-1002): los clientes de prueba comparten el SSN 123-45-6789, así que para buscar uno se registra con cy.pbNewSsn().",
+    "No encontrado: 'Error!' + 'The customer information provided could not be found.' y el panel 'Customer Login' sigue disponible."
+  ]
+}

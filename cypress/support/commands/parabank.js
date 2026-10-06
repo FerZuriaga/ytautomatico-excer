@@ -12,8 +12,11 @@ Cypress.Commands.add("gotoParabankUrl", (route, options = {}) => {
 // formulario. La base es compartida y cualquiera la puede borrar, así que
 // cada test crea el suyo. Por defecto termina SIN sesión (logout), para
 // probar el login o repetir el usuario; con { keepSession: true } el
-// navegador queda con la sesión del cliente iniciada.
-Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
+// navegador queda con la sesión del cliente iniciada. El SSN por defecto lo
+// comparten todos los clientes de prueba; Customer Lookup no encuentra un
+// SSN repetido (SCRUM-1002), así que para buscarlo se pasa uno único
+// ({ ssn } con cy.pbNewSsn()).
+Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false, ssn = '123-45-6789' } = {}) => {
     const base = Cypress.env('parabankUrl')
     const customer = {
         firstName: 'Qa',
@@ -23,6 +26,7 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
         state: 'MO',
         zipCode: '11000',
         phone: '099111222',
+        ssn,
         username: newUsername(),
         password: 'Qa!Pb2026'
     }
@@ -39,7 +43,7 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
             'customer.address.state': customer.state,
             'customer.address.zipCode': customer.zipCode,
             'customer.phoneNumber': customer.phone,
-            'customer.ssn': '123-45-6789',
+            'customer.ssn': customer.ssn,
             'customer.username': customer.username,
             'customer.password': customer.password,
             repeatedPassword: customer.password
@@ -50,6 +54,12 @@ Cypress.Commands.add("pbRegisterCustomer", ({ keepSession = false } = {}) => {
 })
 
 Cypress.Commands.add("pbNewUsername", () => cy.wrap(newUsername()))
+
+// SSN que no tiene ningún otro cliente (formato 9NN-NN-NNNN).
+Cypress.Commands.add("pbNewSsn", () => {
+    const digits = `${Date.now()}${Cypress._.random(100, 999)}`.slice(-9)
+    return cy.wrap(`9${digits.slice(1, 3)}-${digits.slice(3, 5)}-${digits.slice(5, 9)}`)
+})
 
 // Sesión del cliente en el navegador sin pasar por la pantalla de login (el
 // mismo formulario: GET para la cookie y POST). Para tests que comparten un

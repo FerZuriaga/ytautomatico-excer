@@ -158,14 +158,18 @@ function checkRecipes(plan) {
 
 const toPosix = p => p.split(path.sep).join('/');
 
-function buildConfig({ width, height, app, baseUrl }) {
+// origin: sin baseUrl, Cypress arranca en localhost y el primer cy.visit a
+// otro dominio reinicia el test, que vuelve a ejecutar prepareScenario: las
+// recetas del primer escenario corrían dos veces (ParaBank Customer Lookup,
+// 2026-10-06: dos clientes con el mismo SSN y la búsqueda no lo encontraba).
+function buildConfig({ width, height, app, baseUrl, origin }) {
   return `const { runData, nodeRequest, loadRecipes } = require(${JSON.stringify(toPosix(path.join(__dirname, 'lib/data-recipe.js')))});
 const { resolveScenario } = require(${JSON.stringify(toPosix(path.join(__dirname, 'lib/explore-scenarios.js')))});
 const APP = ${JSON.stringify(app)};
 const BASE_URL = ${JSON.stringify(baseUrl)};
 
 module.exports = { e2e: {
-  specPattern: 'explore.cy.js', supportFile: false, video: false, screenshotOnRunFailure: true, testIsolation: true,
+  specPattern: 'explore.cy.js', supportFile: false, video: false, screenshotOnRunFailure: true, testIsolation: true,${origin ? `\n  baseUrl: ${JSON.stringify(origin)},` : ''}
   viewportWidth: ${width}, viewportHeight: ${height}, pageLoadTimeout: 20000, defaultCommandTimeout: 15000, retries: 0,
   setupNodeEvents(on) {
     on('task', {
@@ -497,7 +501,12 @@ async function main() {
   }
 
   let host = 'app';
-  try { host = new URL(plan.baseUrl || plan.scenarios[0].url).host.replace(/[^a-z0-9.-]/gi, '_'); } catch { /* url con plantilla */ }
+  let origin = null;
+  try {
+    const target = new URL(plan.baseUrl || plan.scenarios[0].url);
+    host = target.host.replace(/[^a-z0-9.-]/gi, '_');
+    origin = target.origin;
+  } catch { /* url con plantilla */ }
   const outDir = args.out || path.join(os.tmpdir(), `explore-${host}-${Date.now()}`);
   if (outDir.startsWith(REPO_ROOT + path.sep)) {
     console.error('El informe no puede quedar dentro del repo: usar una carpeta fuera (o el default temporal).');
@@ -509,7 +518,7 @@ async function main() {
 
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'explore-project-'));
   const [width, height] = args.viewport.split('x').map(Number);
-  fs.writeFileSync(path.join(projectDir, 'cypress.config.js'), buildConfig({ width, height, app: plan.app, baseUrl: plan.baseUrl }));
+  fs.writeFileSync(path.join(projectDir, 'cypress.config.js'), buildConfig({ width, height, app: plan.app, baseUrl: plan.baseUrl, origin }));
   fs.writeFileSync(path.join(projectDir, 'explore.cy.js'), buildSpec({ scenarios: plan.scenarios, reports, initScript: args.initScript }));
 
   const started = Date.now();
