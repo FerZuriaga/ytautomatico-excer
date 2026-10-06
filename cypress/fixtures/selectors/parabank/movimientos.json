@@ -1,0 +1,50 @@
+{
+  "menuLink": "#leftPanel a[href*=\"findtrans.htm\"]",
+  "searchRequest": "**/services_proxy/bank/**/transactions/**",
+  "idRequest": "**/services_proxy/bank/transactions/**",
+  "form": {
+    "container": "#formContainer",
+    "title": "#formContainer h1.title",
+    "account": "#accountId",
+    "id": "#transactionId",
+    "date": "#transactionDate",
+    "fromDate": "#fromDate",
+    "toDate": "#toDate",
+    "amount": "#amount",
+    "buttons": {
+      "id": "#findById",
+      "date": "#findByDate",
+      "range": "#findByDateRange",
+      "amount": "#findByAmount"
+    },
+    "errors": {
+      "id": "#transactionIdError",
+      "date": "#transactionDateError",
+      "range": "#dateRangeError",
+      "amount": "#amountError"
+    }
+  },
+  "result": {
+    "container": "#resultContainer",
+    "title": "#resultContainer h1.title",
+    "row": "#transactionBody tr",
+    "descriptionCell": 1,
+    "debitCell": 2
+  },
+  "texts": {
+    "title": "Find Transactions",
+    "results": "Transaction Results",
+    "errors": {
+      "id": "Invalid transaction ID",
+      "date": "Invalid date format",
+      "range": "Invalid date format",
+      "amount": "Invalid amount"
+    }
+  },
+  "hallazgos": [
+    "Cuatro búsquedas con su botón: por número (GET services_proxy/bank/transactions/<id>, sin cuenta ni cliente: muestra movimientos de otros clientes, bug SCRUM-937), por fecha, por período y por monto (GET .../accounts/<cuenta>/transactions/...).",
+    "La pantalla valida antes de buscar: número entero, fechas con el patrón MM-DD-YYYY (no controla que existan: 13-45-2026 se busca, bug SCRUM-939) y monto numérico. El aviso queda junto al campo y no se borra al corregirlo.",
+    "Sin coincidencias el servidor responde 404 (o una lista vacía) y la pantalla muestra 'Transaction Results' con la tabla vacía, sin mensaje.",
+    "La fecha llega como medianoche UTC y la pantalla la convierte a la hora local: en UTC-3 se ve un día antes (bug SCRUM-938). Los tests no controlan la columna Date."
+  ]
+}
