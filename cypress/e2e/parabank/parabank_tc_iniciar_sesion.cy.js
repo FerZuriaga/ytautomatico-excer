@@ -2,8 +2,9 @@
 // Sitio bajo prueba: https://parabank.parasoft.com/parabank (ParaBank, demo de Parasoft)
 // Ticket Jira: SCRUM-846 (CA-05..CA-07, Test Cycle SCRUM-847)
 //
-// Cada test que necesita un cliente lo registra antes (base compartida y
-// borrable) y abre la página de inicio sin sesión.
+// Iniciar sesión no modifica datos: un solo cliente, registrado al empezar
+// el spec, sirve para todos los TC (la demo limita la cantidad de pedidos).
+// Cada test abre la página de inicio sin sesión.
 
 import ParabankLoginPage from '../../pages/parabank/ParabankLoginPage'
 
@@ -13,13 +14,19 @@ const WRONG_PASSWORD = 'Otra!2026'
 // Contraseña de los TC sin cliente (usuario inexistente o vacío).
 const ANY_PASSWORD = 'Qa!Pb2026'
 
+let registered
+
 // Paso 1 de los TC con cliente: la página de inicio con un cliente registrado.
-const openLoginWithCustomer = () => cy.pbRegisterCustomer().then(customer => {
+const openLoginWithCustomer = () => {
     login.open()
-    return cy.wrap(customer)
-})
+    return cy.wrap(registered)
+}
 
 describe('[SCRUM-846] ParaBank - Iniciar sesión en la banca online', () => {
+
+    before(() => {
+        cy.pbRegisterCustomer().then(customer => { registered = customer })
+    })
 
     // CA-05: Al ingresar con el usuario y la contraseña de un cliente, se entra al resumen de cuentas "Accounts Overview".
 
