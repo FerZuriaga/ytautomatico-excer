@@ -78,6 +78,18 @@ Cypress.Commands.add("pbTransactions", (accountId) => {
         }))
 })
 
+// Números de las cuentas del cliente por la API del banco, en el orden del
+// resumen (la inicial primero).
+Cypress.Commands.add("pbAccounts", (customer) => {
+    const api = `${Cypress.env('parabankUrl')}/services/bank`
+    const json = { Accept: 'application/json' }
+    cy.request({ url: `${api}/login/${encodeURIComponent(customer.username)}/${encodeURIComponent(customer.password)}`, headers: json })
+        .its('body.id').then(customerId => {
+            cy.request({ url: `${api}/customers/${customerId}/accounts`, headers: json })
+                .its('body').then(accounts => cy.wrap(accounts.map(a => a.id)))
+        })
+})
+
 // Segunda cuenta (CHECKING) del cliente por la API del banco, fondeada con
 // $100.00 desde la inicial (que queda en $415.50). Devuelve los números de
 // ambas: { initial, second }.

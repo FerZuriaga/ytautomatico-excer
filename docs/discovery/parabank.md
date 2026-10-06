@@ -27,7 +27,7 @@ cero", 2026-10-04).
 | 2b | Cuenta | Cerrar sesión | AUTOMATIZADA (SCRUM-858, bug SCRUM-865) | Vuelve al inicio; sin sesión, las páginas de la cuenta responden 500 con "An internal error has occurred" |
 | 3 | Cuenta | Recuperar datos de login (Customer Lookup) | OBSERVADA | Por datos personales + SSN |
 | 4 | Cuenta | Actualizar perfil | AUTOMATIZADA (SCRUM-866, bugs SCRUM-874/875) | Error por campo (`firstName-error`, ...) |
-| 5 | Banca | Resumen de cuentas | OBSERVADA | `#accountTable` |
+| 5 | Banca | Resumen de cuentas y movimientos | AUTOMATIZADA (SCRUM-970 y SCRUM-978, bugs SCRUM-989/990) | `#accountTable`; el número de cuenta lleva a "Account Details" + "Account Activity" (`ParabankActivityPage`) |
 | 6 | Banca | Abrir cuenta nueva | AUTOMATIZADA (SCRUM-959, bug SCRUM-969) | Tipo + cuenta origen → `#newAccountId`; siempre pasan $100.00 del origen, aunque no los tenga |
 | 7 | Banca | Transferir fondos | AUTOMATIZADA (SCRUM-876 y SCRUM-883, bugs SCRUM-894 a 899) | `#amount`, `#fromAccountId`, `#toAccountId` |
 | 8 | Banca | Pagar servicios | AUTOMATIZADA (SCRUM-900 y SCRUM-906, bugs SCRUM-919 a 921) | Validaciones de cuenta vacía, inválida y verificación distinta |
@@ -105,6 +105,15 @@ usuario; deja la receta "usuario nuevo" para el resto).
   Abrir cuenta SCRUM-969): la cuenta queda en negativo.
 - **Validación con espacios:** los obligatorios solo controlan que el campo
   no esté vacío; "   " se acepta (bug SCRUM-874 en el perfil).
+- **Idioma del navegador:** el servidor traduce los meses de "Activity
+  Period" (texto y valor) según el idioma que pide la página, y el filtro
+  solo entiende inglés (bug SCRUM-989). `cy.visit` no manda el idioma del
+  navegador y un clic sí (esta máquina es es-419; la nocturna, inglés): los
+  tests fijan el idioma con `ParabankActivityPage.prepare(idioma)` y eligen
+  los meses por posición, nunca por texto.
+- **Cuentas ajenas:** "Account Details" muestra cualquier cuenta con solo
+  cambiar el número en la dirección (bug SCRUM-990), igual que la búsqueda
+  por número de movimiento (SCRUM-937).
 - **URL con subruta** (`/parabank`): en `--scenarios`, `baseUrl` +
   `"/index.htm"` conserva la subruta desde 2026-10-05 (antes la perdía).
 - **Login por API:** `GET services/bank/login/{username}/{password}`

@@ -1,7 +1,11 @@
+import ParabankActivityPage from './ParabankActivityPage'
+
 const FIXTURE = 'selectors/parabank/abrir-cuenta.json'
 const ACCOUNT_FIXTURE = 'selectors/parabank/cuenta.json'
 
 const T = { timeout: 15000 }
+
+const activity = new ParabankActivityPage()
 
 // "Open New Account": tipo y cuenta de origen (listas, sin validación en la
 // pantalla). La respuesta reemplaza al formulario.
@@ -65,12 +69,10 @@ class ParabankOpenAccountPage {
 
     // Clic en el número de la cuenta nueva: "Account Details" con su tipo.
     verifyDetailsType(accountId, type) {
-        cy.fixture(FIXTURE).then(sel => {
-            cy.get(sel.result.newAccount).click()
-            cy.get(sel.details.title, T).should('be.visible').and('have.text', sel.texts.details)
-            cy.get(sel.details.accountId, T).should('have.text', accountId)
-            cy.get(sel.details.accountType).should('have.text', type)
-        })
+        activity.prepare()
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.result.newAccount).click())
+        activity.verifyShown(accountId)
+        activity.verifyType(type)
     }
 }
 

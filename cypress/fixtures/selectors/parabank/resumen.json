@@ -1,0 +1,38 @@
+{
+  "page": "/activity.htm",
+  "pageRequest": "**/activity.htm*",
+  "transactionsRequest": "**/services_proxy/bank/accounts/*/transactions/**",
+  "details": {
+    "container": "#accountDetails",
+    "title": "#accountDetails h1.title",
+    "accountId": "#accountId",
+    "accountType": "#accountType",
+    "balance": "#balance",
+    "available": "#availableBalance"
+  },
+  "activity": {
+    "title": "#accountActivity h1.title",
+    "month": "#month",
+    "type": "#transactionType",
+    "go": "#activityForm input[value=\"Go\"]",
+    "table": "#transactionTable",
+    "rows": "#transactionTable tbody tr",
+    "noTransactions": "#noTransactions",
+    "columns": { "description": 1, "debit": 2, "credit": 3 }
+  },
+  "error": "#error",
+  "texts": {
+    "details": "Account Details",
+    "activity": "Account Activity",
+    "noTransactions": "No transactions found.",
+    "received": "Funds Transfer Received",
+    "sent": "Funds Transfer Sent"
+  },
+  "hallazgos": [
+    "Account Details (activity.htm?id=<cuenta>) no tiene entrada en el menú: se llega desde el número de cuenta en Accounts Overview. Datos por AJAX: GET services_proxy/bank/accounts/<id> y GET .../transactions/month/<mes>/type/<tipo>.",
+    "Cada movimiento: fecha, descripción (link a transaction.htm) y monto en 'Debit (-)' o 'Credit (+)' según su tipo. Sin movimientos: '#noTransactions' visible y la tabla oculta.",
+    "Los meses de 'Activity Period' se traducen según el idioma del navegador (texto Y valor: 'enero'). El servidor ignora un mes que no está en inglés y devuelve todos los movimientos (bug SCRUM-989). cy.visit no manda el idioma del navegador, un clic sí: los tests fijan el idioma con un intercept de la página y eligen el mes por posición.",
+    "Con el número de una cuenta de otro cliente en la dirección se ven su saldo y sus movimientos (bug SCRUM-990).",
+    "La fecha del movimiento sale un día antes según la zona horaria (bug SCRUM-938): no se controla."
+  ]
+}

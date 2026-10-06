@@ -26,6 +26,22 @@ class ParabankOverviewPage {
         this.verifyBalances(balances)
     }
 
+    // { númeroDeCuenta: "$315.50" } en "Available Amount".
+    verifyAvailable(amounts) {
+        cy.fixture(FIXTURE).then(sel => {
+            Object.entries(amounts).forEach(([account, amount]) => {
+                cy.contains(sel.overview.row, account).find('td').eq(sel.overview.availableCell).should('have.text', amount)
+            })
+        })
+    }
+
+    // La fila "Total" (suma de los saldos).
+    verifyTotal(total) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.overview.row, sel.overview.totalLabel).find('td').eq(sel.overview.balanceCell).should('have.text', total)
+        })
+    }
+
     // { númeroDeCuenta: "$315.50" } tal como lo muestra la tabla.
     verifyBalances(balances) {
         cy.fixture(FIXTURE).then(sel => {

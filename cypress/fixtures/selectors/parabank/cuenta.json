@@ -82,7 +82,9 @@
     "link": "#leftPanel a[href*=\"overview.htm\"]",
     "row": "#accountTable tbody tr",
     "accountLink": "#accountTable tbody tr td a",
-    "balanceCell": 1
+    "balanceCell": 1,
+    "availableCell": 2,
+    "totalLabel": "Total"
   },
   "accountPages": {
     "overview": "/overview.htm",
