@@ -113,7 +113,11 @@ Al terminar el discovery, UN mensaje con:
   segundo TC se explora y se propone en esta pausa, no después (ParaBank
   CA-05, 2026-10-05: la falta apareció recién en el dry-run y costó una
   pregunta extra);
-- dudas de alcance o datos y posibles defectos;
+- dudas de alcance o datos y posibles defectos, cada uno marcado
+  **seguro** (la app se contradice a sí misma o pierde/expone dinero o
+  datos) o **probable** (viola una regla razonable que no está escrita, y
+  se dice cuál). Los probables se publican solo si el usuario confirma la
+  regla en esta pausa (D-47);
 - archivos compartidos que se van a tocar: los de patrón conocido se
   informan (URL `<app>Url` en el config, `import './commands/<app>'`,
   `apps` de `qa.config.json`, `test:<app>`, filas del README); cualquier otro cambio en
@@ -412,8 +416,11 @@ reabra.
    entorno, severidad, captura; `linkTo` a la HU). El estándar lo frena
    `lib/bug-validator.js` (D-22, D-31): pasos solo funcionales, evidencia
    observable, sin requests/rutas/URLs fuera de Entorno, sin especular
-   sobre el código, sin keys en el texto.
-4. Durante un lote no se pregunta si se suma: se crea el Bug, el TC queda
+   sobre el código, sin keys en el texto. El payload lleva `"certeza":
+   "seguro"` o `"probable"` (label `bug-seguro` / `bug-probable` en Jira);
+   un probable además `"reglaConfirmada"` con cuándo y cómo la confirmó el
+   usuario (D-47). Sin eso no se publica.
+4. Durante un lote no se pregunta si se suma un Bug **seguro**: se crea, el TC queda
    automatizado con el comportamiento correcto en `it.skip` "(bug conocido:
    KEY)" y se informa en el cierre. Solo se consulta si cambia el alcance.
 

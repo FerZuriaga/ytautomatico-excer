@@ -492,7 +492,7 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
     }
   }
 
-  await attachCaptures(key, issueDef);
+  await finishBug(key, issueDef);
   await linkAll(key, issueDef);
 
   return key;
@@ -504,6 +504,22 @@ async function createSingleIssue(issueDef, sharedFolderCache) {
 function linksOf(issueDef) {
   const links = issueDef && issueDef.linkTo;
   return (Array.isArray(links) ? links : [links]).filter(link => link && link.key);
+}
+
+// Después de crear o actualizar un Bug: capturas y label de certeza
+// ("bug-seguro" / "bug-probable", D-47).
+async function finishBug(key, issueDef) {
+  if (!issueDef || !issueDef.bug) return;
+  await attachCaptures(key, issueDef);
+  const certaintyLabel = bugValidator.CERTAINTY_LABELS[issueDef.certeza];
+  if (certaintyLabel) {
+    const res = await jira.addLabels(key, [certaintyLabel]);
+    if (res.status !== 204) {
+      console.error(`Error al agregar el label ${certaintyLabel} a ${key} (HTTP ${res.status}):`, JSON.stringify(res.body, null, 2));
+      process.exit(1);
+    }
+    console.log(`Label de certeza en ${key}: ${certaintyLabel}.`);
+  }
 }
 
 // Adjunta las capturas del Bug (obligatorias, ya validadas por
@@ -698,7 +714,7 @@ async function main() {
       const res = await jira.updateIssue(ISSUE_KEY, { summary, description });
       if (res.status === 204) {
         console.log(`Actualizado: https://${jira.HOSTNAME}/browse/${ISSUE_KEY}`);
-        await attachCaptures(ISSUE_KEY, ISSUE);
+        await finishBug(ISSUE_KEY, ISSUE);
         await linkAll(ISSUE_KEY, ISSUE, { skipExisting: true });
       } else {
         console.error('Error al actualizar:', JSON.stringify(res.body, null, 2));
@@ -767,7 +783,7 @@ async function main() {
           }
         }
 
-        await attachCaptures(key, ISSUE);
+        await finishBug(key, ISSUE);
         await linkAll(key, ISSUE);
       } else {
         console.error('Error al crear:', JSON.stringify(res.body, null, 2));

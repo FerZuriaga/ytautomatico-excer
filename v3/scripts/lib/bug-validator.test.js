@@ -27,6 +27,7 @@ const validBug = (overrides = {}) => ({
   issuetype: 'Bug',
   summary: 'Perfil: guardar los datos personales borra el número de casa de la dirección',
   linkTo: [{ key: 'SCRUM-565', type: 'Relates' }, { key: 'SCRUM-561', type: 'Relates' }],
+  certeza: 'seguro',
   bug: {
     resumen: 'Al hacer clic en "Update Profile" la dirección del cliente queda sin número de casa aunque tenía uno cargado.',
     precondiciones: 'Cliente registrado con sesión iniciada, con número de casa 42 en su dirección.',
@@ -222,4 +223,15 @@ test('regresion SCRUM-658: requests, rutas y URLs en el texto del Bug son error;
   // Fechas, conteos y textos de la pantalla con "/" no son rutas.
   const functional = 'Con las notas "Pan & queso" y "Pan dulce", buscar "Pan & queso" muestra las dos tarjetas y el resumen "You have 0/2 notes completed in the all categories"; vence el 12/2030 (captura adjunta).';
   assert.deepEqual(validateBug(validBug({ evidencia: functional })).errors, []);
+});
+
+test('D-47: el Bug declara su certeza; uno "probable" necesita la regla confirmada por el usuario', () => {
+  const { certeza, ...sinCerteza } = validBug();
+  assert.equal(certeza, 'seguro');
+  assert.match(validateBug(sinCerteza).errors.join('\n'), /falta "certeza": "seguro" .* o "probable"/);
+  assert.match(validateBug({ ...validBug(), certeza: 'quizas' }).errors.join('\n'), /falta "certeza"/);
+
+  const probable = { ...validBug(), certeza: 'probable' };
+  assert.match(validateBug(probable).errors.join('\n'), /necesita "reglaConfirmada"/);
+  assert.deepEqual(validateBug({ ...probable, reglaConfirmada: "pausa del 2026-10-06: 'dale, va con los bugs'" }).errors, []);
 });

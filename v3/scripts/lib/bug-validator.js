@@ -126,6 +126,22 @@ function isBlank(value) {
   return typeof value !== 'string' || !value.trim();
 }
 
+// Certeza del Bug (D-47, 2026-10-05): "seguro" = la app se contradice a sí
+// misma o pierde/expone dinero o datos, sin depender de una regla supuesta;
+// "probable" = viola una regla razonable que no está escrita, y solo se
+// publica con la regla confirmada por el usuario. Queda como label en Jira.
+const CERTAINTY_LABELS = { seguro: 'bug-seguro', probable: 'bug-probable' };
+
+function validateCertainty(issue, label) {
+  if (!Object.prototype.hasOwnProperty.call(CERTAINTY_LABELS, issue.certeza)) {
+    return [`${label}: falta "certeza": "seguro" (la app se contradice o pierde/expone dinero o datos) o "probable" (regla razonable sin requisito escrito) (D-47).`];
+  }
+  if (issue.certeza === 'probable' && isBlank(issue.reglaConfirmada)) {
+    return [`${label}: un Bug "probable" necesita "reglaConfirmada": cuándo y cómo confirmó el usuario la regla (ej. "pausa del 2026-10-06: 'dale, va con los bugs'"). Sin eso no se publica (D-47).`];
+  }
+  return [];
+}
+
 function validateBug(issue, { projectKey = config.jira.projectKey, inspectCapture = inspectCaptureOnDisk } = {}) {
   const label = `Bug "${issue.summary || '(sin summary)'}"`;
   const errors = [];
@@ -133,6 +149,7 @@ function validateBug(issue, { projectKey = config.jira.projectKey, inspectCaptur
   if (!bug || typeof bug !== 'object') {
     return { errors: [`${label}: falta el objeto "bug" con las secciones del ticket.`] };
   }
+  errors.push(...validateCertainty(issue, label));
 
   for (const field of REQUIRED_TEXT) {
     if (isBlank(bug[field])) errors.push(`${label}: falta la sección "${field}".`);
@@ -199,4 +216,4 @@ function validateBugs(payload, options = {}) {
   return { errors, bugCount: bugs.length };
 }
 
-module.exports = { validateBug, validateBugs };
+module.exports = { validateBug, validateBugs, CERTAINTY_LABELS };
