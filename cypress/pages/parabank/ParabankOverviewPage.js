@@ -13,6 +13,12 @@ class ParabankOverviewPage {
         })
     }
 
+    // Cantidad de cuentas del cliente (filas con número de cuenta; la de
+    // "Total" no cuenta).
+    verifyAccountCount(count) {
+        cy.fixture(FIXTURE).then(sel => cy.get(sel.overview.accountLink).should('have.length', count))
+    }
+
     // { númeroDeCuenta: "$315.50" } tal como lo muestra la tabla.
     verifyBalances(balances) {
         cy.fixture(FIXTURE).then(sel => {

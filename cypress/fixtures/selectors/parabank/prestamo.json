@@ -1,0 +1,37 @@
+{
+  "menuLink": "#leftPanel a[href*=\"requestloan.htm\"]",
+  "loanRequest": "**/services_proxy/bank/requestLoan*",
+  "form": {
+    "container": "#requestLoanForm",
+    "title": "#requestLoanForm h1.title",
+    "amount": "#amount",
+    "downPayment": "#downPayment",
+    "fromAccount": "#fromAccountId",
+    "submit": "#requestLoanForm input[value=\"Apply Now\"]"
+  },
+  "result": {
+    "container": "#requestLoanResult",
+    "title": "#requestLoanResult h1.title",
+    "status": "#loanStatus",
+    "approved": "#loanRequestApproved",
+    "approvedMessage": "#loanRequestApproved p:first-of-type",
+    "newAccount": "#newAccountId",
+    "denied": "#loanRequestDenied",
+    "deniedMessage": "#loanRequestDenied p.error"
+  },
+  "texts": {
+    "title": "Apply for a Loan",
+    "processed": "Loan Request Processed",
+    "approved": "Approved",
+    "denied": "Denied",
+    "congratulations": "Congratulations, your loan has been approved.",
+    "insufficientFunds": "We cannot grant a loan in that amount with your available funds.",
+    "insufficientDownPayment": "You do not have sufficient funds for the given down payment."
+  },
+  "hallazgos": [
+    "La pantalla no valida nada: POST services_proxy/bank/requestLoan?customerId&amount&downPayment&fromAccountId. Vacío o cero -> 400/500 y bloque 'An internal error' (bug probable SCRUM-958).",
+    "La aprobación la decide la configuración de 'Admin Page' (compartida: cualquiera la cambia). El 2026-10-06: proveedor Web Service, procesador 'Available Funds', umbral 20 %. Con un cliente nuevo ($515.50) se aprueba $2578 y se rechaza $3000 sin pie: los tests usan $1000 (aprobado) y $3000/$5000 (rechazado).",
+    "Aprobado: el pie se descuenta de la cuenta de origen y se crea una cuenta LOAN con el monto. Un pie negativo se aprueba y suma a la cuenta (bug seguro SCRUM-957).",
+    "La fecha de la respuesta se muestra sin el cero del día (10-6-2026): cosmético, no se controla."
+  ]
+}
