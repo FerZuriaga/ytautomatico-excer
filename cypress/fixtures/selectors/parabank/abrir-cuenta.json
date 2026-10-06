@@ -1,0 +1,36 @@
+{
+  "menuLink": "#leftPanel a[href*=\"openaccount.htm\"]",
+  "createRequest": "**/services_proxy/bank/createAccount*",
+  "form": {
+    "container": "#openAccountForm",
+    "title": "#openAccountForm h1.title",
+    "type": "#type",
+    "fromAccount": "#fromAccountId",
+    "submit": "#openAccountForm input[value=\"Open New Account\"]"
+  },
+  "result": {
+    "container": "#openAccountResult",
+    "title": "#openAccountResult h1.title",
+    "message": "#openAccountResult p:first-of-type",
+    "newAccount": "#newAccountId"
+  },
+  "error": "#openAccountError",
+  "details": {
+    "title": "#accountDetails h1.title",
+    "accountId": "#accountId",
+    "accountType": "#accountType"
+  },
+  "texts": {
+    "title": "Open New Account",
+    "defaultType": "CHECKING",
+    "opened": "Account Opened!",
+    "congratulations": "Congratulations, your account is now open.",
+    "details": "Account Details"
+  },
+  "hallazgos": [
+    "La pantalla no valida nada: el tipo (CHECKING value 0 / SAVINGS value 1) y la cuenta de origen son listas siempre con valor. La lista de cuentas se carga por AJAX (GET services_proxy/bank/customers/<id>/accounts).",
+    "Abrir: POST services_proxy/bank/createAccount?customerId&newAccountType&fromAccountId. Ok -> #openAccountResult 'Account Opened!' con el número en #newAccountId (link a activity.htm?id=<cuenta>). Falla del servidor -> #openAccountError 'Error!' (no se puede provocar desde la pantalla).",
+    "Siempre pasan $100.00 de la cuenta de origen a la nueva. Con $100.00 justos el origen queda en $0.00; con menos igual se abre y el origen queda negativo (bug probable SCRUM-969).",
+    "Account Details (activity.htm): #accountType con el tipo, #balance $100.00 y el movimiento 'Funds Transfer Received'. La fecha del movimiento sale un día antes (bug SCRUM-938): no se controla."
+  ]
+}
