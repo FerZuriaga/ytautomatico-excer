@@ -30,10 +30,8 @@ const SECOND_MOVEMENTS = [received('$100.00'), received('$25.50'), sent('$10.00'
 
 // Pasos 1 y 2: "Accounts Overview" y clic en el número de la cuenta.
 const openActivity = (customer, accountId, language) => {
-    cy.pbLogin(customer)
     activity.prepare(language)
-    cy.fixture('selectors/parabank/cuenta.json').then(sel => cy.gotoParabankUrl(sel.paths.home))
-    overview.open()
+    overview.openAs(customer)
     overview.verifyAccountCount(customer === pair ? 2 : 1)
     activity.openFromOverview(accountId)
 }

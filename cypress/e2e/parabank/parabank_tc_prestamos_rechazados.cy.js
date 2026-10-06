@@ -8,8 +8,10 @@
 // negativo queda en it.skip: la app lo aprueba (SCRUM-957).
 
 import ParabankLoanPage from '../../pages/parabank/ParabankLoanPage'
+import ParabankOverviewPage from '../../pages/parabank/ParabankOverviewPage'
 
 const loan = new ParabankLoanPage()
+const overview = new ParabankOverviewPage()
 
 let customer
 let account
@@ -25,7 +27,7 @@ const request = (amount, downPayment) => {
 const notGranted = (amount, downPayment) => {
     request(amount, downPayment)
     loan.verifyNotGranted()
-    loan.verifyOverview({ [account]: '$515.50' }, 1)
+    overview.verifyAccounts({ [account]: '$515.50' }, 1)
 }
 
 describe('[SCRUM-947] ParaBank - Préstamos que no se otorgan', () => {

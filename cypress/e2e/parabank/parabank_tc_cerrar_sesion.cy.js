@@ -5,13 +5,11 @@
 // Cada test registra su propio cliente. Los que parten de la sesión
 // iniciada la reciben de la receta (cy.pbRegisterCustomer con keepSession).
 
-import ParabankRegisterPage from '../../pages/parabank/ParabankRegisterPage'
+import ParabankOverviewPage from '../../pages/parabank/ParabankOverviewPage'
 import ParabankSessionPage from '../../pages/parabank/ParabankSessionPage'
 
-const register = new ParabankRegisterPage()
+const overview = new ParabankOverviewPage()
 const session = new ParabankSessionPage()
-
-const PASSWORD = 'Qa!Pb2026'
 
 // Pasos 1 y 2 de los TC de CA-09: salir desde "Update Contact Info".
 const logoutFromProfile = () => {
@@ -25,14 +23,12 @@ describe('[SCRUM-858] ParaBank - Cerrar sesión en la banca online', () => {
 
     // CA-08: Al hacer clic en "Log Out" se vuelve a la página de inicio con el panel "Customer Login" y sin el menú "Account Services".
 
-    it('[CA-08][TC-08.1][SCRUM-860] Cerrar sesión desde la bienvenida del registro', () => {
-        cy.pbNewUsername().then(username => {
-            register.open()
-            register.register(username, PASSWORD)
-            register.verifyRegistered(username)
-            session.logout()
-            session.verifyLoggedOut()
-        })
+    it('[CA-08][TC-08.1][SCRUM-860] Cerrar sesión desde Accounts Overview', () => {
+        cy.pbRegisterCustomer({ keepSession: true })
+        overview.openFromHome()
+        overview.verifyAccountCount(1)
+        session.logout()
+        session.verifyLoggedOut()
     })
 
     it('[CA-08][TC-08.2][SCRUM-861] Cerrar sesión desde Update Contact Info', () => {

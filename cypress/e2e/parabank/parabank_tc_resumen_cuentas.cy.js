@@ -22,10 +22,8 @@ let second
 
 // Paso 1: "Accounts Overview" con la sesión del cliente.
 const openOverview = (customer) => {
-    cy.pbLogin(customer)
     activity.prepare()
-    cy.fixture('selectors/parabank/cuenta.json').then(sel => cy.gotoParabankUrl(sel.paths.home))
-    overview.open()
+    overview.openAs(customer)
 }
 
 describe('[SCRUM-970] ParaBank - Ver el resumen de mis cuentas', () => {
@@ -68,6 +66,10 @@ describe('[SCRUM-970] ParaBank - Ver el resumen de mis cuentas', () => {
         overview.verifyTotal('$515.50')
         activity.openFromOverview(initial)
         activity.verifyBalance('$390.00')
+        overview.open()
+        overview.verifyTotal('$515.50')
+        activity.openFromOverview(second)
+        activity.verifyBalance('$125.50')
     })
 
     it('[CA-36][TC-36.2][SCRUM-975] El total del resumen con una sola cuenta', () => {

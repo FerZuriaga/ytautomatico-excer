@@ -8,8 +8,10 @@
 // disponibles); $1000 queda lejos del límite.
 
 import ParabankLoanPage from '../../pages/parabank/ParabankLoanPage'
+import ParabankOverviewPage from '../../pages/parabank/ParabankOverviewPage'
 
 const loan = new ParabankLoanPage()
+const overview = new ParabankOverviewPage()
 
 // Pasos 1 a 4: abrir "Request Loan", monto, pie y préstamo aprobado.
 // Devuelve { from, loanAccount }.
@@ -44,13 +46,13 @@ describe('[SCRUM-940] ParaBank - Pedir un préstamo', () => {
 
     it('[CA-27][TC-27.1][SCRUM-945] El resumen refleja un préstamo con pie', () => {
         requestApproved('1000', '100').then(({ from, loanAccount }) => {
-            loan.verifyOverview({ [from]: '$415.50', [loanAccount]: '$1000.00' }, 2)
+            overview.verifyAccounts({ [from]: '$415.50', [loanAccount]: '$1000.00' }, 2)
         })
     })
 
     it('[CA-27][TC-27.2][SCRUM-946] El resumen refleja un préstamo sin pie', () => {
         requestApproved('1000', '0').then(({ from, loanAccount }) => {
-            loan.verifyOverview({ [from]: '$515.50', [loanAccount]: '$1000.00' }, 2)
+            overview.verifyAccounts({ [from]: '$515.50', [loanAccount]: '$1000.00' }, 2)
         })
     })
 })
