@@ -16,7 +16,8 @@ const PHASE_LABELS = {
   trazabilidad: 'trazabilidad',
   cypress: 'Cypress',
   reporte: 'reporte a Xray',
-  verificacion: 'verificacion por lectura'
+  verificacion: 'verificacion por lectura',
+  espera: 'espera por limite de pedidos (429)'
 };
 
 function createTimer(now = Date.now) {
@@ -57,8 +58,9 @@ function specsKey(specs) {
 
 /**
  * Número de iteración de esta corrida: cuántas corridas previas hubo en la
- * misma rama con el mismo conjunto de specs (las regresiones --affected y
- * los --from-results no cuentan como iteración del lote).
+ * misma rama con el mismo conjunto de specs (las regresiones --affected,
+ * los --from-results y las corridas que cortó el entorno con un 429, modo
+ * 'entorno', no cuentan como iteración del lote).
  */
 function iterationNumber(entries, branch, key) {
   return entries.filter(e => e.branch === branch && e.mode === 'lote' && e.specsKey === key).length + 1;
@@ -88,6 +90,7 @@ function summarizeLog(entries, branch = null) {
       loteRuns: lote.length,
       loteFailed: lote.filter(r => !r.ok).length,
       regressionRuns: runs.filter(r => r.mode === 'regresion').length,
+      environmentRuns: runs.filter(r => r.mode === 'entorno').length,
       phaseMs,
       runMs: runs.reduce((sum, r) => sum + (r.totalMs || 0), 0),
       wallMs: times.length > 1 ? Math.max(...times) + (last.totalMs || 0) - Math.min(...times) : (last.totalMs || 0)
@@ -99,7 +102,7 @@ function formatSummary(summary) {
   const phases = Object.entries(summary.phaseMs).map(([name, ms]) => `${PHASE_LABELS[name] || name} ${formatDuration(ms)}`).join(' | ');
   return [
     `Rama ${summary.branch}:`,
-    `  corridas: ${summary.runs} (lote: ${summary.loteRuns}, fallidas: ${summary.loteFailed}; regresion: ${summary.regressionRuns})`,
+    `  corridas: ${summary.runs} (lote: ${summary.loteRuns}, fallidas: ${summary.loteFailed}; regresion: ${summary.regressionRuns}${summary.environmentRuns ? `; cortadas por el entorno (429): ${summary.environmentRuns}` : ''})`,
     `  en corridas: ${formatDuration(summary.runMs)}${phases ? ` (${phases})` : ''}`,
     `  reloj desde la primera corrida: ${formatDuration(summary.wallMs)}`
   ].join('\n');

@@ -25,8 +25,9 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const fs = require('fs');
 const path = require('path');
 
-const jira = require('./lib/jira');
-const xray = require('./lib/xray');
+const tools = require('./lib/tools');
+const jira = tools.issueTracker();
+const xray = tools.testManager();
 const traceability = require('./lib/traceability');
 const traceReport = require('./lib/trace-report');
 const { config } = require('./lib/qa-config');

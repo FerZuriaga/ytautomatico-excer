@@ -32,6 +32,11 @@
  *                   sin correr Cypress.
  *   --timing-report (opcional) no corre nada: resume los tiempos
  *                   registrados (de una rama o de todas).
+ *   --esperar-limite (opcional) si TODAS las fallas son un 429 de la app
+ *                   (límite de pedidos), espera a que la app vuelva a
+ *                   responder y repite la corrida UNA vez. Sin el flag, la
+ *                   corrida igual se marca como falla del entorno: no se
+ *                   reporta y no cuenta como iteración del lote (D-48).
  *
  * Tiempos (lib/run-timing.js): cada corrida imprime la duración de cada
  * fase (trazabilidad, Cypress, reporte a Xray, verificación) y la deja en
@@ -60,7 +65,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const testRunner = require('./lib/test-runner');
-const xray = require('./lib/xray');
+const xray = require('./lib/tools').testManager();
 const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
 const { config } = require('./lib/qa-config');
@@ -82,6 +87,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--results-out') args.resultsOut = argv[++i];
     else if (argv[i] === '--from-results') args.fromResults = argv[++i];
     else if (argv[i] === '--health') args.health = true;
+    else if (argv[i] === '--esperar-limite') args.waitRateLimit = true;
     else if (argv[i] === '--timing-report') args.timingReport = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : null;
   }
   return args;
@@ -168,6 +174,25 @@ function printSummary(summary) {
   }
 }
 
+// Espera a que la URL que respondió 429 deje de hacerlo: consulta cada 30 s
+// (o lo que pidió retry-after, si es más) hasta RATE_LIMIT_MAX_MINUTES.
+const RATE_LIMIT_POLL_SECONDS = 30;
+const RATE_LIMIT_MAX_MINUTES = 20;
+async function waitUntilAvailable({ url, retryAfterSeconds }) {
+  if (!url) return false;
+  const deadline = Date.now() + RATE_LIMIT_MAX_MINUTES * 60 * 1000;
+  let waitSeconds = Math.max(RATE_LIMIT_POLL_SECONDS, retryAfterSeconds || 0);
+  console.log(`Esperando a que ${url} deje de responder 429 (hasta ${RATE_LIMIT_MAX_MINUTES} min)...`);
+  while (Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, Math.min(waitSeconds * 1000, Math.max(0, deadline - Date.now()))));
+    const status = await fetch(url, { method: 'GET', redirect: 'manual' }).then(r => r.status).catch(() => null);
+    console.log(`  ${new Date().toLocaleTimeString()} -> ${status === null ? 'sin respuesta' : status}`);
+    if (status !== null && status !== 429) return true;
+    waitSeconds = RATE_LIMIT_POLL_SECONDS;
+  }
+  return false;
+}
+
 async function verifyCycles(cycles, expectedKeys) {
   const executions = [];
   for (const cycle of cycles) executions.push(...await xray.getTestExecutions(PROJECT, cycle));
@@ -212,7 +237,7 @@ function printTimingReport(branch) {
 }
 
 async function main() {
-  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport, maxSpecs, health } = parseArgs(process.argv.slice(2));
+  const { specs: specArgs, cycles, resultsOut, fromResults, affected, base, list, timingReport, maxSpecs, health, waitRateLimit } = parseArgs(process.argv.slice(2));
   if (timingReport !== undefined) {
     printTimingReport(timingReport);
     return;
@@ -257,7 +282,8 @@ async function main() {
   const startedAt = new Date().toISOString();
   const branch = currentBranch();
   const key = runTiming.specsKey(specs);
-  const mode = fromResults ? 'from-results' : (affected && !specArgs.length ? 'regresion' : 'lote');
+  // 'entorno' si la corrida la cortó un 429 de la app (no cuenta como iteración).
+  let mode = fromResults ? 'from-results' : (affected && !specArgs.length ? 'regresion' : 'lote');
   if (mode === 'lote') console.log(`Iteracion ${runTiming.iterationNumber(readTimingLog(), branch, key)} de este lote en la rama ${branch}.`);
   let summary = null;
   let reported = false;
@@ -280,11 +306,35 @@ async function main() {
   }
 
   const resultsPath = path.resolve(fromResults || resultsOut || path.join(os.tmpdir(), `cypress-results-${Date.now()}.json`));
-  const exitCode = fromResults ? 0 : await timer.measure('cypress', async () => runCypress(specs, resultsPath));
-  if (fromResults) console.log(`Sin correr Cypress: se usa la corrida guardada en ${resultsPath}`);
+  let exitCode = 0;
+  // Un 429 en todas las fallas es del entorno (D-48): con --esperar-limite
+  // se espera a la app y se repite UNA vez; si no, se corta sin contarla
+  // como iteración ni mandar a revisar el código.
+  for (let attempt = 0; ; attempt++) {
+    exitCode = fromResults ? 0 : await timer.measure('cypress', async () => runCypress(specs, resultsPath));
+    if (fromResults) console.log(`Sin correr Cypress: se usa la corrida guardada en ${resultsPath}`);
 
-  summary = testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath));
-  printSummary(summary);
+    summary = testRunner.summarizeResults(testRunner.parseResultsFile(resultsPath));
+    printSummary(summary);
+
+    const limit = summary.rateLimit;
+    if (!limit) break;
+    console.error(`\nFalla del entorno: ${limit.url || 'la app'} respondio 429 (limite de pedidos) en todas las fallas. No es una falla del codigo: no se reporta y no cuenta como iteracion.`);
+    if (fromResults || !waitRateLimit || attempt >= 1) {
+      console.error(waitRateLimit && !fromResults
+        ? 'Volvio a cortarse por el limite despues de esperar: frenar y avisar al usuario (el entorno no da para esta corrida).'
+        : 'Repetir cuando la app vuelva a responder, o correr con --esperar-limite para que espere y repita una vez.');
+      if (!fromResults) mode = 'entorno';
+      finish(false, 1);
+    }
+    const back = await timer.measure('espera', () => waitUntilAvailable(limit));
+    if (!back) {
+      console.error(`La app sigue respondiendo 429 despues de ${RATE_LIMIT_MAX_MINUTES} minutos: frenar y avisar al usuario.`);
+      mode = 'entorno';
+      finish(false, 1);
+    }
+    console.log('La app volvio a responder: se repite la corrida una vez.\n');
+  }
 
   if (!testRunner.isReportable(summary)) {
     console.error(`\nLa corrida NO es 100% exitosa (codigo de salida de Cypress: ${exitCode}). No se reporta a Xray.`);

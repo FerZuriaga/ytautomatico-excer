@@ -57,6 +57,23 @@ test('resumen por rama: corridas, fallidas, tiempo por fase y reloj', () => {
   assert.equal(summarizeLog(CHECKOUT).length, 2);
 });
 
+// D-48 (2026-10-06): una corrida cortada por un 429 de la app no es una
+// iteración del lote (en ParaBank figuraba "Iteracion 2" sin haber tocado
+// el código).
+test('las corridas cortadas por el entorno no cuentan como iteracion y se resumen aparte', () => {
+  const entries = [
+    { branch: 'b', mode: 'lote', specsKey: 's', ok: false, at: '2026-10-06T12:00:00Z', totalMs: 1000 },
+    { branch: 'b', mode: 'entorno', specsKey: 's', ok: false, at: '2026-10-06T12:01:00Z', totalMs: 1000 },
+    { branch: 'b', mode: 'entorno', specsKey: 's', ok: false, at: '2026-10-06T12:02:00Z', totalMs: 1000 }
+  ];
+  assert.equal(iterationNumber(entries, 'b', 's'), 2);
+  const [summary] = summarizeLog(entries, 'b');
+  assert.equal(summary.loteRuns, 1);
+  assert.equal(summary.environmentRuns, 2);
+  assert.match(formatSummary(summary), /cortadas por el entorno \(429\): 2/);
+  assert.doesNotMatch(formatSummary({ ...summary, environmentRuns: 0 }), /entorno/);
+});
+
 test('el registro JSONL ignora lineas vacias o rotas', () => {
   assert.deepEqual(parseLog('{"a":1}\n\nno-json\n{"b":2}\n'), [{ a: 1 }, { b: 2 }]);
 });

@@ -300,6 +300,11 @@ se informa siempre (`retries.runMode: 1`). Reporte cortado (502,
 ECONNABORTED): `--from-results <json> --test-cycle <ciclos>`, sin volver a
 correr.
 
+**Si todas las fallas son un 429** (límite de pedidos de la app), el script
+lo dice como falla del entorno: no es una iteración ni se toca el código.
+Repetir con `--esperar-limite`, que espera a la app y corre una vez más
+(D-48).
+
 **Si falla (D-24):** leer error y captura; seguir la Pista del script
 ("no encontró el elemento" vs. "está pero no cumple": en el segundo caso
 reproducir con `explore-page.js` ANTES de tocar código). Clasificar:

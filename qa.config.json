@@ -1,7 +1,12 @@
 {
-  "_ayuda": "Configuración del proyecto (D-43). 'apps': las carpetas de cypress/e2e/ que se trabajan (D-28). Todo lo que depende de la instancia de Jira/Xray o del idioma en que se escriben las HU y los Test Cases vive acá, no en el código. Para otro proyecto: copiar y editar (ver qa.config.en.example.json). Las palabras se comparan en minúsculas y sin tildes; un '*' final acepta cualquier terminación (ej. 'revert*').",
+  "_ayuda": "Configuración del proyecto (D-43). 'apps': las carpetas de cypress/e2e/ que se trabajan (D-28). 'herramientas': qué adapter de v3/scripts/lib/ usa cada gestor (otro gestor = un adapter nuevo que cumpla su contrato + cambiar esta línea, D-48). Todo lo que depende de la instancia de Jira/Xray o del idioma en que se escriben las HU y los Test Cases vive acá, no en el código. Para otro proyecto: copiar y editar (ver qa.config.en.example.json). Las palabras se comparan en minúsculas y sin tildes; un '*' final acepta cualquier terminación (ej. 'revert*').",
 
   "apps": ["automation-test-store", "commitquality", "expandtesting-notes", "parabank", "practicesoftwaretesting", "restful-booker-platform"],
+
+  "herramientas": {
+    "gestorDePruebas": "xray",
+    "gestorDeTickets": "jira"
+  },
 
   "jira": {
     "projectKey": "SCRUM",

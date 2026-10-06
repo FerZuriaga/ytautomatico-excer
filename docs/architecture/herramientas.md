@@ -14,14 +14,18 @@ el mismo commit.
 
 | Herramienta | Para qué | Único lugar donde vive | Quién lo usa | Regla |
 |---|---|---|---|---|
-| **Jira** (issues, HU, Bugs, transiciones) | Gestión de tickets | `v3/scripts/lib/jira.js` (credenciales `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`) | `create-jira-task.js`, `run-and-report.js`, `check-traceability.js`, `lib/xray.js` | `credenciales-jira-xray`, `uso-adapters-jira-xray` |
-| **Xray** (Test Cases, pasos, ciclos, resultados) | Gestión de pruebas | `v3/scripts/lib/xray.js` (credenciales `XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`) | los mismos CLIs | idem |
+| **Jira** (issues, HU, Bugs, transiciones) | Gestión de tickets | `v3/scripts/lib/jira.js` (credenciales `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`) | `create-jira-task.js` y `check-traceability.js` vía `lib/tools.js`; `lib/xray.js` directo | `credenciales-jira-xray`, `uso-adapters-jira-xray` |
+| **Xray** (Test Cases, pasos, ciclos, resultados) | Gestión de pruebas | `v3/scripts/lib/xray.js` (credenciales `XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`) | los 3 CLIs vía `lib/tools.js` | idem |
 | **Cypress** (arranque del runner) | Ejecutar tests y explorar pantallas | `v3/scripts/run-and-report.js` (PASO 3), `v3/scripts/explore-page.js` (PASO 1) | — | `arranque-cypress` |
 | **Cypress en GitHub Actions** | Corrida nocturna de Notes App (D-06) | `.github/workflows/nocturna-notes.yml` | — | — |
 | **GitHub Actions en cada PR** | Lint + unitarios; E2E afectados apagados por defecto (D-06, D-43) | `.github/workflows/pr.yml` | — | — |
 | **Cypress** (formato de resultados) | Leer el reporte JSON de Mocha | `v3/scripts/lib/test-runner.js` | `run-and-report.js`, `create-jira-task.js` | (documentado en el archivo) |
 | **GitHub** (PRs, merge, ramas) | Pull Requests | `v3/scripts/create-pull-request.js` (`GITHUB_TOKEN`, API REST; sin `gh`) | — | `github` |
 | **APIs de las apps bajo prueba** | Preparar datos del discovery | motor general `v3/scripts/lib/data-recipe.js` + una receta JSON por app en `v3/data-recipes/<app>.json` | `explore-page.js` | — |
+
+**Qué adapter habla con cada gestor:** `herramientas` de `qa.config.json`
+(`gestorDePruebas`, `gestorDeTickets`). Los CLIs piden el adapter a
+`lib/tools.js`, que lo valida contra su contrato al cargarlo (D-48).
 
 **Nombres de la instancia** (clave del proyecto, tipos de issue, tipo de
 vínculo, estados iniciales): en `qa.config.json`, sección `jira` (D-43).
@@ -57,6 +61,8 @@ otro gestor u otro runner. Las reglas `libs-sin-procesos` y
 | `lib/explore-scenarios.js` | Formato de los escenarios del discovery |
 | `lib/http-retry.js` | Reintentos ante fallas transitorias de red |
 | `lib/test-manager-contract.js` | Contrato que cumple el adapter del gestor de pruebas: funciones, formas y estados (D-45) |
+| `lib/issue-tracker-contract.js` | Contrato que cumple el adapter del gestor de tickets (HU, Bugs, labels, vínculos, transiciones; D-48) |
+| `lib/tools.js` | Carga el adapter de cada gestor según `herramientas` de `qa.config.json` y lo valida contra su contrato (D-48) |
 | `lib/http-body.js` | Lectura del cuerpo de las respuestas HTTP en UTF-8 (todos los adapters; sin caracteres partidos entre pedazos) |
 | `lib/payload-builder.js` | Archivo de lote → payload de publicación (PASO 2) |
 | `lib/bundle-scan.js` | Atributos de test y mensajes de validación del código de la app (discovery) |
@@ -79,12 +85,17 @@ en `cypress/support/commands.js`).
 
 ## Si mañana cambia una herramienta
 
-- **Otro gestor de pruebas en lugar de Xray:** un adapter nuevo que cumpla
-  el contrato de `lib/test-manager-contract.js` (12 funciones, formas y
-  estados del framework; D-45), más cambiar el `require` de los 3 CLIs y
-  sus nombres en las reglas de `lib/architecture.js`. `npm run test:unit`
-  dice si al adapter le falta algo. Los validadores y la trazabilidad no
-  cambian.
+- **Otro gestor de pruebas en lugar de Xray:** un archivo nuevo en
+  `v3/scripts/lib/` (ej. `testrail.js`) que cumpla el contrato de
+  `lib/test-manager-contract.js` (funciones, formas y estados del
+  framework; D-45), y `"gestorDePruebas": "testrail"` en `qa.config.json`.
+  Si le falta una función, frena al cargarlo nombrándola (D-48). Los CLIs,
+  los validadores y la trazabilidad no cambian.
+- **Otro gestor de tickets en lugar de Jira:** lo mismo con
+  `lib/issue-tracker-contract.js` y `"gestorDeTickets"`. Las descripciones
+  (`build*Description`) son del adapter: Jira usa ADF, otro gestor puede
+  usar Markdown. Ojo: Xray solo funciona sobre Jira, así que cambiar Jira
+  implica también cambiar de gestor de pruebas.
 - **Playwright en lugar de Cypress:** `lib/test-runner.js` (formato de
   resultados), los comandos de arranque de `run-and-report.js` y
   `explore-page.js`, y los specs y Page Objects. Por decisión del

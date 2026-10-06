@@ -22,7 +22,9 @@ const path = require('path');
 
 const CONFIG_FILE = path.resolve(__dirname, '../../../qa.config.json');
 
-const REQUIRED_JIRA = ['projectKey', 'issueTypes', 'bugTypeNames', 'linkType', 'testLinkType', 'testCaseStatus', 'testCycleStatus'];
+// Qué adapter de lib/ habla con cada gestor (lib/tools.js, D-48).
+const REQUIRED_TOOLS = ['gestorDePruebas', 'gestorDeTickets'];
+const REQUIRED_JIRA =['projectKey', 'issueTypes', 'bugTypeNames', 'linkType', 'testLinkType', 'testCaseStatus', 'testCycleStatus'];
 const REQUIRED_ISSUE_TYPES = ['Historia', 'Bug', 'Tarea', 'Test'];
 const REQUIRED_KEYWORDS = [
   'verbosDeAccion', 'verbosDeCarga', 'verbosDeCargaAlInicio', 'negaciones', 'articulos', 'conjuncion', 'variosDatos',
@@ -39,6 +41,9 @@ function normalizeText(text) {
 function checkConfig(config, file = CONFIG_FILE) {
   const missing = [];
   if (!Array.isArray(config && config.apps)) missing.push('apps');
+  const tools = config && config.herramientas;
+  if (!tools) missing.push('herramientas');
+  else REQUIRED_TOOLS.filter(k => !tools[k]).forEach(k => missing.push(`herramientas.${k}`));
   const jira = config && config.jira;
   if (!jira) missing.push('jira');
   else {
