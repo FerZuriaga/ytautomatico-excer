@@ -28,6 +28,14 @@
  *     }
  *   }
  *
+ * Apps de formularios con sesión por cookie (ej. ParaBank): un paso con
+ * "form": { campo: valor } manda application/x-www-form-urlencoded en vez
+ * de JSON; las cookies que fija el servidor se reenvían solas en los pasos
+ * siguientes del mismo "as" y quedan como {{cookies.NOMBRE}}; "browser":
+ * { "cookies": { "JSESSIONID": "{{cookies.JSESSIONID}}" } } las pasa al
+ * navegador. "expectText": "..." exige ese texto en la respuesta (un
+ * formulario puede responder 200 aunque falle).
+ *
  * Plantillas: "{{var}}" dentro de un texto se reemplaza; un valor que es
  * SOLO "{{var}}" conserva el tipo (número, objeto). {{unique}} es un valor
  * distinto en cada receta ejecutada. Una variable sin definir es error.
@@ -151,9 +159,11 @@ async function runData(config, data, { request, unique = defaultUnique }) {
   if (configErrors.length) throw new Error(`Recetas inválidas:\n  ${configErrors.join('\n  ')}`);
 
   const scopes = { '': {} };
+  const jars = {};
   const browser = {
     localStorage: { ...(config.browser?.localStorage || {}) },
-    sessionStorage: { ...(config.browser?.sessionStorage || {}) }
+    sessionStorage: { ...(config.browser?.sessionStorage || {}) },
+    cookies: { ...(config.browser?.cookies || {}) }
   };
   const log = [];
 
@@ -171,14 +181,19 @@ async function runData(config, data, { request, unique = defaultUnique }) {
 
     const vars = { ...scope, ...(recipe.params || {}), ...(inv.params || {}), unique: unique() };
     Object.assign(vars, fillTemplate(recipe.vars || {}, vars));
+    // Cookies de la sesión (apps de formularios, ej. ParaBank): las que
+    // devuelve un paso se reenvían en los siguientes del mismo "as".
+    const jar = jars[scopeName] || (jars[scopeName] = {});
 
     for (const [i, step] of recipe.steps.entries()) {
       const filled = fillTemplate(step, vars);
+      const cookieHeader = Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
       const req = {
         method: String(filled.method).toUpperCase(),
         url: buildUrl(config.api, filled.path, filled.query),
-        headers: { ...(config.headers || {}), ...(filled.headers || {}) },
-        body: filled.body
+        headers: { ...(config.headers || {}), ...(cookieHeader ? { Cookie: cookieHeader } : {}), ...(filled.headers || {}) },
+        body: filled.body,
+        form: filled.form
       };
       const res = await request(req);
       log.push({ recipe: who, step: i + 1, method: req.method, url: req.url, status: res.status });
@@ -186,6 +201,17 @@ async function runData(config, data, { request, unique = defaultUnique }) {
       if (expected ? !expected.includes(res.status) : (res.status < 200 || res.status > 299)) {
         throw new Error(`Receta "${who}" paso ${i + 1} (${req.method} ${filled.path}): HTTP ${res.status}, esperado ${expected ? expected.join('/') : '2xx'} -- ${snippet(res.body)}`);
       }
+      // Un formulario puede responder 200 aunque falle: el texto que tiene
+      // que aparecer en la respuesta confirma el paso.
+      if (filled.expectText && !String(typeof res.body === 'string' ? res.body : JSON.stringify(res.body)).includes(filled.expectText)) {
+        throw new Error(`Receta "${who}" paso ${i + 1} (${req.method} ${filled.path}): la respuesta no contiene "${filled.expectText}" -- ${snippet(res.body)}`);
+      }
+      for (const raw of res.cookies || []) {
+        const [pair] = String(raw).split(';');
+        const eq = pair.indexOf('=');
+        if (eq > 0) jar[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
+      }
+      vars.cookies = { ...jar };
       for (const [name, from] of Object.entries(filled.save || {})) {
         const value = extractPath(res.body, from);
         if (value === undefined) throw new Error(`Receta "${who}" paso ${i + 1}: la respuesta no trae "${from}" para guardar ${name} -- ${snippet(res.body)}`);
@@ -199,6 +225,7 @@ async function runData(config, data, { request, unique = defaultUnique }) {
       const filled = fillTemplate(recipe.browser, vars);
       Object.assign(browser.localStorage, filled.localStorage || {});
       Object.assign(browser.sessionStorage, filled.sessionStorage || {});
+      Object.assign(browser.cookies, filled.cookies || {});
     }
   }
 
@@ -206,18 +233,30 @@ async function runData(config, data, { request, unique = defaultUnique }) {
   return { vars: { ...main, ...named }, browser, log };
 }
 
-// Request real (Node 18+): JSON de ida y vuelta. Sin reintentos: crear un
+// Request real (Node 18+): JSON de ida y vuelta, o un formulario
+// (application/x-www-form-urlencoded) si el paso trae "form". Devuelve
+// también las cookies que fija el servidor. Sin reintentos: crear un
 // cliente o una compra no es idempotente.
-async function nodeRequest({ method, url, headers, body }) {
+async function nodeRequest({ method, url, headers, body, form }) {
+  let sent;
+  let contentType = null;
+  if (form !== undefined) {
+    sent = new URLSearchParams(form).toString();
+    contentType = 'application/x-www-form-urlencoded';
+  } else if (body !== undefined) {
+    sent = JSON.stringify(body);
+    contentType = 'application/json';
+  }
   const res = await fetch(url, {
     method,
-    headers: body === undefined ? headers : { 'Content-Type': 'application/json', ...headers },
-    body: body === undefined ? undefined : JSON.stringify(body)
+    headers: contentType ? { 'Content-Type': contentType, ...headers } : headers,
+    body: sent
   });
   const text = await res.text();
   let parsed = text;
   try { parsed = text ? JSON.parse(text) : null; } catch { /* queda como texto */ }
-  return { status: res.status, body: parsed };
+  const cookies = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];
+  return { status: res.status, body: parsed, cookies };
 }
 
 function loadRecipes(app, dir = RECIPES_DIR) {

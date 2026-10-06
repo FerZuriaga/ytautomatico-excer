@@ -93,7 +93,7 @@ test('runData encadena recetas: variables compartidas, headers comunes y sesión
   assert.equal(result.vars.productId, 'P-sierra', 'toma el producto de nombre exacto, no el primero');
   assert.equal(result.vars.invoiceId, 'INV-1');
   assert.equal(result.vars.unique, undefined, 'unique no se filtra a las variables');
-  assert.deepEqual(result.browser, { localStorage: { language: 'en', 'auth-token': 'tk-qa.u1@example.com' }, sessionStorage: {} });
+  assert.deepEqual(result.browser, { localStorage: { language: 'en', 'auth-token': 'tk-qa.u1@example.com' }, sessionStorage: {}, cookies: {} });
 
   const [login, search, invoice] = api.calls;
   assert.equal(login.url, 'https://api.test/login');
@@ -136,4 +136,37 @@ test('las recetas versionadas del repo son válidas', () => {
   assert.ok(apps.length > 0);
   for (const app of apps) assert.deepEqual(validateRecipes(loadRecipes(app)), [], app);
   assert.throws(() => loadRecipes('app-inexistente'), /No hay recetas de datos para "app-inexistente".*Disponibles: .*practicesoftwaretesting/);
+});
+
+test('regresion ParaBank: formulario con sesion por cookie (form, cookies reenviadas, expectText y cookies al navegador)', async () => {
+  const config = {
+    api: 'https://bank.test/parabank',
+    recipes: {
+      cliente: {
+        vars: { username: 'QaPb{{unique}}' },
+        steps: [
+          { method: 'GET', path: '/register.htm' },
+          { method: 'POST', path: '/register.htm', form: { 'customer.username': '{{username}}' }, expectText: 'Welcome {{username}}' }
+        ],
+        browser: { cookies: { JSESSIONID: '{{cookies.JSESSIONID}}' } }
+      }
+    }
+  };
+  const calls = [];
+  const request = async req => {
+    calls.push(req);
+    if (req.method === 'GET') return { status: 200, body: '<form>', cookies: ['JSESSIONID=ABC123; Path=/parabank; HttpOnly'] };
+    const ok = req.headers.Cookie === 'JSESSIONID=ABC123';
+    return { status: 200, body: ok ? `<h1>Welcome ${req.form['customer.username']}</h1>` : '<h1>Error!</h1>' };
+  };
+
+  const result = await runData(config, 'cliente', { request, unique: counter() });
+  assert.deepEqual(calls[1].form, { 'customer.username': 'QaPbu1' });
+  assert.equal(calls[1].body, undefined, 'un formulario no viaja como JSON');
+  assert.equal(calls[1].headers.Cookie, 'JSESSIONID=ABC123', 'la cookie del GET se reenvía en el POST');
+  assert.deepEqual(result.browser.cookies, { JSESSIONID: 'ABC123' });
+
+  // Sin la cookie el formulario responde 200 con un error: expectText lo frena.
+  const sinCookie = async req => (req.method === 'GET' ? { status: 200, body: '' } : { status: 200, body: '<h1>Error!</h1>' });
+  await assert.rejects(runData(config, 'cliente', { request: sinCookie, unique: counter() }), /no contiene "Welcome QaPbu1"/);
 });

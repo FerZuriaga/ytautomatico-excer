@@ -61,7 +61,10 @@ el usuario elige. Una app nueva se declara en `apps` de
   `--init-script` (ver el encabezado del script).
 - **Datos por receta** (`v3/data-recipes/<app>.json`, `"data": [...]` en
   el escenario). Si falta una receta, se agrega al JSON y se commitea.
-  Nunca scripts sueltos (D-14).
+  Nunca scripts sueltos (D-14). Las apps de formularios con sesión por
+  cookie también van por receta (`"form"`, cookies y `"expectText"`, ver
+  `lib/data-recipe.js`): nunca repetir en cada escenario las acciones de
+  registro (ParaBank, 2026-10-05: se copiaron 8 veces).
 - **Formulario que se completa después de cargar** (AJAX): antes de
   borrar o escribir, `waitFor` con `"filled": true` sobre un campo. Si no,
   la carga pisa lo escrito y el informe muestra un envío que nunca se
@@ -110,7 +113,11 @@ Al terminar el discovery, UN mensaje con:
   segundo TC se explora y se propone en esta pausa, no después (ParaBank
   CA-05, 2026-10-05: la falta apareció recién en el dry-run y costó una
   pregunta extra);
-- dudas de alcance o datos y posibles defectos;
+- dudas de alcance o datos y posibles defectos, cada uno marcado
+  **seguro** (la app se contradice a sí misma o pierde/expone dinero o
+  datos) o **probable** (viola una regla razonable que no está escrita, y
+  se dice cuál). Los probables se publican solo si el usuario confirma la
+  regla en esta pausa (D-47);
 - archivos compartidos que se van a tocar: los de patrón conocido se
   informan (URL `<app>Url` en el config, `import './commands/<app>'`,
   `apps` de `qa.config.json`, `test:<app>`, filas del README); cualquier otro cambio en
@@ -374,7 +381,9 @@ pisaban y textos de TC que el test no controlaba.
 - Tras el merge: HU a "Listo". Con un Bug abierto que rompe la HU, no se
   cierra sin decidirlo con el usuario: `--transition` a un estado terminado
   frena y lista los Bugs vinculados sin terminar; `--cerrar-con-bugs` solo
-  después de que el usuario lo decidió (D-46).
+  después de que el usuario lo decidió (D-46). En apps de terceros el
+  criterio ya está decidido: se cierra con `--cerrar-con-bugs` y un
+  `--comment` que dice qué CA no se cumplen y qué Bugs lo explican.
 - PR apilado: se mergea primero la base. Con `--delete-branch`, el merge
   re-apunta solo a `main` los PRs apilados ANTES de borrar la rama (si se
   borra antes, GitHub los cierra: caso #143). Sin `--delete-branch`,
@@ -407,8 +416,11 @@ reabra.
    entorno, severidad, captura; `linkTo` a la HU). El estándar lo frena
    `lib/bug-validator.js` (D-22, D-31): pasos solo funcionales, evidencia
    observable, sin requests/rutas/URLs fuera de Entorno, sin especular
-   sobre el código, sin keys en el texto.
-4. Durante un lote no se pregunta si se suma: se crea el Bug, el TC queda
+   sobre el código, sin keys en el texto. El payload lleva `"certeza":
+   "seguro"` o `"probable"` (label `bug-seguro` / `bug-probable` en Jira);
+   un probable además `"reglaConfirmada"` con cuándo y cómo la confirmó el
+   usuario (D-47). Sin eso no se publica.
+4. Durante un lote no se pregunta si se suma un Bug **seguro**: se crea, el TC queda
    automatizado con el comportamiento correcto en `it.skip` "(bug conocido:
    KEY)" y se informa en el cierre. Solo se consulta si cambia el alcance.
 

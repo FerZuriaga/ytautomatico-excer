@@ -655,8 +655,31 @@ agrega una contradictoria.
   tiene Bugs vinculados sin terminar, y los lista. Solo pasa con
   `--cerrar-con-bugs`, que se usa cuando el usuario ya lo decidió. No se
   aplica a los Bugs (un Bug vinculado a otro Bug no bloquea su cierre).
+- **Criterio para apps de terceros (demos que nadie va a corregir):** la
+  HU automatizada se cierra con `--cerrar-con-bugs` y un `--comment` que
+  dice qué CA no se cumplen y qué Bugs lo explican; el estado real de cada
+  regla queda en sus Bugs. Elegido por el usuario el 2026-10-05 ("Cerrar
+  con comentario") para SCRUM-883, SCRUM-906 y SCRUM-922, en vez de
+  dejarlas en In Review indefinidamente.
 - **Por qué:** pedido del usuario (2026-10-05). SCRUM-883 pasó a Listo con
   tres Bugs de severidad Alta que dejaban dos de sus CA sin ningún TC que
   corra; `lote.md` §5 ya lo prohibía, pero nada lo controlaba.
 - **Dónde:** `lib/jira.js` (`transitionIssue`, `openLinkedBugs`) y su test;
   `docs/lote.md` §5.
+
+### D-47 · Cada Bug declara si es seguro o probable
+- **Decisión:** un Bug es **seguro** cuando la app se contradice a sí misma
+  o pierde/expone dinero o datos (no depende de una regla supuesta), y
+  **probable** cuando viola una regla razonable que no está escrita (ej.
+  "un banco no deja transferir más que el saldo"). En la pausa del lote
+  cada posible defecto se presenta con su certeza y, si es probable, con
+  la regla que se supone. Un probable se publica solo si el usuario
+  confirma esa regla. `lib/bug-validator.js` exige `"certeza"` en el
+  payload y, para un probable, `"reglaConfirmada"`; al publicar queda el
+  label `bug-seguro` o `bug-probable`.
+- **Por qué:** pedido del usuario (2026-10-05, "separá seguros y probables
+  de ahora en más"). En ParaBank se cargaron 17 Bugs en un día; revisados,
+  8 eran seguros, 8 probables y 1 discutible (SCRUM-897, $0), y en las
+  pausas no se había distinguido una cosa de la otra.
+- **Dónde:** `docs/lote.md` §2 (pausa) y §6 (Bugs); `lib/bug-validator.js`
+  y su test; `create-jira-task.js` (label al publicar).
