@@ -3,7 +3,10 @@
   "api": "https://parabank.parasoft.com/parabank",
   "recipes": {
     "cliente": {
-      "description": "Cliente nuevo registrado por el formulario, con la sesion iniciada en el navegador (cookie JSESSIONID). Una cuenta con $515.50 (initialAccount).",
+      "description": "Cliente nuevo registrado por el formulario, con la sesion iniciada en el navegador (cookie JSESSIONID). Una cuenta con $515.50 (initialAccount). El SSN por defecto lo comparten todos los clientes de prueba: Customer Lookup no encuentra un SSN repetido, asi que para buscarlo se pasa uno unico en params (ssn).",
+      "params": {
+        "ssn": "123-45-6789"
+      },
       "vars": {
         "username": "QaPb{{unique}}",
         "password": "Qa!Pb2026",
@@ -18,7 +21,7 @@
             "customer.firstName": "{{firstName}}", "customer.lastName": "{{lastName}}",
             "customer.address.street": "Calle 123", "customer.address.city": "Montevideo",
             "customer.address.state": "MO", "customer.address.zipCode": "11000",
-            "customer.phoneNumber": "099111222", "customer.ssn": "123-45-6789",
+            "customer.phoneNumber": "099111222", "customer.ssn": "{{ssn}}",
             "customer.username": "{{username}}", "customer.password": "{{password}}",
             "repeatedPassword": "{{password}}"
           },

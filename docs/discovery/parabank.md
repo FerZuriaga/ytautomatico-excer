@@ -25,7 +25,7 @@ cero", 2026-10-04).
 | 1 | Cuenta | Login | AUTOMATIZADA (SCRUM-846) | Vacío o inexistente: título "Error!" + mensaje |
 | 2 | Cuenta | Registro | AUTOMATIZADA (SCRUM-836, bug SCRUM-857) | 10 campos obligatorios (teléfono opcional), error por campo; al registrarse entra con "Welcome <usuario>" |
 | 2b | Cuenta | Cerrar sesión | AUTOMATIZADA (SCRUM-858, bug SCRUM-865) | Vuelve al inicio; sin sesión, las páginas de la cuenta responden 500 con "An internal error has occurred" |
-| 3 | Cuenta | Recuperar datos de login (Customer Lookup) | OBSERVADA | Por datos personales + SSN |
+| 3 | Cuenta | Recuperar datos de login (Customer Lookup) | AUTOMATIZADA (SCRUM-991, bugs SCRUM-1000 a 1002) | Pide 7 datos pero solo compara el SSN; muestra usuario y contraseña y deja la sesión iniciada |
 | 4 | Cuenta | Actualizar perfil | AUTOMATIZADA (SCRUM-866, bugs SCRUM-874/875) | Error por campo (`firstName-error`, ...) |
 | 5 | Banca | Resumen de cuentas y movimientos | AUTOMATIZADA (SCRUM-970 y SCRUM-978, bugs SCRUM-989/990) | `#accountTable`; el número de cuenta lleva a "Account Details" + "Account Activity" (`ParabankActivityPage`) |
 | 6 | Banca | Abrir cuenta nueva | AUTOMATIZADA (SCRUM-959, bug SCRUM-969) | Tipo + cuenta origen → `#newAccountId`; siempre pasan $100.00 del origen, aunque no los tenga |
@@ -48,6 +48,14 @@ usuario; deja la receta "usuario nuevo" para el resto).
   cliente. En Cypress, `cy.pbRegisterCustomer()` (`cypress/support/commands/parabank.js`)
   hace `GET register.htm` (cookie) y `POST register.htm` con `form: true`
   y termina con logout: es la receta "cliente nuevo" de todos los módulos.
+- **SSN compartido:** todos los clientes de prueba se registran con el SSN
+  123-45-6789 (receta `cliente` y `cy.pbRegisterCustomer` por defecto), y el
+  registro no rechaza un SSN repetido. Customer Lookup no encuentra un SSN
+  que tienen dos clientes (SCRUM-1002): para buscar un cliente se registra
+  con uno único (`params.ssn` en la receta, `{ ssn }` con `cy.pbNewSsn()`).
+- **La base se reinicia sin aviso:** el 2026-10-06 ~13:55 desaparecieron los
+  clientes creados un rato antes (la API respondía 400). Nunca reutilizar
+  datos de una exploración anterior en un test.
 - **Usuario y contraseña distinguen mayúsculas** (login y usuario repetido).
   Un usuario con un espacio adelante se registra como otro (bug SCRUM-857).
 - **Páginas con bloques ocultos:** el resumen de cuentas trae un
