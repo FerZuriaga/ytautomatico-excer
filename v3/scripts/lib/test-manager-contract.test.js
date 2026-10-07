@@ -64,3 +64,13 @@ test('isExecution rechaza la forma cruda del gestor y estados desconocidos', () 
   assert.equal(isExecution({ id: '1', testCaseKey: 'SCRUM-1', status: null }), true);
   assert.deepEqual(STATUSES, ['TO DO', 'EXECUTING', 'PASSED', 'FAILED']);
 });
+
+test('el adapter aplana el árbol de carpetas de Xray a rutas completas (--list-folders)', () => {
+  const { flattenFolders } = require('./xray');
+  const tree = [
+    { name: 'Restful Booker Platform', path: '/Restful Booker Platform', folders: [{ name: 'Habitaciones', folders: [] }] },
+    { name: 'Notes App', folders: [{ name: 'Cuenta', path: '/Notes App/Cuenta' }] }
+  ];
+  assert.deepEqual(flattenFolders(tree, ''), ['/Restful Booker Platform', '/Restful Booker Platform/Habitaciones', '/Notes App', '/Notes App/Cuenta']);
+  assert.deepEqual(flattenFolders(undefined, ''), []);
+});

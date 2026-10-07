@@ -78,7 +78,10 @@ el usuario elige. Una app nueva se declara en `apps` de
   entrada directa a una pantalla interna), no solo el de la UI (D-12).
 - **Cada negativo se ejecuta antes de especificarlo** y se anota lo
   observado (mensaje exacto, estado del campo y del botón). Lo que no se
-  observó no es resultado esperado (D-13).
+  observó no es resultado esperado (D-13). Un caso cuyo resultado todavía
+  no se vio se explora con `waitFor` + `anyOf` (aceptado / rechazado),
+  nunca esperando solo el aviso de rechazo: si la app lo acepta, el
+  escenario se corta y no sirve de evidencia (RBP 2026-10-07, D-50).
 
 Del informe, mirar siempre:
 - el resumen final "⚠ Excepciones y errores de consola": una excepción de
@@ -128,6 +131,14 @@ Al terminar el discovery, UN mensaje con:
   `apps` de `qa.config.json`, `test:<app>`, filas del README); cualquier otro cambio en
   `cypress/support/`, `cypress.config.js`, `package.json` o fixtures
   globales se pide acá.
+
+**Antes de mandar el mensaje**, el alcance propuesto se escribe ya en el
+archivo de lote (HU completas y una línea por TC: `criterio`, `tipo`,
+`nombre`) y se corre `create-jira-task.js --data <lote> --dry-run
+--borrador`. Lo que avise se corrige antes de mandarlo: el usuario aprueba
+CA que ya pasaron por el validador (RBP 2026-10-07: CA-01 y CA-03 con dos
+reglas llegaron a su OK, D-50). Después de la pausa se completa el mismo
+archivo con los pasos.
 
 Terminar el turno. Después no se vuelve a preguntar salvo algo nuevo. Si
 al escribir cambia la estructura aprobada (cantidad de HU o CA,
@@ -200,7 +211,10 @@ espera el OK (SCRUM-826, 2026-10-02).
   "(bug conocido: KEY)"; no se parte el TC para que una mitad quede verde
   ni se valida el síntoma. Si el bug afecta solo un resultado secundario,
   ese resultado sale del TC y va a `defectosConocidos`.
-- `folder`: la misma ruta para todos los lotes de la app.
+- `folder`: `<raíz de la app>/<módulo>`, con la raíz de `carpetasDePruebas`
+  en `qa.config.json` (el lote no se arma con otra). App nueva: elegir la
+  raíz con `create-jira-task.js --list-folders` y agregarla a la config;
+  nunca adivinarla, el gestor crea en silencio una ruta que no existe (D-50).
 - Cada negativo lleva `evidencia: { reporte, observado }` (D-13).
 
 ### Sentido de los CA: se cuida al escribir, no en una revisión aparte
@@ -426,7 +440,8 @@ reabra.
    obligatoria.
 3. Publicar con `create-jira-task.js` (payload `bug`: resumen,
    precondiciones, pasos, resultadoActual, resultadoEsperado, evidencia,
-   entorno, severidad, captura; `linkTo` a la HU). El estándar lo frena
+   entorno, severidad, captura —ruta relativa a la carpeta del archivo
+   `--data`, igual que la evidencia del lote—; `linkTo` a la HU). El estándar lo frena
    `lib/bug-validator.js` (D-22, D-31): pasos solo funcionales, evidencia
    observable, sin requests/rutas/URLs fuera de Entorno, sin especular
    sobre el código, sin keys en el texto. El payload lleva `"certeza":

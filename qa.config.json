@@ -3,6 +3,16 @@
 
   "apps": ["automation-test-store", "commitquality", "expandtesting-notes", "parabank", "practicesoftwaretesting", "restful-booker-platform"],
 
+  "_carpetasDePruebas": "Carpeta raíz de cada app en el gestor de pruebas. La carpeta de un lote (comun.folder) es '<raíz>/<módulo>'; el lote no se arma con otra raíz. Las que existen: create-jira-task.js --list-folders.",
+  "carpetasDePruebas": {
+    "automation-test-store": "/Automation Test Store",
+    "commitquality": "/CommitQuality",
+    "expandtesting-notes": "/Notes App",
+    "parabank": "/ParaBank",
+    "practicesoftwaretesting": "/Practice Software Testing",
+    "restful-booker-platform": "/Restful Booker Platform"
+  },
+
   "herramientas": {
     "gestorDePruebas": "xray",
     "gestorDeTickets": "jira"

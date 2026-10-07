@@ -46,7 +46,14 @@
  *                { "action": "waitFor", "selector": "...", "filled": true }
  *                  (espera a que el campo tenga valor: formularios que la
  *                  pantalla completa por AJAX después de cargar; sin esto
- *                  un clear/type corre antes y la carga lo pisa)]
+ *                  un clear/type corre antes y la carga lo pisa),
+ *                { "action": "waitFor", "anyOf": ["<si se acepta>", "<si se rechaza>"] }
+ *                  (el primero que aparezca; el informe anota cuál. Para un
+ *                  caso cuyo resultado no se observó todavía: esperar solo
+ *                  el aviso de rechazo supone el resultado y, si la app lo
+ *                  acepta, el escenario se corta)]
+ *                El selector acepta los de jQuery: button:contains("Edit")
+ *                para un botón sin atributos, por su texto.
  *   --wait-for   (opcional) selector que indica que la pantalla terminó de
  *                renderizar (SPA).
  *   --init-script (opcional) archivo JS con `export default function (win) {}`
@@ -96,7 +103,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { parseScenarios, checkActions, summarizeProblems } = require('./lib/explore-scenarios');
+const { parseScenarios, checkActions, summarizeProblems, cutHint } = require('./lib/explore-scenarios');
 const { loadRecipes, validateRecipes, normalizeInvocations } = require('./lib/data-recipe');
 const { recordStep } = require('./lib/metrics-log');
 const bundleScan = require('./lib/bundle-scan');
@@ -372,9 +379,13 @@ describe('explore', () => {
             { contents: Cypress.Buffer.from(a.content), fileName: a.fileName, mimeType: a.mimeType || undefined });
           else if (a.action === 'visit') cy.visit(new URL(a.value, resolved.url).href, { failOnStatusCode: false });
           else if (a.action === 'waitFor' && a.filled) cy.get(a.selector, { timeout: 15000 }).first().should('not.have.value', '');
+          // anyOf: el primero que aparezca, sin suponer el resultado; el
+          // informe anota cuál fue.
+          else if (a.action === 'waitFor' && a.anyOf) cy.get(a.anyOf.join(', '), { timeout: 15000 })
+            .then(() => cy.document().then(doc => { a.matched = a.anyOf.filter(s => Cypress.$(doc).find(s).length); }));
           else if (a.action === 'waitFor') cy.get(a.selector, { timeout: 15000 });
           settle();
-          snapshot(i + 1, a.action + ' ' + (a.selector || a.value || '') + (a.fileName ? ' ' + a.fileName : ''));
+          cy.then(() => snapshot(i + 1, a.action + ' ' + (a.anyOf ? 'anyOf → ' + (a.matched || []).join(' | ') : (a.selector || a.value || '')) + (a.fileName ? ' ' + a.fileName : '')));
         });
       });
     });
@@ -428,7 +439,7 @@ function summarize(report) {
   if (fieldsNoAttr.length) console.log(`Campos/botones visibles SIN atributo de test: ${fieldsNoAttr.length}`);
   if (report.consoleErrors.length) console.log(`\nErrores de consola (${report.consoleErrors.length}):\n  ${report.consoleErrors.slice(0, 5).join('\n  ')}`);
   if (report.failedStep) console.log(`
-⚠ La exploracion se corto en una accion: ${report.failedStep}`);
+⚠ La exploracion se corto en una accion: ${report.failedStep}${cutHint(report.failedStep) ? `\n  Pista: ${cutHint(report.failedStep)}` : ''}`);
   if (report.uncaughtExceptions.length) console.log(`Excepciones no capturadas (${report.uncaughtExceptions.length}):\n  ${report.uncaughtExceptions.slice(0, 5).join('\n  ')}`);
 }
 
@@ -438,6 +449,7 @@ function summarizeBrief(name, report, reportPath) {
   const flagged = groupRequests(report.requests).filter(g => g.flags.length);
   const status = report.failedStep ? `⚠ CORTADA: ${report.failedStep.slice(0, 160)}` : 'OK';
   console.log(`\n[${name}] ${status}`);
+  if (cutHint(report.failedStep)) console.log(`  Pista: ${cutHint(report.failedStep)}`);
   console.log(`  URL final: ${report.url} | requests ${report.requests.length} | errores de consola ${report.consoleErrors.length}`);
   flagged.forEach(g => console.log(`  ⚠ ${g.key} [${g.statuses.join(', ')}] <- ${g.flags.join(', ')}`));
   console.log(`  Informe: ${reportPath}`);

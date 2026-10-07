@@ -33,7 +33,20 @@ function checkActions(actions, where) {
   // attach genera el archivo en memoria: sin archivos de prueba sueltos.
   const badAttach = actions.filter(a => a.action === 'attach' && (!a.selector || !a.fileName || typeof a.content !== 'string'));
   if (badAttach.length) throw new Error(`${where}: "attach" necesita selector, fileName y content (texto, "" para un archivo vacío); mimeType es opcional.`);
+  const badWait = actions.filter(a => a.action === 'waitFor' && (a.anyOf !== undefined
+    ? (a.selector || a.filled || !Array.isArray(a.anyOf) || a.anyOf.length < 2 || a.anyOf.some(s => typeof s !== 'string' || !s.trim()))
+    : !a.selector));
+  if (badWait.length) throw new Error(`${where}: "waitFor" lleva "selector" o "anyOf": [dos o más selectores] (no los dos; "filled" solo con "selector").`);
   return actions;
+}
+
+// Un escenario cortado esperando un elemento suele suponer el resultado
+// (RBP 2026-10-07: un número de solo espacios se exploró esperando el
+// aviso de rechazo; la app lo aceptó, el escenario se cortó y la
+// evidencia no sirvió). Pista para el informe y el validador de evidencia.
+function cutHint(failedStep) {
+  if (!/Expected to find element/i.test(String(failedStep || ''))) return null;
+  return 'la espera suponía un resultado que no llegó: mirar en el informe qué pasó (requests y texto) y, para explorar sin suponerlo, usar { "action": "waitFor", "anyOf": ["<si se acepta>", "<si se rechaza>"] }.';
 }
 
 function parseScenarios(file) {
@@ -124,4 +137,4 @@ function summarizeProblems(reports) {
   return [...groups.values()].sort((a, b) => b.scenarios.length - a.scenarios.length);
 }
 
-module.exports = { ACTIONS, checkActions, parseScenarios, resolveScenario, summarizeProblems };
+module.exports = { ACTIONS, checkActions, parseScenarios, resolveScenario, summarizeProblems, cutHint };

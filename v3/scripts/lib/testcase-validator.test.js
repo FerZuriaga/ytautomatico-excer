@@ -20,6 +20,7 @@ const {
   validateStoryCriteria,
   validateStoryText,
   validatePayload,
+  validateDraft,
   validateStepUpdates
 } = require('./testcase-validator');
 
@@ -827,4 +828,27 @@ test('regresion D-31: un Test Case o una HU que nombra un script interno de la s
   assert.match(storyErrors.join(' | '), /Contexto nombra una herramienta interna.*explore-page\.js/);
   assert.match(storyErrors.join(' | '), /sinNegativo CA-01 nombra una herramienta interna/);
   assert.deepEqual(validateStoryText({ ...issue, historia: { ...issue.historia, contexto: 'Se busca desde "My Notes".', sinNegativo: {} } }).errors, []);
+});
+
+// Caso real (RBP, 2026-10-07): la pausa del lote llevó "CA-01: ... aparece
+// en la lista con esos datos, y sin número se rechaza ..." y el usuario lo
+// aprobó; el validador recién avisó con el payload completo.
+test('validateDraft: reglas de HU y CA sobre TC sin pasos (pausa del lote)', () => {
+  const historia = {
+    como: 'administrador de Shady Meadows B&B', quiero: 'dar de alta habitaciones en el panel',
+    para: 'ofrecer a los huespedes todas las habitaciones', contexto: 'La lista de habitaciones tiene un formulario de alta.',
+    objetivo: 'Que cada habitacion nueva quede registrada.',
+    criterios: [
+      'CA-01: Una habitacion creada con sus datos aparece en la lista con esos datos, y sin numero se rechaza con "Room name must be set".',
+      'CA-02: Un precio fuera de 1 a 999 se rechaza con el aviso del limite.'
+    ]
+  };
+  const models = [
+    { criterio: 'CA-01', tipo: 'positivo', name: 'Crear' }, { criterio: 'CA-01', tipo: 'negativo', name: 'Sin numero' },
+    { criterio: 'CA-02', tipo: 'negativo', name: 'Precio 0' }
+  ];
+  const { errors, warnings } = validateDraft({ issues: [{ summary: 'Crear una habitacion', historia, testcaseModels: models }] });
+  assert.ok(errors.some(e => /CA-02 tiene 1 Test Case\(s\), el minimo es 2/.test(e)), errors.join('\n'));
+  assert.ok(warnings.some(w => /CA-01 parece combinar 2 reglas/.test(w)), warnings.join('\n'));
+  assert.ok(!warnings.some(w => /pasos/.test(w)), 'no audita pasos en el borrador');
 });

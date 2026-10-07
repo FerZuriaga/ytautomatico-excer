@@ -92,3 +92,9 @@ test('modo lote: revisa los negativos de todas las HU', () => {
   assert.equal(errors.length, 1);
   assert.match(errors[0], /^HU 1 \//);
 });
+
+test('evidencia cortada esperando un elemento: el error sugiere explorar con anyOf (RBP 2026-10-07)', () => {
+  reports['espera.json'] = { ...THOR_REPORT, failedStep: 'Timed out retrying after 15000ms: Expected to find element: `.alert`, but never found it.' };
+  const { errors } = validateNegativeEvidence(payloadWith([negativo({ reporte: 'espera.json', observado: 'algo' })]), { readReport, now: NOW });
+  assert.match(errors[0], /se corto antes de terminar.*Pista: .*anyOf/);
+});

@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { validateBug: validateBugRaw, validateBugs: validateBugsRaw } = require('./bug-validator');
+const { validateBug: validateBugRaw, validateBugs: validateBugsRaw, resolveCaptures } = require('./bug-validator');
 
 const CAPTURE = 'exp/perfil-casa/screenshots/explore.cy.js/explore.png';
 const EXPLORE_REPORT = { generator: 'explore-page', generatedAt: '2026-09-27T22:40:00Z' };
@@ -234,4 +234,18 @@ test('D-47: el Bug declara su certeza; uno "probable" necesita la regla confirma
   const probable = { ...validBug(), certeza: 'probable' };
   assert.match(validateBug(probable).errors.join('\n'), /necesita "reglaConfirmada"/);
   assert.deepEqual(validateBug({ ...probable, reglaConfirmada: "pausa del 2026-10-06: 'dale, va con los bugs'" }).errors, []);
+});
+
+// Caso real (RBP, 2026-10-07): las capturas relativas se buscaban desde la
+// carpeta donde se corría el script y los 5 Bugs fallaron con ENOENT.
+test('resolveCaptures: rutas relativas contra la carpeta del --data, absolutas sin cambios', () => {
+  const base = path.resolve('/tmp/lote');
+  const abs = path.resolve('/otra/captura.png');
+  const payload = { issues: [validBug(), validBug({ captura: [CAPTURE, abs] }), { summary: 'HU', historia: {} }] };
+  const out = resolveCaptures(payload, base);
+  assert.equal(out.issues[0].bug.captura, path.resolve(base, CAPTURE));
+  assert.deepEqual(out.issues[1].bug.captura, [path.resolve(base, CAPTURE), abs]);
+  assert.deepEqual(out.issues[2], payload.issues[2]);
+  assert.equal(payload.issues[0].bug.captura, CAPTURE, 'no modifica el payload original');
+  assert.equal(resolveCaptures(validBug(), base).bug.captura, path.resolve(base, CAPTURE));
 });

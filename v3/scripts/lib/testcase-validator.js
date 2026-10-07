@@ -563,6 +563,26 @@ function validatePayload(payload, { existingTestCases = [] } = {}) {
   return { errors, warnings, testCaseCount: testCases.length };
 }
 
+/**
+ * Borrador de la pausa del lote (--dry-run --borrador): las HU con sus CA
+ * y una línea por TC ({ criterio, tipo, name }, sin pasos). Corre las
+ * reglas de la HU y de los CA (dos reglas en un CA, mínimo de TC por CA,
+ * negativo), no las de los pasos. Nace del 2026-10-07 (RBP habitaciones):
+ * CA-01 y CA-03 llegaron a la aprobación del usuario con dos reglas cada
+ * uno y el validador recién lo vio en el dry-run del payload completo.
+ */
+function validateDraft(payload) {
+  const errors = [];
+  const warnings = [];
+  for (const issue of issuesOf(payload)) {
+    for (const result of [validateStoryCriteria(issue), validateStoryText(issue)]) {
+      errors.push(...result.errors);
+      warnings.push(...result.warnings);
+    }
+  }
+  return { errors, warnings };
+}
+
 const ISSUE_KEY_REGEX = /^[A-Z][A-Z0-9]+-\d+$/;
 
 /**
@@ -622,5 +642,6 @@ module.exports = {
   validateStoryCriteria,
   validateStoryText,
   validatePayload,
+  validateDraft,
   validateStepUpdates
 };

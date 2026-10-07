@@ -22,6 +22,7 @@
  *
  * Función pura: la lectura del informe se inyecta (readReport).
  */
+const { cutHint } = require('./explore-scenarios');
 
 const MAX_AGE_DAYS = 14;
 const QUOTED_REGEX = /["“]([^"”]{3,})["”]/g;
@@ -73,7 +74,8 @@ function validateNegativeEvidence(payload, { readReport, now = new Date() }) {
         continue;
       }
       if (report.failedStep) {
-        errors.push(`${label}: la exploracion de "${evidencia.reporte}" se corto antes de terminar ("${String(report.failedStep).slice(0, 80)}") -- no prueba el resultado.`);
+        const hint = cutHint(report.failedStep);
+        errors.push(`${label}: la exploracion de "${evidencia.reporte}" se corto antes de terminar ("${String(report.failedStep).slice(0, 80)}") -- no prueba el resultado.${hint ? ` Pista: ${hint}` : ''}`);
         continue;
       }
 

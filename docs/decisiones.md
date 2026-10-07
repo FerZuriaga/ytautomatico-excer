@@ -737,3 +737,43 @@ agrega una contradictoria.
   `explore-page.js`, `create-jira-task.js`, `create-pull-request.js`
   (registro y acción `ci-variable`), `.github/workflows/pr.yml`,
   `docs/lote.md` §0, §4 y §5.
+
+### D-50 · Los errores del lote de habitaciones se frenan antes, en código
+- **Decisión:**
+  1. **La pausa pasa por el validador.** Antes de mandarle la pausa al
+     usuario se escribe el lote con las HU y una línea por TC (`criterio`,
+     `tipo`, `nombre`) y se corre `create-jira-task.js --data <lote>
+     --dry-run --borrador`: corre las reglas de la HU y de los CA (dos
+     reglas en un CA, mínimo de TC por CA, negativo) sin pedir pasos. El
+     mismo archivo crece después con los pasos.
+  2. **Explorar sin suponer el resultado.** `explore-page.js` acepta
+     `{ "action": "waitFor", "anyOf": [...] }`: espera el primero que
+     aparezca y el informe anota cuál. Un escenario cortado esperando un
+     elemento lleva una pista (en el informe y en el error del validador de
+     evidencia) que sugiere `anyOf`.
+  3. **La carpeta del gestor de pruebas no se adivina.** Cada app tiene su
+     raíz en `carpetasDePruebas` de `qa.config.json`; el lote se rechaza si
+     `comun.folder` no es `<raíz>/<módulo>`. `create-jira-task.js
+     --list-folders` lista las carpetas que existen (función `listFolders`
+     del contrato del gestor).
+  4. **Rutas relativas, siempre desde el archivo.** La `captura` de un Bug
+     se resuelve contra la carpeta del archivo `--data`, igual que la
+     evidencia de un lote.
+- **Por qué:** en el análisis de errores del lote de RBP habitaciones
+  (2026-10-07) el usuario pidió prevenir: (1) CA-01 y CA-03 llegaron a su
+  aprobación con dos reglas cada uno y el validador recién lo vio con el
+  payload completo; (2) dos exploraciones esperaban el aviso de rechazo,
+  la app aceptó el dato y se cortaron; (3) la carpeta de RBP no estaba
+  anotada en ningún lado y el gestor crea en silencio una ruta que no
+  existe (`--list-folders` mostró raíces duplicadas como `/Notes App` y
+  `/Expand Testing Notes`); (4) los 5 Bugs fallaron el dry-run por rutas de
+  captura relativas. Elegida en `qa.config.json` la raíz de Notes:
+  `/Notes App` (la de los lotes de cuenta, los más recientes).
+- **Dónde:** `create-jira-task.js` (`--borrador`, `--list-folders`, rutas de
+  captura), `lib/payload-builder.js` (`borrador`, `checkFolder`),
+  `lib/testcase-validator.js` (`validateDraft`), `lib/bug-validator.js`
+  (`resolveCaptures`), `lib/xray.js` y `lib/test-manager-contract.js`
+  (`listFolders`), `lib/qa-config.js` y `qa.config*.json`
+  (`carpetasDePruebas`), `explore-page.js` y `lib/explore-scenarios.js`
+  (`anyOf`, `cutHint`), `lib/negative-evidence.js`, sus tests y
+  `docs/lote.md` §1, §2, §3 y §6.
