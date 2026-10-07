@@ -102,6 +102,7 @@ const payloadBuilder = require('./lib/payload-builder');
 const storyCoherence = require('./lib/story-coherence');
 const { mapWithLimit } = require('./lib/concurrency');
 const { config } = require('./lib/qa-config');
+const { recordStep } = require('./lib/metrics-log');
 
 const PROJECT = config.jira.projectKey;
 
@@ -859,4 +860,11 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error(e.message); process.exit(1); });
+// Tiempo de lo que escribe en el gestor (publicar, corregir, cerrar) en el
+// registro del lote (D-49). El reporte de resultados lo mide run-and-report.
+const STARTED = Date.now();
+const WRITES = Boolean((dataPath && !dryRun) || transitionName || commentText || completeTestcase) && !reportResultsPath;
+
+main()
+  .then(() => { if (WRITES) recordStep('publicacion', STARTED); })
+  .catch(e => { console.error(e.message); process.exit(1); });

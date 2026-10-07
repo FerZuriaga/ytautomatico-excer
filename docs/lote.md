@@ -25,6 +25,11 @@ Todo en el hilo principal, sin subagentes (D-01). Archivos auxiliares
    Si solo trae una app o URL: discovery Parte A.
 3. Leer `docs/discovery/<app>.md` y los specs de la misma familia para
    precargar los gotchas ya conocidos (D-15).
+4. **Crear la rama del lote ahora**, antes del discovery (`git pull` de
+   `main` y `git checkout -b feature/<app>-<funcionalidad>`; ver "Rama" en
+   §4). El registro de tiempos agrupa por rama: así la exploración, la
+   publicación, las corridas y el merge quedan en el mismo lote y
+   `run-and-report.js --timing-report <rama>` da el lote completo (D-49).
 
 `--health` no se corre al empezar: solo a pedido o si una falla parece
 ajena a la rama (D-35).
@@ -269,11 +274,12 @@ nombra herramientas internas (D-31).
 
 ### Rama
 
-`git pull` de `main`; si hay cambios ajenos, preservarlos (nunca
-descartarlos sin confirmación). Reutilizar la rama del ticket si existe;
-si depende de una rama sin mergear, salir de esa (PR apilado, avisado).
-Nombres: `feature/SCRUM-<key>-<descripcion>`, lote de varias HU
-`feature/SCRUM-<app>-<lote>`, mantenimiento `chore/<descripcion>`.
+Se crea en §0, al empezar el lote (D-49). `git pull` de `main`; si hay
+cambios ajenos, preservarlos (nunca descartarlos sin confirmación).
+Reutilizar la rama del ticket si existe; si depende de una rama sin
+mergear, salir de esa (PR apilado, avisado). Nombres: como las keys de
+Jira todavía no existen al empezar, `feature/<app>-<funcionalidad>` (ej.
+`feature/parabank-abrir-cuenta`); mantenimiento `chore/<descripcion>`.
 
 ### Código
 
@@ -396,7 +402,9 @@ pisaban y textos de TC que el test no controlaba.
   Si el PR cambia, actualizar su descripción (`--action view` /
   `--action update --body-file`).
 - `node v3/scripts/run-and-report.js --timing-report <rama>` para los
-  tiempos del lote.
+  tiempos del lote: después del merge da el **lote completo** (de la primera
+  exploración al merge) con discovery, publicación y corridas por separado
+  (D-49). Es el dato de TIEMPOS del informe de cierre: no se estima.
 
 **Informe de cierre** (todos los campos; `N/A` si no aplica, nunca
 inventar): TICKET, HU, RAMA, RESULTADO TESTS (passing / failing / ↻
