@@ -138,7 +138,9 @@ archivo de lote (HU completas y una línea por TC: `criterio`, `tipo`,
 --borrador`. Lo que avise se corrige antes de mandarlo: el usuario aprueba
 CA que ya pasaron por el validador (RBP 2026-10-07: CA-01 y CA-03 con dos
 reglas llegaron a su OK, D-50). Después de la pausa se completa el mismo
-archivo con los pasos.
+archivo con los pasos. El hook del asistente (D-51) corre ese chequeo solo
+cada vez que se escribe el archivo de lote, y eslint en cada `.js` de
+`cypress/`: lo que avise se corrige en el momento.
 
 Terminar el turno. Después no se vuelve a preguntar salvo algo nuevo. Si
 al escribir cambia la estructura aprobada (cantidad de HU o CA,

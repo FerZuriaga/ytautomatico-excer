@@ -777,3 +777,22 @@ agrega una contradictoria.
   (`carpetasDePruebas`), `explore-page.js` y `lib/explore-scenarios.js`
   (`anyOf`, `cutHint`), `lib/negative-evidence.js`, sus tests y
   `docs/lote.md` §1, §2, §3 y §6.
+
+### D-51 · Los chequeos corren solos al escribir (hooks del asistente)
+- **Decisión:** `.claude/settings.json` registra un hook `PostToolUse`
+  (`Write|Edit`) que corre `.claude/hooks/verificar-escritura.js` sobre el
+  archivo recién escrito: un `.js` de `cypress/` (o `cypress.config.js`)
+  pasa por eslint y frena con errores o con avisos **nuevos** contra el
+  último commit (los 27 de base no hacen ruido, D-42); un archivo de lote
+  (`"formato": "lote"`, en cualquier carpeta) pasa por `--dry-run
+  --borrador` (D-50). Sin problemas no dice nada; con problemas le devuelve
+  el detalle al asistente en el acto. No agrega reglas: adelanta las que ya
+  existen.
+- **Por qué:** el usuario preguntó si el asistente podía darse cuenta de
+  sus errores en el momento (2026-10-07). En el lote de RBP habitaciones 5
+  de los 7 errores los frenó un chequeo, pero varios pasos después de
+  escribirlos; los otros 2 eran de criterio y ningún chequeo los ve. Sumar
+  reglas no era la respuesta; correr antes las existentes, sí. Cuesta ~4 s
+  por archivo `.js` editado.
+- **Dónde:** `.claude/settings.json`, `.claude/hooks/verificar-escritura.js`,
+  `eslint.config.js` (entorno Node para los hooks), `docs/lote.md` §2.
