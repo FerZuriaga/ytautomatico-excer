@@ -44,14 +44,14 @@ había entrado con la contraseña vieja sigue adentro (Bug SCRUM-833, con
 captura). Lo que contradice el objetivo de la Historia va a Bug, nunca a un
 criterio de aceptación.
 
-## Números (al 2026-10-03)
+## Números (al 2026-10-07)
 
 | | |
 |---|---|
-| Apps activas | 5 (demos públicas de terceros) |
-| Specs / `it()` | 70 / 542 (16 en `it.skip` por bugs conocidos, con su key) |
-| Corridas registradas desde el 2026-09-27 | 42 lotes, 758 tests ejecutados, 6 pasaron recién en el reintento |
-| Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786) |
+| Apps activas | 6 (demos públicas de terceros) |
+| Historias / specs / `it()` | 75 / 87 / 672, cada `it()` trazado a su Test Case en Xray (39 en `it.skip` por bugs conocidos, con la key del Bug) |
+| Corridas registradas desde el 2026-09-27 | 97 (94 de lote, 3 de regresión), 1.396 tests ejecutados, 7 pasaron recién en el reintento |
+| Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786). Último medido de punta a punta, RBP Habitaciones (2 HU, 17 TC): exploración 5 min, publicación 4 min, corrida y reporte 2 min, verde en la 1ª iteración |
 | Reporte a Xray por corrida | de 38-49 s a 3-8 s (plan de reporte + escrituras en paralelo, D-29) |
 | Decisiones de trabajo documentadas | 26 temas (51 decisiones consolidadas el 2026-10-07), con su porqué (`docs/decisiones.md`) |
 
@@ -66,6 +66,7 @@ Un lote sigue siempre el mismo documento, `docs/lote.md`:
 | 3. Ejecución | `node v3/scripts/run-and-report.js --spec <specs> --test-cycle <ciclos>` | Verifica la trazabilidad, corre Cypress y reporta a Xray solo si pasa el 100%. |
 | 3. PR | `node v3/scripts/create-pull-request.js --action create ...` | Abre el Pull Request por la API de GitHub, con una auditoría por Historia (criterio, resultados, TC con pasos, bordes). |
 
+- **Al escribir:** un hook del asistente corre eslint en cada `.js` de `cypress/` y el chequeo de criterios en cada archivo de lote, en el momento (D-51).
 - **Por qué** de cada regla: `docs/decisiones.md`.
 - **Hallazgos por app** (comportamientos, gotchas, selectores): `docs/discovery/<app>.md`.
 - **Qué archivo habla con cada herramienta** (Jira, Xray, Cypress, GitHub): `docs/architecture/herramientas.md`; `npm run test:unit` falla si una frontera se cruza.
@@ -102,7 +103,7 @@ sacaron de `main` el 2026-10-03 y siguen en la etiqueta git
 npm ci                                  # dependencias
 npm run test:unit                       # lógica del pipeline, sin navegador
 npm run lint                            # ESLint con las reglas de Cypress
-npm run test:expandtesting-notes        # una app (igual con las otras 4)
+npm run test:expandtesting-notes        # una app (igual con las otras 5)
 ```
 
 Las URLs de cada sitio son defaults del bloque `env` de `cypress.config.js`
@@ -142,6 +143,6 @@ Con una app propia y un staging estable, prender los E2E afectados del PR
 con la variable de repositorio `QA_PR_E2E=true`.
 
 **Límites conocidos:** el gestor de pruebas implementado es Xray (otro es
-un adapter nuevo que cumple `lib/test-manager-contract.js`, D-45), y los
+un adapter nuevo que cumple `lib/test-manager-contract.js`, D-26), y los
 textos que el framework escribe en Jira y en los reportes están en español
 (D-43).
