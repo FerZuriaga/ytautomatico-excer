@@ -46,6 +46,50 @@
             "token": "token"
           }
         }
+      ],
+      "browser": {
+        "cookies": {
+          "token": "{{token}}"
+        }
+      }
+    },
+    "habitacion": {
+      "description": "Habitacion creada en el panel (requiere la receta admin). El nombre lleva un valor unico para ubicarla entre las de otros usuarios; el alta no devuelve el id, se busca por el nombre.",
+      "requires": ["token"],
+      "params": {
+        "type": "Double",
+        "roomPrice": 120,
+        "description": "Habitacion creada por QA."
+      },
+      "vars": {
+        "roomName": "QA{{unique}}"
+      },
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/room",
+          "expect": 200,
+          "headers": {
+            "Cookie": "token={{token}}"
+          },
+          "body": {
+            "roomName": "{{roomName}}",
+            "type": "{{type}}",
+            "accessible": false,
+            "roomPrice": "{{roomPrice}}",
+            "features": ["WiFi"],
+            "description": "{{description}}",
+            "image": "/images/room2.jpg"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/room",
+          "expect": 200,
+          "save": {
+            "roomid": "rooms[roomName={{roomName}}].roomid"
+          }
+        }
       ]
     },
     "reserva": {

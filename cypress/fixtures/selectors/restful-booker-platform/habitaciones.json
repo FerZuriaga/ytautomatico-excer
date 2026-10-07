@@ -1,0 +1,61 @@
+{
+  "api": {
+    "host": "automationintesting.online",
+    "roomPath": "/api/room"
+  },
+  "paths": {
+    "rooms": "/admin/rooms"
+  },
+  "list": {
+    "row": "[data-testid=\"roomlisting\"]",
+    "menuLink": "a.nav-link"
+  },
+  "create": {
+    "name": "[data-testid=\"roomName\"]",
+    "type": "#type",
+    "accessible": "#accessible",
+    "price": "#roomPrice",
+    "features": {
+      "WiFi": "#wifiCheckbox",
+      "TV": "#tvCheckbox",
+      "Radio": "#radioCheckbox",
+      "Refreshments": "#refreshCheckbox",
+      "Safe": "#safeCheckbox",
+      "Views": "#viewsCheckbox"
+    },
+    "submit": "#createRoom",
+    "alert": ".alert"
+  },
+  "edit": {
+    "name": "#roomName",
+    "type": "#type",
+    "price": "#roomPrice",
+    "description": "#description",
+    "features": {
+      "WiFi": "#wifiCheckbox",
+      "TV": "#tvCheckbox",
+      "Radio": "#radioCheckbox",
+      "Refreshments": "#refreshmentsCheckbox",
+      "Safe": "#safeCheckbox",
+      "Views": "#viewsCheckbox"
+    },
+    "update": "#update",
+    "cancel": "#cancelEdit",
+    "alert": ".alert"
+  },
+  "texts": {
+    "rooms": "Rooms",
+    "editButton": "Edit",
+    "noFeatures": "No features added to the room",
+    "detailTitle": "Room: {name}",
+    "detailType": "Type: {type}",
+    "detailAccessible": "Accessible: {accessible}",
+    "detailFeatures": "Features: {features}",
+    "detailPrice": "Room price: {price}",
+    "detailDescription": "Description: {description}",
+    "nameRequired": "Room name must be set",
+    "priceMin": "must be greater than or equal to 1",
+    "priceMax": "must be less than or equal to 999",
+    "updateFailed": "Failed to update room"
+  }
+}
