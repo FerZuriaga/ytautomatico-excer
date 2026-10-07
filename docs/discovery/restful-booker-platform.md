@@ -97,3 +97,36 @@ fechas ocupadas). Selectores en
 - **Datos en los tests:** fechas futuras al azar y distintas por test
   (`randomFutureStay`): una corrida anterior deja ocupadas las mismas
   fechas hasta el próximo reinicio de la demo.
+
+## Habitaciones: crear y editar (2026-10-07)
+
+Explorado con 6 tandas (recetas `admin`, que ahora deja la cookie de
+sesión, y `habitacion`, que devuelve `roomid` buscándola por el número).
+Selectores en `cypress/fixtures/selectors/restful-booker-platform/habitaciones.json`.
+Carpeta de Xray de todo RBP: `/Restful Booker Platform/<módulo>` (antes no
+estaba anotada; `--verify-testcase` no la muestra).
+
+- **Alta** (debajo de la lista de `/admin/rooms`): número
+  (`data-testid=roomName`), `#type`, `#accessible`, `#roomPrice`,
+  comodidades `#<x>Checkbox` (Refreshments es `#refreshCheckbox` en el alta
+  y `#refreshmentsCheckbox` en la edición) y `#createRoom`. `POST /api/room`
+  200 sin el id. La fila nueva aparece al final; sin comodidades dice "No
+  features added to the room".
+- **Validaciones del alta (400, `.alert`):** sin número "Room name must be
+  set"; precio 0 "must be greater than or equal to 1"; 1000 "must be less
+  than or equal to 999"; 1 y 999 se aceptan; precio vacío o con letras
+  "Failed to create room" (Bug SCRUM-1027).
+- **Detalle** `/admin/room/<id>` (pide `GET /api/room/<id>`): "Room: <número>",
+  "Type:", "Description:", "Accessible:", "Features:", "Room price:" y el
+  botón "Edit" (sin id; `button:contains("Edit")` en `explore-page`). El
+  formulario de edición se completa después de abrir: esperar el valor antes
+  de reemplazar. `PUT /api/room/<id>` 202; cualquier dato inválido da 400 y
+  solo "Failed to update room".
+- **Defectos:** "Cancel" deja en pantalla lo descartado hasta recargar
+  (SCRUM-1024); número con solo espacios aceptado al crear y editar
+  (SCRUM-1025); número repetido aceptado (SCRUM-1026); la home muestra solo
+  3 habitaciones (SCRUM-1028).
+- **Filas de la lista:** comparar el texto exacto de cada celda, no
+  `contain.text` (un precio 1 coincide con el "100" de otra celda).
+- Una vez el alta respondió 500 ("An unexpected error occurred") y pasó en el
+  reintento: falla puntual de la demo, no del test.
