@@ -53,7 +53,7 @@ criterio de aceptación.
 | Corridas registradas desde el 2026-09-27 | 42 lotes, 758 tests ejecutados, 6 pasaron recién en el reintento |
 | Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786) |
 | Reporte a Xray por corrida | de 38-49 s a 3-8 s (plan de reporte + escrituras en paralelo, D-29) |
-| Decisiones de trabajo documentadas | 40, con su porqué (`docs/decisiones.md`) |
+| Decisiones de trabajo documentadas | 26 temas (51 decisiones consolidadas el 2026-10-07), con su porqué (`docs/decisiones.md`) |
 
 ## Cómo se trabaja
 

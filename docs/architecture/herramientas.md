@@ -38,6 +38,9 @@ Otra instancia de Jira es editar ese archivo, no el código.
   payload `"issuetype": "Bug"`).
 - La transición para cerrar se llama **"Listo"**, pero el estado que queda
   es **"Finalizada"**: `--transition "Finalizada"` falla.
+- **No hay estado "Cancelada"** (antes D-10): un ticket descartado pasa a
+  "Finalizada" con un comentario aclaratorio. Solo se borra si el usuario lo
+  pide (caso SCRUM-52; limpieza del 2026-07-21, SCRUM-1 a 42).
 - Para saber si un addon (Xray, Zephyr) está instalado, la API no es
   concluyente: en proyectos team-managed y con apps Forge da falsos
   negativos. Confirmarlo en la UI del proyecto.

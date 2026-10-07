@@ -17,6 +17,24 @@ documentación más la app explorada con `explore-page.js`.
 - Datos para explorar: recetas `usuario` y `nota` de
   `v3/data-recipes/expandtesting-notes.json`.
 
+## Decisiones propias de Notes (antes D-40 y D-44a)
+
+- **Publicidad de Google bloqueada solo en Notes** (antes D-40), desde
+  `cy.gotoNotesUrl`, no con `blockHosts` global: solo Notes tiene publicidad
+  relevada. SCRUM-832 pasó recién en el reintento porque un anuncio de video
+  empujó el formulario de registro (2026-10-02). Medido con 4 specs (59
+  tests): 304 s → 228 s (−25 %), 0 fallas. Otra app con el mismo problema
+  lo suma en su propio comando; pasa a global solo si varias lo necesitan y
+  una regresión de todas lo valida. `explore-page.js` no bloquea: ve la app
+  tal cual.
+- **Selectores compartidos en `comunes.json`** (antes D-44a): lo que usan
+  varias pantallas (aviso, error de campo, diálogo de confirmación, menú,
+  rutas, API, textos repetidos) vive en
+  `cypress/fixtures/selectors/expandtesting-notes/comunes.json` y cada
+  módulo lo referencia con `"@comun.<ruta>"`; `notesSelectors()` reemplaza
+  a `cy.fixture()` y frena si una referencia no existe. Había 26 valores
+  repetidos entre los 6 JSON (el aviso en 5 archivos), 2026-10-03.
+
 ## Datos y sesión — vale para todos los módulos
 
 - **Datos aislados por usuario:** cada usuario ve solo sus notas. Un
