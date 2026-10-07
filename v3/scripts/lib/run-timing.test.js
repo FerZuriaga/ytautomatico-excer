@@ -74,6 +74,36 @@ test('las corridas cortadas por el entorno no cuentan como iteracion y se resume
   assert.doesNotMatch(formatSummary({ ...summary, environmentRuns: 0 }), /entorno/);
 });
 
+// D-49 (2026-10-06): el reporte arrancaba en la primera corrida de Cypress;
+// el discovery y la publicación no se medían y la duración del lote se
+// estimaba.
+test('el resumen mide el lote completo: discovery, publicacion, corridas y merge', () => {
+  const at = minutes => new Date(Date.parse('2026-10-06T13:00:00Z') + minutes * 60000).toISOString();
+  const entries = [
+    { branch: 'f', mode: 'discovery', ok: true, at: at(0), totalMs: 57000 },
+    { branch: 'f', mode: 'discovery', ok: true, at: at(10), totalMs: 37000 },
+    { branch: 'f', mode: 'publicacion', ok: true, at: at(25), totalMs: 40000 },
+    { branch: 'f', mode: 'lote', specsKey: 's', ok: true, at: at(40), totalMs: 44000, phases: [{ name: 'cypress', ms: 35000 }] },
+    { branch: 'f', mode: 'pr', ok: true, at: at(50), totalMs: 2000 },
+    { branch: 'f', mode: 'merge', ok: true, at: at(70), totalMs: 3000 }
+  ];
+  const [summary] = summarizeLog(entries, 'f');
+  assert.equal(summary.runs, 1);
+  assert.equal(summary.discoveryRuns, 2);
+  assert.equal(summary.discoveryMs, 94000);
+  assert.equal(summary.publishRuns, 1);
+  assert.equal(summary.runMs, 44000);
+  assert.equal(summary.merged, true);
+  assert.equal(summary.wallMs, 70 * 60000 + 3000);
+  const text = formatSummary(summary);
+  assert.match(text, /lote completo: 1h 10m \(del primer registro al merge\)/);
+  assert.match(text, /discovery: 2 exploracion\(es\), 1m 34s/);
+  assert.match(text, /publicacion en el gestor: 1, 40s/);
+  assert.doesNotMatch(text, /reloj desde/);
+  // Sin merge todavía: reloj desde el primer registro.
+  assert.match(formatSummary(summarizeLog(entries.slice(0, 4), 'f')[0]), /reloj desde el primer registro: 40m 44s/);
+});
+
 test('el registro JSONL ignora lineas vacias o rotas', () => {
   assert.deepEqual(parseLog('{"a":1}\n\nno-json\n{"b":2}\n'), [{ a: 1 }, { b: 2 }]);
 });

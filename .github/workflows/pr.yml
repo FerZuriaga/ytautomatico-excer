@@ -5,9 +5,13 @@
 #   públicas inestables (el motivo por el que D-06 sacó el CI de la suite).
 # - e2e-afectados: APAGADO por defecto. Corre solo los specs afectados por el
 #   PR (run-and-report.js --affected, sin reporte a Xray). Pensado para una
-#   app propia con staging estable: se prende con la variable de repositorio
-#   QA_PR_E2E=true (Settings > Secrets and variables > Actions > Variables).
-#   Tope de specs: QA_PR_MAX_SPECS (default 20, D-33).
+#   app propia con staging estable (D-49: las demos públicas limitan pedidos
+#   y reinician su base). Se prende con la variable de repositorio
+#   QA_PR_E2E=true:
+#     node v3/scripts/create-pull-request.js --action ci-variable --name QA_PR_E2E --value true
+#   (--delete la apaga; sin --value muestra su estado). Tope de specs:
+#   QA_PR_MAX_SPECS (default 20, D-33). Un 429 de la app espera y repite una
+#   vez (--esperar-limite, D-48) en vez de fallar el PR.
 name: PR
 
 on:
@@ -50,7 +54,7 @@ jobs:
         with:
           runTests: false
       - name: Specs afectados por el PR
-        run: node v3/scripts/run-and-report.js --affected --base origin/${{ github.base_ref }} --max-specs ${{ vars.QA_PR_MAX_SPECS || 20 }}
+        run: node v3/scripts/run-and-report.js --affected --base origin/${{ github.base_ref }} --max-specs ${{ vars.QA_PR_MAX_SPECS || 20 }} --esperar-limite
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

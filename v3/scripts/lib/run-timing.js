@@ -66,10 +66,18 @@ function iterationNumber(entries, branch, key) {
   return entries.filter(e => e.branch === branch && e.mode === 'lote' && e.specsKey === key).length + 1;
 }
 
+// Corridas de Cypress (run-and-report.js). El resto de los registros son
+// los otros pasos del lote (D-49): 'discovery' (explore-page.js),
+// 'publicacion' (create-jira-task.js), 'pr' y 'merge' (create-pull-request.js).
+const RUN_MODES = new Set(['lote', 'regresion', 'entorno', 'from-results']);
+const sumMs = entries => entries.reduce((sum, e) => sum + (e.totalMs || 0), 0);
+
 /**
- * Resumen por rama: corridas, iteraciones del lote (y cuántas fallaron),
- * tiempo en cada fase y tiempo de reloj entre la primera y la última
- * corrida (incluye lo que pasa entre corridas: diagnóstico, código).
+ * Resumen por rama: discovery y publicación (cantidad y tiempo), corridas,
+ * iteraciones del lote (y cuántas fallaron), tiempo en cada fase y tiempo
+ * de reloj entre el primer y el último registro (incluye lo que pasa entre
+ * pasos: diagnóstico, código, revisión). Con un merge registrado, ese reloj
+ * es el lote completo: de la primera exploración al merge.
  */
 function summarizeLog(entries, branch = null) {
   const byBranch = new Map();
@@ -78,12 +86,15 @@ function summarizeLog(entries, branch = null) {
     if (!byBranch.has(e.branch)) byBranch.set(e.branch, []);
     byBranch.get(e.branch).push(e);
   }
-  return [...byBranch].map(([name, runs]) => {
+  return [...byBranch].map(([name, all]) => {
+    const runs = all.filter(r => RUN_MODES.has(r.mode));
+    const discovery = all.filter(r => r.mode === 'discovery');
+    const publish = all.filter(r => r.mode === 'publicacion');
     const phaseMs = {};
     runs.forEach(r => (r.phases || []).forEach(p => { phaseMs[p.name] = (phaseMs[p.name] || 0) + p.ms; }));
     const lote = runs.filter(r => r.mode === 'lote');
-    const times = runs.map(r => new Date(r.at).getTime()).filter(t => !Number.isNaN(t));
-    const last = runs[runs.length - 1];
+    const times = all.map(r => new Date(r.at).getTime()).filter(t => !Number.isNaN(t));
+    const last = all[all.length - 1];
     return {
       branch: name,
       runs: runs.length,
@@ -91,8 +102,13 @@ function summarizeLog(entries, branch = null) {
       loteFailed: lote.filter(r => !r.ok).length,
       regressionRuns: runs.filter(r => r.mode === 'regresion').length,
       environmentRuns: runs.filter(r => r.mode === 'entorno').length,
+      discoveryRuns: discovery.length,
+      discoveryMs: sumMs(discovery),
+      publishRuns: publish.length,
+      publishMs: sumMs(publish),
+      merged: all.some(r => r.mode === 'merge'),
       phaseMs,
-      runMs: runs.reduce((sum, r) => sum + (r.totalMs || 0), 0),
+      runMs: sumMs(runs),
       wallMs: times.length > 1 ? Math.max(...times) + (last.totalMs || 0) - Math.min(...times) : (last.totalMs || 0)
     };
   });
@@ -100,12 +116,16 @@ function summarizeLog(entries, branch = null) {
 
 function formatSummary(summary) {
   const phases = Object.entries(summary.phaseMs).map(([name, ms]) => `${PHASE_LABELS[name] || name} ${formatDuration(ms)}`).join(' | ');
-  return [
-    `Rama ${summary.branch}:`,
+  const lines = [`Rama ${summary.branch}:`];
+  if (summary.merged) lines.push(`  lote completo: ${formatDuration(summary.wallMs)} (del primer registro al merge)`);
+  if (summary.discoveryRuns) lines.push(`  discovery: ${summary.discoveryRuns} exploracion(es), ${formatDuration(summary.discoveryMs)}`);
+  if (summary.publishRuns) lines.push(`  publicacion en el gestor: ${summary.publishRuns}, ${formatDuration(summary.publishMs)}`);
+  lines.push(
     `  corridas: ${summary.runs} (lote: ${summary.loteRuns}, fallidas: ${summary.loteFailed}; regresion: ${summary.regressionRuns}${summary.environmentRuns ? `; cortadas por el entorno (429): ${summary.environmentRuns}` : ''})`,
-    `  en corridas: ${formatDuration(summary.runMs)}${phases ? ` (${phases})` : ''}`,
-    `  reloj desde la primera corrida: ${formatDuration(summary.wallMs)}`
-  ].join('\n');
+    `  en corridas: ${formatDuration(summary.runMs)}${phases ? ` (${phases})` : ''}`
+  );
+  if (!summary.merged) lines.push(`  reloj desde el primer registro: ${formatDuration(summary.wallMs)}`);
+  return lines.join('\n');
 }
 
 function parseLog(text) {

@@ -31,7 +31,10 @@
  *   --list          (opcional) con --affected: lista los specs y el motivo,
  *                   sin correr Cypress.
  *   --timing-report (opcional) no corre nada: resume los tiempos
- *                   registrados (de una rama o de todas).
+ *                   registrados (de una rama o de todas). Con el merge
+ *                   registrado da el lote completo: discovery
+ *                   (explore-page.js), publicación (create-jira-task.js),
+ *                   corridas y PR (D-49).
  *   --esperar-limite (opcional) si TODAS las fallas son un 429 de la app
  *                   (límite de pedidos), espera a que la app vuelva a
  *                   responder y repite la corrida UNA vez. Sin el flag, la
@@ -70,6 +73,7 @@ const { runCheck } = require('./check-traceability');
 const affectedSpecs = require('./lib/affected-specs');
 const { config } = require('./lib/qa-config');
 const runTiming = require('./lib/run-timing');
+const metricsLog = require('./lib/metrics-log');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const PROJECT = config.jira.projectKey;
@@ -199,38 +203,13 @@ async function verifyCycles(cycles, expectedKeys) {
   return testRunner.compareReportedStatuses(executions, expectedKeys);
 }
 
-const METRICS_LOG = path.join(REPO_ROOT, '.qa-metrics', 'run-and-report.jsonl');
-
-function readTimingLog() {
-  try {
-    return runTiming.parseLog(fs.readFileSync(METRICS_LOG, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-// El registro nunca corta la corrida: si no se puede escribir, se avisa.
-function appendTimingLog(entry) {
-  try {
-    fs.mkdirSync(path.dirname(METRICS_LOG), { recursive: true });
-    fs.appendFileSync(METRICS_LOG, JSON.stringify(entry) + '\n');
-  } catch (e) {
-    console.warn(`No se pudo registrar el tiempo de la corrida (${e.message}).`);
-  }
-}
-
-function currentBranch() {
-  try {
-    return git(['rev-parse', '--abbrev-ref', 'HEAD'])[0];
-  } catch {
-    return 'desconocida';
-  }
-}
+// Registro de tiempos del lote (lib/metrics-log.js, D-49).
+const { METRICS_LOG, readLog: readTimingLog, appendEntry: appendTimingLog, currentBranch } = metricsLog;
 
 function printTimingReport(branch) {
   const summaries = runTiming.summarizeLog(readTimingLog(), branch);
   if (!summaries.length) {
-    console.log(`Sin corridas registradas${branch ? ` en la rama ${branch}` : ''} (${METRICS_LOG}).`);
+    console.log(`Sin registros${branch ? ` en la rama ${branch}` : ''} (${METRICS_LOG}).`);
     return;
   }
   summaries.forEach(s => console.log(runTiming.formatSummary(s)));

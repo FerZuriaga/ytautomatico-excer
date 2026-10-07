@@ -34,6 +34,11 @@ Acciones soportadas actualmente:
   código 1 si hay más de <n>. Se corre antes de arrancar un lote nuevo:
   con PRs acumulados sin mergear, los lotes nuevos salen apilados y
   chocan entre sí (caso real 2026-09-26: #107, #108 y #109 abiertos).
+- ci-variable --name <QA_...> [--value <v> | --delete]: muestra, fija o
+  borra una variable de Actions del repo que lee el workflow de los PR
+  (QA_PR_E2E prende los E2E afectados; QA_PR_MAX_SPECS es su tope). Solo
+  variables que empiezan con QA_. Prender los E2E es decisión del usuario
+  (D-49: hoy apagados hasta tener un entorno propio).
  *
  *   --head        (obligatorio) rama origen del PR, ej: feature/SCRUM-48-alta-empleado-pim
  *   --base        (opcional, default "main") rama destino del PR
@@ -76,8 +81,10 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { safeMerge } = require('./lib/pr-merge');
 const { onBody } = require('./lib/http-body');
+const { recordStep } = require('./lib/metrics-log');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const STARTED = Date.now();
 const API_HOSTNAME = 'api.github.com';
 const API_VERSION = '2022-11-28';
 
@@ -127,6 +134,14 @@ function parseArgs(argv) {
     } else if (argv[i] === '--pr') {
       args.pullRequestNumber = argv[i + 1];
       i++;
+    } else if (argv[i] === '--name') {
+      args.variableName = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--value') {
+      args.variableValue = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--delete') {
+      args.deleteVariable = true;
     }
   }
 
@@ -242,7 +257,18 @@ async function main() {
     process.exit(1);
   }
 
-  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max, deleteBranch } = parseArgs(process.argv.slice(2));
+  const { action, head, base, baseGiven, title, body, bodyFile, repo, pullRequestNumber, max, deleteBranch, variableName, variableValue, deleteVariable } = parseArgs(process.argv.slice(2));
+
+  if (action === 'ci-variable') {
+    if (!/^QA_[A-Z0-9_]+$/.test(String(variableName || ''))) {
+      console.error('ci-variable: indicar --name con una variable que empiece con QA_ (ej. QA_PR_E2E).');
+      process.exit(1);
+    }
+    if (variableValue !== undefined && deleteVariable) {
+      console.error('ci-variable: --value y --delete son mutuamente excluyentes.');
+      process.exit(1);
+    }
+  }
 
   if ((action === 'view' || action === 'close') && !pullRequestNumber) {
     console.error('Debe indicar --pr <numero>.');
@@ -335,6 +361,7 @@ async function main() {
 
       console.log(`Creado: #${pr.number}`);
       console.log(`URL: ${pr.html_url}`);
+      recordStep('pr', STARTED, { branch: head, pr: pr.number });
       break;
     }
     
@@ -370,6 +397,8 @@ async function main() {
       console.log(`Merge realizado y confirmado por lectura.`);
       console.log(`SHA: ${result.sha}`);
       if (result.branchDeleted) console.log(`Rama remota borrada: ${result.branch}`);
+      // Cierra el lote en el registro de tiempos (D-49): bajo la rama del PR.
+      recordStep('merge', STARTED, { branch: result.branch, pr: Number(pullRequestNumber) });
 
       break;
     }
@@ -441,6 +470,50 @@ async function main() {
         process.exit(1);
       }
       console.log('OK: se puede arrancar un lote nuevo.');
+      break;
+    }
+
+    case 'ci-variable': {
+      const varPath = `/repos/${owner}/${name}/actions/variables/${variableName}`;
+      const current = await githubRequest('GET', varPath);
+      if (current.status !== 200 && current.status !== 404) {
+        console.error(`Error al leer ${variableName} (HTTP ${current.status}): ${JSON.stringify(current.body)}`);
+        process.exit(1);
+      }
+      const before = current.status === 200 ? current.body.value : null;
+
+      if (deleteVariable) {
+        if (before === null) {
+          console.log(`${variableName} no existe en ${owner}/${name}: nada que borrar.`);
+          break;
+        }
+        const res = await githubRequest('DELETE', varPath);
+        if (res.status !== 204) {
+          console.error(`Error al borrar ${variableName} (HTTP ${res.status}): ${JSON.stringify(res.body)}`);
+          process.exit(1);
+        }
+      } else if (variableValue !== undefined) {
+        const res = before === null
+          ? await githubRequest('POST', `/repos/${owner}/${name}/actions/variables`, { name: variableName, value: variableValue })
+          : await githubRequest('PATCH', varPath, { name: variableName, value: variableValue });
+        if (res.status !== 201 && res.status !== 204) {
+          console.error(`Error al fijar ${variableName} (HTTP ${res.status}): ${JSON.stringify(res.body)}`);
+          process.exit(1);
+        }
+      } else {
+        console.log(`${variableName} en ${owner}/${name}: ${before === null ? 'sin definir' : `"${before}"`}.`);
+        break;
+      }
+
+      // Confirmación por lectura, como el merge.
+      const after = await githubRequest('GET', varPath);
+      const now = after.status === 200 ? after.body.value : null;
+      const expected = deleteVariable ? null : variableValue;
+      if (now !== expected) {
+        console.error(`${variableName} quedó en ${now === null ? 'sin definir' : `"${now}"`}, no en lo pedido.`);
+        process.exit(1);
+      }
+      console.log(`${variableName} en ${owner}/${name}: ${before === null ? 'sin definir' : `"${before}"`} -> ${now === null ? 'sin definir' : `"${now}"`} (confirmado por lectura).`);
       break;
     }
 

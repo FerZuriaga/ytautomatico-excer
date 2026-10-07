@@ -712,3 +712,28 @@ agrega una contradictoria.
   y sus tests; `lib/test-runner.js` (`rateLimitInfo`, pista), `lib/run-timing.js`
   (modo `entorno`) y `run-and-report.js` (`--esperar-limite`);
   `docs/architecture/herramientas.md`.
+
+### D-49 · El lote se mide completo y los E2E por PR quedan listos, apagados
+- **Decisión:**
+  1. Cada paso del lote deja su tiempo en el mismo registro
+     (`lib/metrics-log.js`): el discovery (`explore-page.js`), lo que se
+     escribe en el gestor (`create-jira-task.js`, sin `--dry-run`), las
+     corridas (`run-and-report.js`), y la apertura y el merge del PR
+     (`create-pull-request.js`, bajo la rama del PR).
+     `run-and-report.js --timing-report <rama>` da el **lote completo** (de
+     la primera exploración al merge) con cada parte por separado. Para que
+     todo quede en la misma rama, **la rama del lote se crea al empezar**
+     (`docs/lote.md` §0), con nombre `feature/<app>-<funcionalidad>`.
+  2. El job `e2e-afectados` de `.github/workflows/pr.yml` queda listo
+     (`--affected`, tope de specs, `--esperar-limite`) y **apagado**: se
+     prende con `create-pull-request.js --action ci-variable --name
+     QA_PR_E2E --value true` cuando haya un entorno propio.
+- **Por qué:** en la opinión de cierre del 2026-10-06 los tiempos de los
+  lotes se tuvieron que estimar: el reporte arrancaba en la primera corrida
+  de Cypress. Sobre los E2E por PR, el usuario eligió "dejarlo listo y
+  apagado": con las demos públicas (límite de pedidos y base que se
+  reinicia sola) los PR quedarían a merced del entorno.
+- **Dónde:** `lib/metrics-log.js` y su test, `lib/run-timing.js` y su test,
+  `explore-page.js`, `create-jira-task.js`, `create-pull-request.js`
+  (registro y acción `ci-variable`), `.github/workflows/pr.yml`,
+  `docs/lote.md` §0, §4 y §5.

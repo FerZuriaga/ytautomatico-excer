@@ -98,6 +98,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { parseScenarios, checkActions, summarizeProblems } = require('./lib/explore-scenarios');
 const { loadRecipes, validateRecipes, normalizeInvocations } = require('./lib/data-recipe');
+const { recordStep } = require('./lib/metrics-log');
 const bundleScan = require('./lib/bundle-scan');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
@@ -570,6 +571,7 @@ async function main() {
   if (missing.length) {
     console.error(`\nSin informe: ${missing.join(', ')}. Salida de Cypress:`);
     console.error((run.stdout || '').slice(-3000), (run.stderr || '').slice(-2000));
+    recordStep('discovery', started, { ok: false, scenarios: plan.scenarios.length });
     process.exit(1);
   }
 
@@ -600,6 +602,8 @@ async function main() {
     console.log(`Capturas: ${path.join(outDir, 'screenshots')}`);
     console.log(`Duracion: ${seconds}s`);
   }
+  // Tiempo del discovery en el registro del lote (D-49).
+  recordStep('discovery', started, { scenarios: plan.scenarios.length });
 }
 
 main().catch(e => { console.error(e.message); process.exit(1); });
