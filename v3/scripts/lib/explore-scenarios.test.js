@@ -7,7 +7,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { checkActions, parseScenarios, resolveScenario, summarizeProblems } = require('./explore-scenarios');
+const { checkActions, parseScenarios, resolveScenario, summarizeProblems, cutHint } = require('./explore-scenarios');
 
 const FILE = {
   app: 'practicesoftwaretesting',
@@ -101,4 +101,24 @@ test('summarizeProblems: agrupa las excepciones y errores de consola de toda la 
   assert.ok(problems.some(p => p.message === "Cannot read properties of undefined (reading 'length')" && p.scenarios.join() === 'res-ocupada'));
   assert.ok(problems.some(p => p.kind === 'error de consola' && p.message === 'Error booking room'));
   assert.deepEqual(summarizeProblems([{ scenario: 'limpio', uncaughtExceptions: [], consoleErrors: [] }]), []);
+});
+
+// Caso real (RBP, 2026-10-07): "número de solo espacios" se exploró
+// esperando el aviso de rechazo; la app lo aceptó y el escenario se cortó.
+test('waitFor con anyOf: espera el primer resultado sin suponerlo; mal armado es error', () => {
+  const ok = [{ action: 'waitFor', anyOf: ['.alert', '[data-testid="roomlisting"]:contains("Q1")'] }, { action: 'waitFor', selector: '#x', filled: true }];
+  assert.deepEqual(checkActions(ok, 'E'), ok);
+  for (const bad of [
+    { action: 'waitFor' },
+    { action: 'waitFor', anyOf: ['.alert'] },
+    { action: 'waitFor', anyOf: ['.alert', ''] },
+    { action: 'waitFor', selector: '.a', anyOf: ['.b', '.c'] },
+    { action: 'waitFor', anyOf: ['.b', '.c'], filled: true }
+  ]) assert.throws(() => checkActions([bad], 'E'), /"waitFor" lleva "selector" o "anyOf"/, JSON.stringify(bad));
+});
+
+test('cutHint: un escenario cortado esperando un elemento sugiere anyOf; otro corte no', () => {
+  assert.match(cutHint('Timed out retrying after 15000ms: Expected to find element: `.alert`, but never found it.'), /anyOf/);
+  assert.equal(cutHint('cy.click() failed because this element is detached'), null);
+  assert.equal(cutHint(null), null);
 });

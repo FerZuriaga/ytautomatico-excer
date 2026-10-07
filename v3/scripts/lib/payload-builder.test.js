@@ -7,7 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { isBuildSpec, buildPayload, unknownShapeError } = require('./payload-builder');
+const { isBuildSpec, buildPayload, unknownShapeError, checkFolder } = require('./payload-builder');
 
 const BASE = path.resolve('/lotes/notas');
 
@@ -16,7 +16,7 @@ const historia = { como: 'persona', quiero: 'crear notas', para: 'ordenar pendie
 function spec(overrides = {}) {
   return {
     formato: 'lote',
-    comun: { folder: '/App/Notas', precondicion: 'Usuario con sesión.', evidencias: 'exp' },
+    comun: { folder: '/Notes App/Notas', precondicion: 'Usuario con sesión.', evidencias: 'exp' },
     datos: { D: 'Pintura y rodillos' },
     pasos: {
       ABRIR: { description: 'Hacer clic en "+ Add Note"', expectedResult: 'Se abre el formulario.' },
@@ -55,7 +55,7 @@ test('una historia arma el formato de un issue con el modelo completo', () => {
   assert.deepEqual(payload.testCycle, { name: 'Notes - Crear', description: 'Ciclo de ejecución de la HU Notes - Crear', statusName: 'Not Executed' });
   const [first] = payload.testcaseModels;
   assert.deepEqual(first, {
-    projectKey: 'SCRUM', statusName: 'Draft', labels: [], folder: '/App/Notas', priorityName: 'High',
+    projectKey: 'SCRUM', statusName: 'Draft', labels: [], folder: '/Notes App/Notas', priorityName: 'High',
     name: 'Crear', objective: 'o1', precondition: 'Usuario con sesión.', criterio: 'CA-01', tipo: 'positivo',
     steps: [
       { inline: 1, description: 'Hacer clic en "+ Add Note"', testData: '-', expectedResult: 'Se abre el formulario.' },
@@ -147,4 +147,36 @@ test('unknownShapeError: payload sin nada que validar es error, con pista si par
   assert.equal(unknownShapeError(buildPayload(spec(), { baseDir: BASE })), null);
   assert.equal(unknownShapeError({ testcases: [] }, { updateSteps: true }), null);
   assert.match(unknownShapeError({ testcaseModels: [] }, { updateSteps: true }), /--update-steps espera/);
+});
+
+// Caso real (RBP, 2026-10-07): la raíz de la app no estaba anotada y el
+// gestor crea en silencio una carpeta que no existe.
+test('carpeta: tiene que ser "<raíz de una app>/<módulo>" de carpetasDePruebas', () => {
+  const roots = ['/Restful Booker Platform', '/Notes App'];
+  const check = folder => { const errors = []; checkFolder(folder, 'comun.folder', errors, roots); return errors; };
+  assert.deepEqual(check('/Restful Booker Platform/Habitaciones'), []);
+  assert.match(check('/Restful Booker Platform')[0], /<raíz>\/<módulo>/);
+  assert.match(check('/RBP/Habitaciones')[0], /--list-folders/);
+  assert.match(check('/Notes Application/Notas')[0], /\/Notes App/);
+  const lote = spec();
+  lote.comun.folder = '/Inventada/Notas';
+  assert.throws(() => buildPayload(lote, { baseDir: BASE }), /comun\.folder: "\/Inventada\/Notas"/);
+});
+
+// Caso real (RBP, 2026-10-07): la pausa se mandó con CA de dos reglas y el
+// validador recién lo vio con el payload completo. El borrador se valida
+// con casos de una línea (criterio, tipo, nombre), sin pasos.
+test('borrador: casos sin pasos ni precondición, con su criterio y tipo', () => {
+  const lote = spec();
+  delete lote.comun.precondicion;
+  lote.historias[0].casos = [
+    { criterio: 'CA-01', tipo: 'positivo', nombre: 'Crear' },
+    { criterio: 'ca-01', tipo: 'negativo', nombre: 'Sin título' },
+    { criterio: 'CA-02', nombre: 'Falta el tipo' }
+  ];
+  assert.throws(() => buildPayload(lote, { baseDir: BASE, borrador: true }), /caso 3 "Falta el tipo": falta "tipo"/);
+  lote.historias[0].casos.pop();
+  const payload = buildPayload(lote, { baseDir: BASE, borrador: true });
+  assert.deepEqual(payload.testcaseModels.map(m => [m.criterio, m.tipo, m.name, m.traceability.testCase]), [['CA-01', 'positivo', 'Crear', 'TC-01.1'], ['CA-01', 'negativo', 'Sin título', 'TC-01.2']]);
+  assert.throws(() => buildPayload(lote, { baseDir: BASE }), /"pasos" está vacío/);
 });

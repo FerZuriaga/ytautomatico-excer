@@ -136,12 +136,27 @@ function evidenceOf(caso, comun, baseDir, where, errors) {
   return { reporte: path.resolve(baseDir, comun.evidencias, ev.escenario, 'report.json'), observado: ev.observado };
 }
 
+// La carpeta es "<raíz de una app>/<módulo>" (carpetasDePruebas de
+// qa.config.json): el gestor crea en silencio una ruta que no existe, así
+// que una raíz mal escrita o adivinada terminaba en una carpeta nueva
+// (RBP 2026-10-07: la raíz no estaba anotada en ningún lado).
+function checkFolder(folder, where, errors, roots = Object.values(config.carpetasDePruebas || {})) {
+  const ok = roots.some(root => folder.startsWith(`${root}/`) && folder.length > root.length + 1);
+  if (!ok) errors.push(`${where}: "${folder}" no es "<raíz>/<módulo>" de ninguna app (raíces en carpetasDePruebas de qa.config.json: ${roots.join(', ')}). Las carpetas que existen: create-jira-task.js --list-folders.`);
+}
+
 /**
  * spec: archivo de lote ya parseado. baseDir: carpeta del archivo, contra
  * la que se resuelven las rutas de evidencia. Devuelve el payload o lanza
  * un Error con TODOS los problemas encontrados (no el primero).
  */
-function buildPayload(spec, { baseDir = process.cwd() } = {}) {
+// borrador: la pausa del lote (--dry-run --borrador). Cada caso lleva solo
+// criterio, tipo y nombre; pasos, precondición, carpeta y evidencia se
+// escriben después del OK del usuario.
+const DRAFT_FIELDS = ['criterio', 'tipo', 'nombre'];
+const CASE_FIELDS = ['criterio', 'tipo', 'prioridad', 'nombre', 'objetivo'];
+
+function buildPayload(spec, { baseDir = process.cwd(), borrador = false } = {}) {
   const errors = [];
   if (!isBuildSpec(spec)) throw new Error('El archivo no es un lote: falta "formato": "lote".');
   const comun = spec.comun || {};
@@ -149,6 +164,7 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
   const library = spec.pasos || {};
   const historias = Array.isArray(spec.historias) ? spec.historias : [];
   if (!historias.length) errors.push('"historias" tiene que traer al menos una Historia.');
+  if (comun.folder) checkFolder(comun.folder, 'comun.folder', errors);
 
   const issues = historias.map((h, hi) => {
     const hWhere = `historias[${hi}]${h.summary ? ` (${h.summary})` : ''}`;
@@ -160,7 +176,7 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
     const counters = {};
     const models = casos.map((caso, ci) => {
       const where = `${hWhere} caso ${ci + 1}${caso.nombre ? ` "${caso.nombre}"` : ''}`;
-      for (const field of ['criterio', 'tipo', 'prioridad', 'nombre', 'objetivo']) {
+      for (const field of borrador ? DRAFT_FIELDS : CASE_FIELDS) {
         if (!caso[field]) errors.push(`${where}: falta "${field}".`);
       }
       const criterio = String(caso.criterio || '').trim().toUpperCase();
@@ -177,6 +193,8 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
           testCase = `TC-${match[1]}.${counters[criterio]}`;
         }
       }
+
+      if (borrador) return { criterio, tipo: caso.tipo, name: caso.nombre, traceability: { scenario: caso.escenario || h.summary, testCase } };
 
       const pasos = Array.isArray(caso.pasos) ? caso.pasos : [];
       if (!pasos.length) errors.push(`${where}: "pasos" está vacío.`);
@@ -203,6 +221,7 @@ function buildPayload(spec, { baseDir = process.cwd() } = {}) {
         traceability: { scenario: caso.escenario || h.summary, testCase }
       };
       if (!model.folder) errors.push(`${where}: falta la carpeta de Xray ("comun.folder").`);
+      else if (caso.folder) checkFolder(caso.folder, `${where} (folder)`, errors);
       const evidencia = evidenceOf(caso, comun, baseDir, where, errors);
       if (evidencia) model.evidencia = evidencia;
       return model;
@@ -236,4 +255,4 @@ function unknownShapeError(data, { updateSteps = false } = {}) {
   return `${Array.isArray(data.issues) ? `issues[${unknown}]` : 'El JSON de --data'} no trae ninguna de ${KNOWN_ISSUE_KEYS.join(', ')}: no hay nada que validar ni publicar.${hint}`;
 }
 
-module.exports = { isBuildSpec, buildPayload, unknownShapeError };
+module.exports = { isBuildSpec, buildPayload, unknownShapeError, checkFolder };

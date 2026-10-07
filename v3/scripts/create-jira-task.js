@@ -127,6 +127,10 @@ function parseArgs(argv) {
     } else if (argv[i] === '--verify-cycle') {
       args.verifyCycle = argv[i + 1];
       i++;
+    } else if (argv[i] === '--borrador') {
+      args.borrador = true;
+    } else if (argv[i] === '--list-folders') {
+      args.listFolders = true;
     } else if (argv[i] === '--verify-status') {
       args.verifyStatus = argv[i + 1];
       i++;
@@ -158,7 +162,7 @@ function parseArgs(argv) {
   return args;
 }
 
-const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo, completeTestcase, allowOpenBugs } = parseArgs(process.argv.slice(2));
+const { dataPath, issueKey, transitionName, commentText, verify, verifyTestcase, verifyCycle, verifyStatus, listFolders, borrador, reportResultsPath, testCycleKeyArg, acceptWarnings, dryRun, updateSteps, expandTo, completeTestcase, allowOpenBugs } = parseArgs(process.argv.slice(2));
 const ISSUE_KEY = issueKey;
 
 if (completeTestcase && !ISSUE_KEY) {
@@ -166,15 +170,22 @@ if (completeTestcase && !ISSUE_KEY) {
   process.exit(1);
 }
 
-if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !reportResultsPath && !completeTestcase) {
+if (!dataPath && !transitionName && !commentText && !verify && !verifyTestcase && !verifyCycle && !verifyStatus && !listFolders && !reportResultsPath && !completeTestcase) {
   console.error('Uso: node scripts/create-jira-task.js --data <archivo.json> [issueKey] [--transition "<Estado>"] [--comment "<texto>"]');
   console.error('     node scripts/create-jira-task.js <issueKey> --verify');
+  console.error('     node scripts/create-jira-task.js --list-folders   (carpetas de Test Cases publicadas)');
   console.error('     node scripts/create-jira-task.js --verify-testcase <TestCaseKey>');
   console.error('     node scripts/create-jira-task.js --verify-cycle <TestCycleKey>');
   console.error('     node scripts/create-jira-task.js --report-results <results.json> --test-cycle <TestCycleKey>[,<TestCycleKey2>,...]');
   console.error('     node scripts/create-jira-task.js --data <archivo.json> --dry-run   (solo valida, no publica)');
   console.error('     node scripts/create-jira-task.js --data <lote.json> [--expand-to <payload.json>] [--dry-run]   (archivo de lote, lib/payload-builder.js)');
+  console.error('     node scripts/create-jira-task.js --data <lote.json> --dry-run --borrador   (pausa del lote: HU, CA y TC sin pasos)');
   console.error('     node scripts/create-jira-task.js --update-steps --data <archivo.json> [--dry-run] [--accept-warnings]');
+  process.exit(1);
+}
+
+if (borrador && !dryRun) {
+  console.error('--borrador solo valida la pausa del lote: va con --dry-run (nunca publica).');
   process.exit(1);
 }
 
@@ -208,12 +219,24 @@ if (dataPath) {
       process.exit(1);
     }
     try {
-      ISSUE = payloadBuilder.buildPayload(ISSUE, { baseDir: path.dirname(path.resolve(dataPath)) });
+      ISSUE = payloadBuilder.buildPayload(ISSUE, { baseDir: path.dirname(path.resolve(dataPath)), borrador });
     } catch (e) {
       console.error(e.message);
       process.exit(1);
     }
     const built = Array.isArray(ISSUE.issues) ? ISSUE.issues : [ISSUE];
+    if (borrador) {
+      const draft = testcaseValidator.validateDraft(ISSUE);
+      console.log(`Borrador: ${built.length} Historia(s), ${built.reduce((n, i) => n + i.testcaseModels.length, 0)} Test Case(s) sin pasos.`);
+      draft.errors.forEach(e => console.error(`  ERROR: ${e}`));
+      draft.warnings.forEach(w => console.warn(`  WARNING: ${w}`));
+      if (draft.errors.length || draft.warnings.length) {
+        console.error('Corregir el borrador antes de mandar la pausa al usuario (docs/lote.md §2).');
+        process.exit(1);
+      }
+      console.log('Borrador OK: se puede mandar la pausa.');
+      process.exit(0);
+    }
     console.log(`Lote armado: ${built.length} Historia(s), ${built.reduce((n, i) => n + i.testcaseModels.length, 0)} Test Case(s).`);
     if (expandTo) {
       fs.writeFileSync(path.resolve(expandTo), JSON.stringify(ISSUE, null, 2));
@@ -228,6 +251,7 @@ if (dataPath) {
     console.error(shapeError);
     process.exit(1);
   }
+  ISSUE = bugValidator.resolveCaptures(ISSUE, path.dirname(path.resolve(dataPath)));
 }
 
 /**
@@ -844,6 +868,11 @@ async function main() {
     const cycle = await xray.getTestCycle(verifyCycle);
     const executions = await xray.getTestExecutions(PROJECT, verifyCycle);
     console.log(JSON.stringify({ cycle: { key: cycle.key, name: cycle.name }, executions }, null, 2));
+  }
+
+  if (listFolders) {
+    const folders = await xray.listFolders(PROJECT);
+    console.log(folders.length ? folders.join('\n') : '(sin carpetas)');
   }
 
   if (verifyStatus) {

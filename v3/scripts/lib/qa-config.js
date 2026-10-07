@@ -41,6 +41,12 @@ function normalizeText(text) {
 function checkConfig(config, file = CONFIG_FILE) {
   const missing = [];
   if (!Array.isArray(config && config.apps)) missing.push('apps');
+  // Carpeta raíz de cada app en el gestor de pruebas: publicar en una ruta
+  // que no existe la crea en silencio (RBP 2026-10-07, la carpeta no estaba
+  // anotada en ningún lado y se buscó a mano).
+  const folders = config && config.carpetasDePruebas;
+  if (!folders) missing.push('carpetasDePruebas');
+  else (config.apps || []).filter(app => typeof folders[app] !== 'string' || !folders[app].startsWith('/')).forEach(app => missing.push(`carpetasDePruebas.${app} ("/Raiz")`));
   const tools = config && config.herramientas;
   if (!tools) missing.push('herramientas');
   else REQUIRED_TOOLS.filter(k => !tools[k]).forEach(k => missing.push(`herramientas.${k}`));

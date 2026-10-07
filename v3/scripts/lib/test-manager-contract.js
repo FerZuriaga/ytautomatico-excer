@@ -43,6 +43,7 @@ const METHODS = [
   { name: 'getTestStepsByKeys', signature: '([testCaseKey]) -> Map<testCaseKey, [Paso]>', does: 'Pasos de muchos Test Cases en pocas llamadas.' },
   { name: 'getTestCaseLinks', signature: '(testCaseKey) -> [vínculo]', does: 'Vínculos del Test Case con otros issues (solo se imprimen, sin forma fija).' },
   { name: 'getTestCycle', signature: '(testCycleKey) -> { key, name }', does: 'Datos de un ciclo.' },
+  { name: 'listFolders', signature: '(projectKey) -> [ruta]', does: 'Rutas completas de las carpetas de Test Cases (--list-folders): la carpeta de una app nueva se elige de acá, nunca se adivina.' },
   { name: 'getStatus', signature: '(status) -> { name, description }', does: 'Confirma que un estado existe en el gestor.' }
 ];
 

@@ -216,4 +216,19 @@ function validateBugs(payload, options = {}) {
   return { errors, bugCount: bugs.length };
 }
 
-module.exports = { validateBug, validateBugs, CERTAINTY_LABELS };
+// Las capturas relativas se resuelven contra la carpeta del archivo --data,
+// igual que la evidencia de un lote (payload-builder). Se resolvían contra
+// la carpeta desde donde se corría el script y los 5 Bugs de RBP
+// (2026-10-07) fallaron el dry-run con ENOENT. Devuelve un payload nuevo.
+function resolveCaptures(payload, baseDir) {
+  const resolveBug = issue => {
+    if (!issue || !issue.bug || issue.bug.captura == null) return issue;
+    const resolve = value => (typeof value === 'string' && value.trim() ? path.resolve(baseDir, value) : value);
+    const captura = Array.isArray(issue.bug.captura) ? issue.bug.captura.map(resolve) : resolve(issue.bug.captura);
+    return { ...issue, bug: { ...issue.bug, captura } };
+  };
+  if (payload && Array.isArray(payload.issues)) return { ...payload, issues: payload.issues.map(resolveBug) };
+  return resolveBug(payload);
+}
+
+module.exports = { validateBug, validateBugs, resolveCaptures, CERTAINTY_LABELS };

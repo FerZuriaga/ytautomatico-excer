@@ -119,7 +119,7 @@ Lo propio de cada proyecto vive en dos archivos; el código del framework
 
 | Archivo | Qué va | Ejemplo |
 |---|---|---|
-| `qa.config.json` | Apps (`apps`), clave del proyecto de Jira, nombres de los tipos de issue en esa instancia ("Story" o "Historia"...), tipo de vínculo, estados iniciales y las palabras clave con que el equipo escribe Historias y Test Cases | `qa.config.en.example.json` (equipo en inglés) |
+| `qa.config.json` | Apps (`apps`), carpeta raíz de cada app en el gestor de pruebas (`carpetasDePruebas`), clave del proyecto de Jira, nombres de los tipos de issue en esa instancia ("Story" o "Historia"...), tipo de vínculo, estados iniciales y las palabras clave con que el equipo escribe Historias y Test Cases | `qa.config.en.example.json` (equipo en inglés) |
 | `.env` (no se versiona) | Credenciales: `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`, `GITHUB_TOKEN`. Solo para publicar en Jira/Xray y abrir PRs; correr los tests no las necesita | — |
 
 **Arrancar:**

@@ -3,6 +3,11 @@
 
   "apps": ["my-app"],
 
+  "_carpetasDePruebas": "Root folder of each app in the test manager. A batch folder (comun.folder) is '<root>/<module>'; a batch with another root is rejected. Existing folders: create-jira-task.js --list-folders.",
+  "carpetasDePruebas": {
+    "my-app": "/My App"
+  },
+
   "herramientas": {
     "gestorDePruebas": "xray",
     "gestorDeTickets": "jira"

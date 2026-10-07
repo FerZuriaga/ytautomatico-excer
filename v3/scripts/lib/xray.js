@@ -602,6 +602,32 @@ async function findFolder(projectKey, folderType, name) {
 }
 
 /**
+ * Rutas de todas las carpetas de Test Cases del proyecto. getFolder
+ * devuelve el árbol en `folders` (JSON: { name, path?, folders }); se
+ * aplana a rutas completas. Sirve para elegir la carpeta de una app nueva
+ * sin adivinarla: publicar en una ruta que no existe la crea en silencio.
+ */
+async function listFolders(projectKey) {
+    const projectId = await projectIdOf(projectKey);
+
+    const query = `
+        query($projectId: String, $path: String!) {
+            getFolder(projectId: $projectId, path: $path) { name path folders }
+        }
+    `;
+    const res = await xrayRequest(query, { projectId, path: '/' });
+    assertNoErrors(res);
+    return flattenFolders(res.body.data.getFolder?.folders || [], '');
+}
+
+function flattenFolders(folders, parent) {
+    return (folders || []).flatMap(folder => {
+        const path = folder.path || `${parent}/${folder.name}`;
+        return [path, ...flattenFolders(folder.folders, path)];
+    });
+}
+
+/**
  * Crea un folder por ruta completa (crea también los segmentos
  * intermedios que no existan). parentId del contrato original de Zephyr
  * no tiene equivalente acá.
@@ -824,6 +850,8 @@ module.exports = {
     findTestExecution,
     updateTestExecutionStatus,
     findFolder,
+    listFolders,
+    flattenFolders,
     createFolder,
     resolveFolderPath,
     resolveTestCycle,
