@@ -25,5 +25,10 @@ module.exports = [
   {
     files: ['cypress.config.js'],
     languageOptions: { sourceType: 'commonjs', globals: { require: 'readonly', module: 'writable' } }
+  },
+  {
+    // Hooks del asistente (D-51): scripts de Node que corre Claude Code.
+    files: ['.claude/hooks/**/*.js'],
+    languageOptions: { sourceType: 'commonjs', globals: { require: 'readonly', module: 'writable', process: 'readonly', __dirname: 'readonly' } }
   }
 ];

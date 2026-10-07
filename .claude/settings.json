@@ -4,5 +4,20 @@
       "Bash(node v3/scripts/create-pull-request.js *)",
       "PowerShell(node v3/scripts/create-pull-request.js *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verificar-escritura.js\"",
+            "timeout": 120,
+            "statusMessage": "Verificando lo escrito (lint / borrador del lote)..."
+          }
+        ]
+      }
+    ]
   }
 }
