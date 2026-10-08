@@ -199,6 +199,49 @@ class AdminMessagesPage {
             cy.get(sel.admin.detail).should('not.exist')
         })
     }
+
+    // Deja la consulta leída (abrir y cerrar) con el contador del menú ya
+    // actualizado: leerlo antes da el valor previo a la lectura.
+    markAsRead(subject) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.messageCountPath }).as('countAfterRead')
+            this.openMessage(subject)
+            cy.wait('@countAfterRead', T)
+            this.closeDetail()
+            this.row(subject).should('have.class', sel.admin.rowRead)
+        })
+    }
+
+    // ─── Borrar ───────────────────────────────────────────────────────────────
+
+    // Borra la consulta con el ícono de su fila. Espera el borrado y el
+    // contador que el menú vuelve a pedir después: quien afirma que el
+    // contador no cambió lo hace con la respuesta ya llegada.
+    deleteMessage(subject) {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.intercept({ method: 'DELETE', hostname: sel.api.host, pathname: new RegExp(`^${sel.api.messagePath}/\\d+$`) }).as('deleteMessage')
+            cy.intercept({ method: 'GET', hostname: sel.api.host, pathname: sel.api.messageCountPath }).as('countAfterDelete')
+            this.row(subject).find(sel.admin.rowDelete).click()
+            cy.wait('@deleteMessage', T).its('response.statusCode').should('be.oneOf', [200, 202])
+            cy.wait('@countAfterDelete', T)
+            this.verifyNoRow(subject)
+        })
+    }
+
+    reloadInbox() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.reload()
+            cy.location('pathname', T).should('eq', sel.paths.inbox)
+            cy.wait('@inbox', T)
+        })
+    }
+
+    openRooms() {
+        cy.fixture(FIXTURE).then(sel => {
+            cy.contains(sel.admin.menuLink, sel.texts.rooms).click()
+            this.waitPanelReady()
+        })
+    }
 }
 
 export default AdminMessagesPage
