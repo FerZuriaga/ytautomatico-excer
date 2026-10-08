@@ -131,7 +131,13 @@ figuran en la tabla.
   rama del lote se crea al empezar (`feature/<app>-<funcionalidad>`).
 - **Por qué:** en el cierre del 2026-10-06 los tiempos se tuvieron que
   estimar: el reporte arrancaba en la primera corrida de Cypress.
-- **Límite:** el total incluye la espera de las respuestas del usuario.
+- **Trabajo vs. espera (2026-10-08):** el reporte separa del total la
+  espera del OK de merge (el hueco antes del merge) y los huecos de más de
+  30 min sin registros (una pausa larga). El lote de borrar consultas de RBP
+  daba "5h 26m" con 11m 36s de trabajo.
+- **Límite:** es por huecos, porque ningún script ve la respuesta del
+  usuario: una pausa respondida en menos de 30 min queda dentro del trabajo,
+  y un hueco largo sale entero, con los minutos de trabajo que tenga adentro.
 - **Dónde:** `lib/metrics-log.js`, `lib/run-timing.js` (+ tests), los CLIs,
   `docs/lote.md` §0 y §5.
 
