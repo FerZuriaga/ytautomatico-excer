@@ -72,12 +72,48 @@ function iterationNumber(entries, branch, key) {
 const RUN_MODES = new Set(['lote', 'regresion', 'entorno', 'from-results']);
 const sumMs = entries => entries.reduce((sum, e) => sum + (e.totalMs || 0), 0);
 
+// Un hueco sin ningún registro más largo que esto no es trabajo: es una
+// pausa (la del lote esperando el OK, o el día que se cortó).
+const IDLE_GAP_MS = 30 * 60000;
+
+/**
+ * Espera dentro del reloj del lote. Nace del 2026-10-08: el lote de borrar
+ * consultas de RBP dio "lote completo: 5h 26m" con ~12 min de trabajo; el
+ * resto era el OK del merge. Ningún script ve la respuesta del usuario, así
+ * que se mide por huecos entre registros (del fin de uno al inicio del
+ * siguiente): el hueco antes del merge es la espera del OK de merge y
+ * cualquier otro de más de IDLE_GAP_MS es tiempo sin actividad. Es una
+ * aproximación: un hueco cuenta entero, con los minutos de trabajo que haya
+ * adentro (ej. armar los pasos después de la pausa).
+ */
+function waitBreakdown(entries) {
+  const timed = entries
+    .map(e => ({ e, start: new Date(e.at).getTime() }))
+    .filter(t => !Number.isNaN(t.start))
+    .sort((a, b) => a.start - b.start);
+  let mergeWaitMs = 0;
+  let idleMs = 0;
+  let idleGaps = 0;
+  let lastEnd = null;
+  for (const { e, start } of timed) {
+    if (lastEnd !== null && start > lastEnd) {
+      const gap = start - lastEnd;
+      if (e.mode === 'merge' && !mergeWaitMs) mergeWaitMs = gap;
+      else if (gap > IDLE_GAP_MS) { idleMs += gap; idleGaps++; }
+    }
+    const end = start + (e.totalMs || 0);
+    lastEnd = lastEnd === null ? end : Math.max(lastEnd, end);
+  }
+  return { mergeWaitMs, idleMs, idleGaps };
+}
+
 /**
  * Resumen por rama: discovery y publicación (cantidad y tiempo), corridas,
  * iteraciones del lote (y cuántas fallaron), tiempo en cada fase y tiempo
  * de reloj entre el primer y el último registro (incluye lo que pasa entre
  * pasos: diagnóstico, código, revisión). Con un merge registrado, ese reloj
- * es el lote completo: de la primera exploración al merge.
+ * es el lote completo: de la primera exploración al merge. De ese reloj se
+ * separa la espera (waitBreakdown) para dar el trabajo real.
  */
 function summarizeLog(entries, branch = null) {
   const byBranch = new Map();
@@ -95,6 +131,8 @@ function summarizeLog(entries, branch = null) {
     const lote = runs.filter(r => r.mode === 'lote');
     const times = all.map(r => new Date(r.at).getTime()).filter(t => !Number.isNaN(t));
     const last = all[all.length - 1];
+    const wallMs = times.length > 1 ? Math.max(...times) + (last.totalMs || 0) - Math.min(...times) : (last.totalMs || 0);
+    const { mergeWaitMs, idleMs, idleGaps } = waitBreakdown(all);
     return {
       branch: name,
       runs: runs.length,
@@ -109,7 +147,11 @@ function summarizeLog(entries, branch = null) {
       merged: all.some(r => r.mode === 'merge'),
       phaseMs,
       runMs: sumMs(runs),
-      wallMs: times.length > 1 ? Math.max(...times) + (last.totalMs || 0) - Math.min(...times) : (last.totalMs || 0)
+      wallMs,
+      mergeWaitMs,
+      idleMs,
+      idleGaps,
+      workMs: Math.max(0, wallMs - mergeWaitMs - idleMs)
     };
   });
 }
@@ -118,6 +160,12 @@ function formatSummary(summary) {
   const phases = Object.entries(summary.phaseMs).map(([name, ms]) => `${PHASE_LABELS[name] || name} ${formatDuration(ms)}`).join(' | ');
   const lines = [`Rama ${summary.branch}:`];
   if (summary.merged) lines.push(`  lote completo: ${formatDuration(summary.wallMs)} (del primer registro al merge)`);
+  if (summary.mergeWaitMs || summary.idleMs) {
+    const waits = [];
+    if (summary.mergeWaitMs) waits.push(`espera del OK de merge ${formatDuration(summary.mergeWaitMs)}`);
+    if (summary.idleMs) waits.push(`sin actividad ${formatDuration(summary.idleMs)} (${summary.idleGaps} hueco(s) de mas de ${IDLE_GAP_MS / 60000} min, ej. la pausa del lote)`);
+    lines.push(`    trabajo: ${formatDuration(summary.workMs)} | ${waits.join(' | ')}`);
+  }
   if (summary.discoveryRuns) lines.push(`  discovery: ${summary.discoveryRuns} exploracion(es), ${formatDuration(summary.discoveryMs)}`);
   if (summary.publishRuns) lines.push(`  publicacion en el gestor: ${summary.publishRuns}, ${formatDuration(summary.publishMs)}`);
   lines.push(

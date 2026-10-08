@@ -420,7 +420,9 @@ pisaban y textos de TC que el test no controlaba.
 - `node v3/scripts/run-and-report.js --timing-report <rama>` para los
   tiempos del lote: después del merge da el **lote completo** (de la primera
   exploración al merge) con discovery, publicación y corridas por separado
-  (D-49). Es el dato de TIEMPOS del informe de cierre: no se estima.
+  (D-49), y separa el **trabajo** de la espera del OK de merge y de las
+  pausas largas. Es el dato de TIEMPOS del informe de cierre: se informa el
+  trabajo y la espera por separado, no se estima.
 
 **Informe de cierre** (todos los campos; `N/A` si no aplica, nunca
 inventar): TICKET, HU, RAMA, RESULTADO TESTS (passing / failing / ↻

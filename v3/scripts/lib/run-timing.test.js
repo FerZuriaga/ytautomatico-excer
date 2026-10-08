@@ -104,6 +104,42 @@ test('el resumen mide el lote completo: discovery, publicacion, corridas y merge
   assert.match(formatSummary(summarizeLog(entries.slice(0, 4), 'f')[0]), /reloj desde el primer registro: 40m 44s/);
 });
 
+// 2026-10-08: el lote de borrar consultas de RBP dio "lote completo: 5h 26m"
+// con ~12 min de trabajo; el resto era la espera del OK de merge.
+test('el resumen separa el trabajo de la espera del OK de merge y de los huecos largos', () => {
+  const entries = [
+    { branch: 'r', mode: 'discovery', ok: true, at: '2026-10-08T16:39:18.583Z', totalMs: 53154 },
+    { branch: 'r', mode: 'discovery', ok: true, at: '2026-10-08T16:40:58.474Z', totalMs: 31645 },
+    { branch: 'r', mode: 'publicacion', ok: true, at: '2026-10-08T16:45:13.799Z', totalMs: 65763 },
+    { branch: 'r', mode: 'lote', specsKey: 's', ok: true, at: '2026-10-08T16:48:38.306Z', totalMs: 67666 },
+    { branch: 'r', mode: 'pr', ok: true, at: '2026-10-08T16:50:44.413Z', totalMs: 2038 },
+    { branch: 'r', mode: 'publicacion', ok: true, at: '2026-10-08T16:50:47.340Z', totalMs: 2157 },
+    { branch: 'r', mode: 'merge', ok: true, at: '2026-10-08T22:05:15.904Z', totalMs: 5215 }
+  ];
+  const [summary] = summarizeLog(entries, 'r');
+  // Del fin de la última publicación (16:50:49.497) al merge.
+  assert.equal(summary.mergeWaitMs, Date.parse('2026-10-08T22:05:15.904Z') - Date.parse('2026-10-08T16:50:49.497Z'));
+  assert.equal(summary.idleMs, 0);
+  assert.equal(summary.workMs, summary.wallMs - summary.mergeWaitMs);
+  const text = formatSummary(summary);
+  assert.match(text, /lote completo: 5h 26m/);
+  assert.match(text, /trabajo: 11m 36s \| espera del OK de merge 5h 14m/);
+  assert.doesNotMatch(text, /sin actividad/);
+
+  // Un hueco de más de 30 min antes del merge (la pausa que pasó la noche)
+  // sale entero del trabajo, con los minutos de trabajo que haya adentro
+  // (ningún registro dice dónde terminan); uno de 20 min no.
+  const shift = (e, ms) => ({ ...e, at: new Date(Date.parse(e.at) + ms).toISOString() });
+  const overnight = entries.map((e, i) => (i >= 2 ? shift(e, 12 * 3600000) : e));
+  const [night] = summarizeLog(overnight, 'r');
+  assert.equal(night.idleGaps, 1);
+  assert.equal(night.idleMs, Date.parse(overnight[2].at) - Date.parse('2026-10-08T16:41:30.119Z'));
+  assert.equal(night.workMs, night.wallMs - night.mergeWaitMs - night.idleMs);
+  assert.match(formatSummary(night), /sin actividad 12h \d\dm \(1 hueco\(s\) de mas de 30 min/);
+  const short = entries.map((e, i) => (i >= 2 ? shift(e, 20 * 60000) : e));
+  assert.equal(summarizeLog(short, 'r')[0].idleGaps, 0);
+});
+
 test('el registro JSONL ignora lineas vacias o rotas', () => {
   assert.deepEqual(parseLog('{"a":1}\n\nno-json\n{"b":2}\n'), [{ a: 1 }, { b: 2 }]);
 });
