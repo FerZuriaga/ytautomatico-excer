@@ -65,6 +65,16 @@ Explorado con 14 escenarios en cuatro tandas. Selectores en
   responden sin sesión (nombre, email y teléfono del huésped). Marcar como
   leído y borrar sí devuelven 403 sin sesión. Captura tomada con
   `--init-script` (Cypress no abre una respuesta JSON con `visit`).
+- **Borrar una consulta** (2026-10-08): ícono `DeleteMessage<n>` (span sin
+  texto) al final de cada fila; un clic hace `DELETE /api/message/<id>`
+  (202) sin confirmación (Bug SCRUM-1037), saca la fila y el menú vuelve a
+  pedir el contador. Borrar una sin leer lo baja en uno; una leída no lo
+  cambia. Al marcar como leída el contador también se vuelve a pedir:
+  esperarlo antes de leerlo (`markAsRead`).
+- **Confirmaciones en el discovery:** Cypress acepta solo los `confirm()`
+  y `alert()`, así que un diálogo no se ve en el informe. Para saber si la
+  app pide confirmación, explorar con un `--init-script` que los deje en
+  los errores de consola.
 - Una vez, entrar directo a `/admin/report` recargando la página dejó el
   panel en "Loading..." con "Error validating authentication: Failed to
   fetch"; no se repitió en `/admin/message`. Sin reportar.

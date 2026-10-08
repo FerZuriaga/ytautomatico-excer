@@ -33,6 +33,7 @@
     "rowUnread": "read-false",
     "rowRead": "read-true",
     "rowSubject": "[data-testid^=\"messageDescription\"]",
+    "rowDelete": "[data-testid^=\"DeleteMessage\"]",
     "detail": "[data-testid=\"message\"]",
     "detailClose": "button"
   },
@@ -44,6 +45,7 @@
     "followUpEnd": "as soon as possible.",
     "menu": ["Rooms", "Report", "Branding", "Messages"],
     "messages": "Messages",
+    "rooms": "Rooms",
     "frontPage": "Front Page",
     "loginTitle": "Login",
     "listHeaders": ["Name", "Subject"],
