@@ -1,7 +1,7 @@
 /**
  * Validación de la estructura de pasos de los Test Cases ANTES de
- * publicarlos en Xray (ver CLAUDE.md, sección 3: "un paso por acción
- * verificable" y "precondición separada de los pasos").
+ * publicarlos en Xray (ver docs/lote.md §2, "Test Cases": un paso por
+ * acción verificable y precondición separada de los pasos).
  *
  * Nace del lote SCRUM-328/338 (2026-09-23): los 16 Test Cases se
  * publicaron todos con exactamente 2 pasos, encadenando 2-3 acciones en
@@ -61,7 +61,7 @@ const MIN_STEPS = 2;
 // acción); la señal de "molde" solo tiene sentido a partir de varios TC.
 const UNIFORM_BATCH_MIN_TESTCASES = 4;
 
-// Criterios de Aceptación por Historia (CLAUDE.md: matriz de 2 a 4).
+// Criterios de Aceptación por Historia (docs/lote.md §2: de 2 a 4).
 const MIN_CRITERIA = 2;
 const MAX_CRITERIA = 4;
 

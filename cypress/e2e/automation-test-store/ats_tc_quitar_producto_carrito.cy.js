@@ -2,7 +2,7 @@
 // Sitio bajo prueba: https://automationteststore.com
 // Ticket Jira: SCRUM-188 (CA-01/CA-02, Test Cycle SCRUM-189)
 // HU separada de "Editar cantidad" por ser una accion destructiva sobre el
-// carrito (regla HU & CA GRANULARITY de CLAUDE.md).
+// carrito (docs/lote.md §2: lo destructivo va en HU aparte).
 // Selectores relevados en el PASO 1 y persistidos en
 // cypress/fixtures/selectors/automation-test-store/carrito.json.
 
