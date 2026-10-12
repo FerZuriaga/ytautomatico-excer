@@ -304,7 +304,7 @@ async function storyCoherenceWarnings() {
 }
 
 // Validación de pasos de los Test Cases ANTES de tocar Jira/Xray (ver
-// lib/testcase-validator.js y CLAUDE.md sección 3). Los errores frenan
+// lib/testcase-validator.js y docs/lote.md §2). Los errores frenan
 // siempre; los warnings frenan salvo --accept-warnings, que se pasa
 // recién después de revisarlos (son heurísticas, pueden ser falsos
 // positivos).

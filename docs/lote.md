@@ -197,9 +197,12 @@ espera el OK (SCRUM-826, 2026-10-02).
 
 ### Test Cases
 
-- 2 a 5 por CA, al menos un negativo o `sinNegativo` con motivo.
+- 2 a 5 por CA, al menos un negativo o `sinNegativo` con motivo (un CA
+  sin negativo se justifica ahí, nunca con `--accept-warnings`).
 - Precondición aparte; Paso 1 = entrar a la pantalla probada; un paso por
   acción verificable; la Acción no verifica; datos en `testData` (D-20).
+  Mínimo 2 pasos, sin relleno: "Observar…" o "Abrir nuevamente…" no son
+  pasos.
 - **Un dato por paso (D-38):** cada campo que se completa es su propio
   paso (con su valor en Datos) y cada botón es otro paso. Nunca "Completar
   el formulario", "Ingresar el email y la contraseña" ni "Escribir X y

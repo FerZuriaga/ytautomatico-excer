@@ -203,7 +203,7 @@ figuran en la tabla.
   independiente o destructivo (eliminar, editar) en HU aparte.
 - **Por qué:** una HU por escenario fragmentaba la funcionalidad (PIM,
   2026-07-22).
-- **Dónde:** `CLAUDE.md` §2, `docs/lote.md`.
+- **Dónde:** `docs/lote.md` §2.
 
 ### D-18 · Los CA salen de las reglas relevadas, una por CA
 - **Decisión:**
