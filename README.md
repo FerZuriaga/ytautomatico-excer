@@ -51,7 +51,7 @@ criterio de aceptación.
 | Apps activas | 6 (demos públicas de terceros) |
 | Historias / specs / `it()` | 76 / 88 / 678, cada `it()` trazado a su Test Case en Xray (39 en `it.skip` por bugs conocidos, con la key del Bug) |
 | Corridas registradas desde el 2026-09-27 | 99 (96 de lote, 3 de regresión), 1.490 tests ejecutados, 7 pasaron recién en el reintento |
-| Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786). Último medido de punta a punta, RBP Borrar consultas (1 HU, 6 TC): 11m 36s de trabajo sin contar la espera del usuario (exploración 1m 25s, publicación 1m 13s, corrida y reporte 1m 08s), verde en la 1ª iteración |
+| Tiempo de un lote (HU → Jira/Xray → tests verdes → PR) | de 12 a 50 min según el tamaño, en los dos lotes medidos de punta a punta, ambos verdes en la 1ª iteración: RBP Borrar consultas (1 HU, 6 TC) 11m 36s (exploración 1m 25s, publicación 1m 13s, corrida y reporte 1m 08s) y RBP Habitaciones (2 HU, 17 TC) 50m 34s (exploración 5m 15s, publicación 3m 49s, corrida y reporte 2m 11s). No cuenta la espera del OK de merge; sí la pausa del lote cuando se responde en menos de 30 min (D-49). Antes de medir así: de 45 min (SCRUM-717) a ~11-13 min (SCRUM-730, SCRUM-786) |
 | Reporte a Xray por corrida | de 38-49 s a 3-8 s (plan de reporte + escrituras en paralelo, D-29) |
 | Decisiones de trabajo documentadas | 26 temas (51 decisiones consolidadas el 2026-10-07), con su porqué (`docs/decisiones.md`) |
 
